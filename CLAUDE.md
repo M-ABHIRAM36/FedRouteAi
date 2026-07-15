@@ -105,6 +105,108 @@ update once they stop recurring (no "close out" pass yet); ingestion
 uses in-process `BackgroundTasks`, not a queue/broker (deliberate Phase
 1 scope decision).
 
+## CURRENT TOP PRIORITY: upgrade from rule-based to genuinely learned FL
+
+**Read this section first if you're picking this project back up.** As
+of this point, the pipeline is fully wired end-to-end (ingest → match →
+persist → detect → serve, 17 passing tests, verified against a real
+Postgres+PostGIS instance with 130 segments / 8 regions / 491,370 seeded
+GPS pings / 3,035 historical memory rows / 23 events) — but the
+"intelligence" layer is honestly rule-based, not learned:
+
+- `event_detection/pattern_matcher.py` classifies by distance to
+  hand-written target multipliers in `event_signatures.py` — this is an
+  expert system, not a trained classifier.
+- `federated_learning/local_model.py` (`LocalModel`) is a closed-form
+  mean/std (4 numbers) per region, not a model trained by gradient
+  descent. Flower's aggregation IS real (correct weighted averaging,
+  real privacy properties, real per-region history) — what's federated
+  is just summary statistics, not learned decision boundaries.
+
+**Decision made**: fix this by training a real model, not by declaring
+the current approach sufficient. Full reasoning below; don't re-litigate
+model choice without reading it first.
+
+### Why an MLP, not XGBoost, as the FEDERATED model
+XGBoost/gradient-boosted trees are normally the right call for small
+tabular feature sets like this one — but FedAvg (weighted parameter
+averaging, what `AdaptiveFedAvg` implements) is defined for continuous
+weight vectors. Trees aren't parameterized that way; federating them
+needs fundamentally different techniques (federated boosting, histogram
+aggregation) and would mean replacing the aggregation strategy, not
+reusing it. A small PyTorch MLP keeps `get_parameters`/`set_parameters`'
+existing contract (`local_model.py` already documents this — swap
+`[mean, std]` for `[layer.weight, layer.bias, ...]`, `AdaptiveFedAvg`
+doesn't change). **Train XGBoost too, but as a CENTRALIZED baseline**
+(see Milestone 2) to compare the federated MLP against — that
+comparison is a legitimate research result, not just an implementation
+detail.
+
+GNN is the highest-value stretch goal (directly replaces
+`road_graph/neighbor_reasoning.py`'s hand-coded heuristic, and matches
+DCRNN/STGCN/Graph-Enhanced-Trajectory-Anomaly-Detection from the
+literature survey) — but it's Milestone 6, not Milestone 1. Don't start
+there; it's harder to federate and harder to debug than the MLP path.
+
+### The pipeline this unlocks
+```
+491K raw GPS pings (labeled, already seeded)
+   -> batch-run signature_extractor.py over sliding windows per segment
+      (the extraction LOGIC already exists — it's only ever been run
+      live, on-demand, one segment at a time; this is a new batch driver
+      around the same function, not new extraction logic)
+Windowed feature table: (speed_ratio, density_ratio, uturn_ratio,
+      variance_ratio, hour, road_type) -> label
+   -> train once, centrally, as a sanity check BEFORE federating anything
+Centralized XGBoost baseline -> per-class F1 (de-risks everything after:
+      if features aren't separable centrally, federating won't fix that)
+   -> split by region_id (already in the data)
+8 regional training sets
+   -> replace LocalModel's Gaussian with a PyTorch MLP, same interface
+Local MLP training per region (real gradient descent, few epochs;
+      college GPU server available, ~24GB VRAM, this will be fast)
+   -> AdaptiveFedAvg unchanged — already does real weighted aggregation
+Flower rounds -> Global MLP
+   -> compare against the centralized baseline (THIS comparison is the
+      research contribution: "federated MLP achieves X% of centralized
+      accuracy without centralizing data")
+Global model evaluation
+   -> wire into orchestrator.py as the PRIMARY classifier
+pattern_matcher.py: learned model first, EVENT_SIGNATURES rule-based
+      fallback for cold-start segments/regions with insufficient
+      training history yet — do NOT delete the rule-based matcher,
+      demote it. This also gives a clean learned-vs-rule-based ablation.
+```
+
+### Milestones (in order — do not skip ahead)
+1. **Batch feature-engineering script**: reuse `signature_extractor.py`
+   over sliding windows across the seeded `gps_pings` table, output a
+   labeled feature table (CSV/parquet). Zero new extraction logic
+   needed, just a batch driver. ~1-2 days.
+2. **Centralized XGBoost baseline**: per-class F1 / confusion matrix.
+   Sanity-checks the features before any FL work starts. ~0.5-1 day.
+3. **PyTorch MLP `LocalModel`** (same `get_parameters`/`set_parameters`
+   interface) + a real training loop in `flower_client.py`'s `fit()`
+   (currently calls `LocalModel.fit()` which does closed-form
+   mean/std — replace with actual backprop). ~1-2 days.
+4. **Full 8-region Flower run**, evaluate global MLP vs. the Milestone 2
+   baseline. ~1 day (training itself is fast on the GPU server; this is
+   mostly eval/debugging time).
+5. **Wire the global model into `orchestrator.py`/`pattern_matcher.py`**
+   as primary classifier, keep the rule-based path as fallback. ~1 day.
+6. **(Stretch, highest research value) GNN** over the segment graph,
+   replacing `neighbor_reasoning.py`'s heuristic. ~3-5 days.
+
+Total to a genuinely federated, learned system: **~5-7 days**, before
+the GNN stretch goal.
+
+### Explicit non-goals (already decided, don't revisit without reason)
+- No CCTV/video analytics — GPS-based architecture was deliberately
+  chosen as sufficient; video stays a documented future extension
+  (Phase 2 in the original project spec), not part of the core system.
+- Don't remove `event_signatures.py`/`pattern_matcher.py` when the
+  learned model lands — demote to fallback, not delete.
+
 ## Prioritized backlog
 
 Roughly in the order that unblocks the most other work:

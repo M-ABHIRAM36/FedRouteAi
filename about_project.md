@@ -1,5 +1,22 @@
 # About FedRouteAI
 
+> **Status update**: verified running end-to-end against a real local
+> PostgreSQL 18 + PostGIS instance — 130 segments / 8 regions / 491,370
+> GPS pings generated, `regions`/`segments`/`segment_historical_memory`/
+> `events` seeded and confirmed (8/130/3,035/23 rows respectively),
+> graph cache built (130 nodes, 622 edges), all 17 tests passing,
+> `/health`/`/segments`/`/segments/{id}`/`/segments/{id}/neighbors`
+> confirmed working. `gps_pings` bulk-load via ORM intentionally
+> skipped per the TODO in `seed_db.py` (use Postgres `COPY` instead).
+>
+> **Current top priority**: the pipeline is real and tested, but the
+> "intelligence" layer is still rule-based (hand-written event
+> signatures) and the federated model is a closed-form statistic
+> (mean/std), not a trained classifier. **Read `CLAUDE.md`'s "CURRENT
+> TOP PRIORITY" section before doing anything else** — it has the full
+> reasoning, model choice (MLP over XGBoost, and why), pipeline, and a
+> 6-milestone roadmap to make this a genuinely learned federated system.
+
 ## What this project is
 
 FedRouteAI is a real-time road-event detection system. It watches GPS
@@ -311,5 +328,3 @@ fedrouteai/
 ### `data/`
 
 Empty except `.gitkeep` placeholders — this is where `generate_dataset_then_seed.sh` writes the synthetic dataset (`data/raw/fedrouteai_dataset/`) and where any future processed/derived data would land. Gitignored so the repo itself stays small; regenerate anytime with `scripts/dataset_generator/generate_dataset.py`.
-
-
