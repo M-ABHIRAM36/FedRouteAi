@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Env
+.env
+*.env.local
+
+# Node
+node_modules/
+dist/
+
+# Data
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+backend/app/ml/artifacts/*
+!backend/app/ml/artifacts/.gitkeep
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

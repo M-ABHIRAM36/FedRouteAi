@@ -1,0 +1,43 @@
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.core.config import settings
+from app.core.logging_config import get_logger
+from app.api.v1.router import api_router
+from app.db.session import SessionLocal
+from app.services.road_graph.graph_cache import GRAPH_CACHE
+
+logger = get_logger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    db = SessionLocal()
+    try:
+        GRAPH_CACHE.refresh(db)
+    except Exception:
+        # DB not up yet / not seeded yet — don't crash the app for it,
+        # the graph will lazily build on the first request that needs it
+        logger.warning("Could not warm graph cache at startup (DB not ready?) — will build on first use.")
+    finally:
+        db.close()
+    yield
+
+
+app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # TODO: restrict before deploying anywhere real
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+
+
+@app.get("/")
+def root():
+    return {"service": settings.APP_NAME, "docs": "/docs"}

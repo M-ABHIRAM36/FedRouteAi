@@ -1,0 +1,8 @@
+# Per-region overrides for the federated client. Loaded by run_client.py
+# once you wire real config loading in (currently region_id is passed via
+# --region CLI flag and this file is a placeholder for anything that
+# needs to differ per region beyond that, e.g. a region-specific DB URL
+# if each region truly runs isolated infrastructure).
+region_id: REGION_08
+db_url: postgresql+psycopg://fedrouteai:fedrouteai@localhost:5432/fedrouteai_region_08
+local_epochs: 1
