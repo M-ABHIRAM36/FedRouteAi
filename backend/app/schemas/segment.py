@@ -25,8 +25,30 @@ class SegmentOut(BaseModel):
     flood_prone: bool
     neighbor_segments: list[str] = []
 
+    # @classmethod
+    # def from_orm_row(cls, row) -> "SegmentOut":
+    #     obj = cls.model_validate(row)
+    #     obj.neighbor_segments = [s for s in (row.neighbor_segments or "").split(";") if s]
+    #     return obj
     @classmethod
     def from_orm_row(cls, row) -> "SegmentOut":
-        obj = cls.model_validate(row)
-        obj.neighbor_segments = [s for s in (row.neighbor_segments or "").split(";") if s]
-        return obj
+        return cls(
+            segment_id=row.segment_id,
+            road_name=row.road_name,
+            road_type=row.road_type,
+            region_id=row.region_id,
+            pincode=row.pincode,
+            start_lat=row.start_lat,
+            start_lon=row.start_lon,
+            end_lat=row.end_lat,
+            end_lon=row.end_lon,
+            segment_length_m=row.segment_length_m,
+            number_of_lanes=row.number_of_lanes,
+            road_width_m=row.road_width_m,
+            max_speed_kmph=row.max_speed_kmph,
+            road_direction=row.road_direction,
+            flood_prone=row.flood_prone,
+            neighbor_segments=[
+                s for s in (row.neighbor_segments or "").split(";") if s
+            ],
+        )
