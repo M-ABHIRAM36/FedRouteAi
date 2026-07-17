@@ -44,7 +44,18 @@ class Settings(BaseSettings):
     # --- Federated learning ---
     FL_NUM_ROUNDS: int = 20
     FL_MIN_CLIENTS: int = 3
-    FL_LOCAL_EPOCHS: int = 1
+    FL_LOCAL_EPOCHS: int = 5          # epochs per FL round for MLP (was 1 for Gaussian)
+    FL_FEDPROX_MU: float = 0.01       # FedProx regularization strength
+    FL_SAVE_EVERY_N_ROUNDS: int = 5   # persist global model weights to disk every N rounds
+
+    # --- MLP architecture ---
+    MLP_INPUT_SIZE: int = 10          # feature vector length (see app/ml/features/windowing.py)
+    MLP_HIDDEN_SIZE: int = 64         # first hidden layer width
+    MLP_NUM_CLASSES: int = 8          # normal + 7 event types
+
+    # --- ML artifact directories (relative to backend/) ---
+    ML_ARTIFACTS_DIR: str = "app/ml/artifacts"
+    REPLAY_BUFFER_MAX_SIZE: int = 500  # per-region replay buffer capacity
 
     # --- Routing ---
     ROUTE_EVENT_PENALTY_FACTOR: float = 3.0  # multiplies travel_time on an affected edge

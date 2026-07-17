@@ -13,9 +13,13 @@ behavioral signatures against known event patterns, reasons over
 neighboring segments, and serves results with a computed alternate
 route. **17 tests pass**, including a full integration test that posts
 realistic GPS traffic and asserts a real detected event comes back out
-of the API. What's still simplified or stubbed is clearly marked with
-`TODO` comments and explained in `docs/architecture.md`'s "what's real
-vs. what's a stub" section — nothing is silently fake.
+of the API. The system now uses a **PyTorch MLP as the primary event
+classifier** (trained via federated learning across 8 regional silos)
+with the original rule-based matcher as a cold-start fallback.
+
+What's still simplified or stubbed is clearly marked with `TODO`
+comments and explained in `docs/architecture.md`'s "what's real vs.
+what's a stub" section — nothing is silently fake.
 
 Deployment (Docker/docker-compose) was deliberately left out of this
 pass to focus on getting the actual logic right first — see
@@ -23,7 +27,7 @@ pass to focus on getting the actual logic right first — see
 
 ```
 fedrouteai/
-├── backend/            FastAPI service — API, services, DB models
+├── backend/            FastAPI service — API, services, DB models, ML pipeline
 ├── frontend/            React + Leaflet dashboard
 ├── federated_clients/   Per-region Flower client runner + configs
 ├── scripts/              Dataset generation + DB seeding
@@ -31,6 +35,15 @@ fedrouteai/
 ├── data/                  Generated datasets land here (gitignored except structure)
 ├── about_project.md       Full file-by-file tour of this repo
 └── CLAUDE.md              Context file for AI coding tools — READ THIS before generating code
+```
+
+`backend/app/ml/` — ML subsystem added in Phase 2:
+```
+app/ml/
+├── features/     datasource abstraction, sliding-window extraction, 7-stage pipeline
+├── training/     class weights, replay buffer, XGBoost baseline, MLP, evaluation
+├── models/       BaseLocalModel ABC
+└── artifacts/    baseline/, federated/, metrics/, feature_tables/ (gitignored)
 ```
 
 ## Quickstart (no Docker — plain Postgres + local processes)
@@ -100,9 +113,10 @@ python3 federated_clients/run_client.py --region REGION_02
 | API | FastAPI |
 | DB | PostgreSQL + PostGIS |
 | ORM / migrations | SQLAlchemy + Alembic |
-| Federated learning | Flower |
+| Federated learning | Flower + AdaptiveFedAvg (5-factor weighted aggregation) |
 | Graph / routing | NetworkX |
-| ML | scikit-learn, XGBoost (local FL model is currently a lightweight Gaussian baseline — see `docs/architecture.md`) |
+| ML (federated) | PyTorch MLP (primary classifier after FL training) |
+| ML (baseline) | XGBoost (centralized baseline, research comparison) |
 | GIS (future real-data swap-in) | OSMnx, GeoPandas, Shapely |
 | Frontend | React + Leaflet |
 | Testing | pytest, in-memory SQLite integration tests |

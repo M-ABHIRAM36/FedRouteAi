@@ -105,7 +105,53 @@ update once they stop recurring (no "close out" pass yet); ingestion
 uses in-process `BackgroundTasks`, not a queue/broker (deliberate Phase
 1 scope decision).
 
-## CURRENT TOP PRIORITY: upgrade from rule-based to genuinely learned FL
+## CURRENT STATE: ML Upgrade Complete (Phase 2)
+
+**What changed in this build:**
+
+- `local_model.py` — replaced Gaussian with PyTorch MLP (`MLPLocalModel`).
+  Both models now inherit `BaseLocalModel` (see `app/ml/models/base_local_model.py`).
+  `GaussianLocalModel` is preserved as cold-start fallback.
+  `LocalModel` aliased to `MLPLocalModel` for zero-change compat with imports.
+- `flower_client.py` — real gradient descent training loop with:
+  - class-weighted NLLLoss (inverse-frequency weighting)
+  - FedProx regularization (μ/2 * ||w_local - w_global||²)
+  - ReplayBuffer per region (persists across FL rounds, retains rare events)
+  - neighbor_effect labels DROPPED (not remapped) from training set
+- `flower_server.py` — unchanged (AdaptiveFedAvg unchanged)
+- `adaptive_aggregation.py` — unchanged (zero modifications)
+- `global_model.py` — added `is_trained` flag, `predict()`, periodic disk save
+- `orchestrator.py` — ML primary path + rule-based fallback:
+  1. `GlobalModelStore.predict(feature_vec)` if trained
+  2. `match_event()` rule-based fallback for cold start
+  Graph reasoning, routing, and API contract unchanged.
+
+**New: `app/ml/` subsystem:**
+- `features/datasource.py` — FeatureSource ABC + CSVSource + DatabaseSource
+- `features/windowing.py` — batch sliding-window feature extraction (10 features)
+- `features/pipeline.py` — 7-stage FeaturePipeline (Load→Window→Extract→Encode→Normalize→Split→Save)
+- `training/class_weights.py` — inverse-frequency weighting for XGBoost + MLP
+- `training/replay_buffer.py` — ReplayBuffer + ReplayExample (rich metadata)
+- `training/mlp_model.py` — EventClassifierMLP (PyTorch, 8 classes)
+- `training/train_baseline_xgboost.py` — full research artifact output
+- `training/evaluate_federated.py` — centralized vs federated comparison
+- `models/base_local_model.py` — BaseLocalModel ABC
+
+**EDA results (from pipeline run on 491K GPS pings):**
+- 14,187 feature windows; 8 regions; 130 segments
+- Normal: 98.1% | road_damage: 0.8% | construction: 0.8% | rare events: <0.1%
+- Class weights critical: road_block has only 2 training windows
+
+**17 existing tests all pass.**
+
+**Two-command workflow to run the ML pipeline:**
+```bash
+cd backend
+PYTHONPATH=. python app/ml/features/pipeline.py --source csv
+PYTHONPATH=. python app/ml/training/train_baseline_xgboost.py
+# Then run FL: python -m app.services.federated_learning.flower_server
+# Then evaluate: python app/ml/training/evaluate_federated.py
+```
 
 **Read this section first if you're picking this project back up.** As
 of this point, the pipeline is fully wired end-to-end (ingest → match →
