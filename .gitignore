@@ -26,3 +26,23 @@ backend/app/ml/artifacts/*
 .DS_Store
 .vscode/
 .idea/
+
+# Generated datasets
+data/calibration/
+
+# Feature tables
+*.parquet
+
+# Trained models
+*.pt
+*.pth
+*.ubj
+
+# Logs
+*.log
+
+# Checkpoints
+checkpoints/
+
+# Python cache
+__pycache__/
