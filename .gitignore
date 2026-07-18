@@ -20,6 +20,9 @@ data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 backend/app/ml/artifacts/*
+backend/data/calibration/high/features/*
+# Generated datasets
+backend/data/calibration/*
 !backend/app/ml/artifacts/.gitkeep
 
 # OS / editor
