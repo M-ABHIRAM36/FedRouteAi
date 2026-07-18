@@ -207,7 +207,7 @@ class FeaturePipeline:
         test_df: pd.DataFrame,
         region_dfs: dict[str, pd.DataFrame],
     ) -> None:
-        logger.info("Stage 6/7: Save → %s", self.output_dir)
+        logger.info("Stage 6/7: Save -> %s", self.output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
         full_df.to_parquet(self.output_dir / "feature_table.parquet", index=False)

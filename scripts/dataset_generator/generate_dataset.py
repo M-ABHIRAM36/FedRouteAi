@@ -69,9 +69,9 @@ class V2Config:
     event_days: int = 4       # days 11-14: events → training data
 
     # Event density: default for direct runs; calibration script overrides at runtime via V2Config
-    # Low=(8,12)  Medium=(16,22)  High=(28,35) — see scripts/calibrate_event_density.py
-    events_per_region_per_day_min: int = 10
-    events_per_region_per_day_max: int = 15
+    # Calibration recommends High=(28,35) to hit Macro F1 > 0.55 and rare-class F1 > 0.30
+    events_per_region_per_day_min: int = 28
+    events_per_region_per_day_max: int = 35
 
     # Event type sampling weights (must sum to 1.0)
     event_type_weights: dict = field(default_factory=lambda: {

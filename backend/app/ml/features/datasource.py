@@ -62,8 +62,10 @@ class CSVSource(FeatureSource):
                  "timestamp", "is_uturn_flag", "label"]
     _SEG_COLS = ["segment_id", "region_id", "road_type", "number_of_lanes",
                  "flood_prone", "neighbor_segments"]
-    _MEM_COLS = ["segment_id", "hour_of_day", "avg_speed_kmph", "std_speed_kmph",
-                 "avg_vehicle_count", "uturn_rate"]
+    # Use a callable for memory columns to gracefully handle V1 vs V2 formats
+    _MEM_COLS_SET = {"segment_id", "hour_of_day", "day_type", "avg_speed_kmph",
+                     "std_speed_kmph", "avg_vehicle_count", "avg_vehicle_count_per_20min",
+                     "uturn_rate"}
 
     def __init__(
         self,
@@ -89,7 +91,7 @@ class CSVSource(FeatureSource):
             parse_dates=["timestamp"],
         )
         segments_df = pd.read_csv(self.segments_path, usecols=self._SEG_COLS)
-        memory_df = pd.read_csv(self.memory_path, usecols=self._MEM_COLS)
+        memory_df = pd.read_csv(self.memory_path, usecols=lambda c: c in self._MEM_COLS_SET)
         return gps_df, segments_df, memory_df
 
     def description(self) -> str:
@@ -115,8 +117,7 @@ class DatabaseSource(FeatureSource):
         FROM segments
     """
     _MEM_QUERY = """
-        SELECT segment_id, hour_of_day, avg_speed_kmph, std_speed_kmph,
-               avg_vehicle_count, uturn_rate
+        SELECT *
         FROM segment_historical_memory
     """
 
