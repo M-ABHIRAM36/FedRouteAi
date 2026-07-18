@@ -11,7 +11,6 @@ import sys
 import time
 from pathlib import Path
 import multiprocessing
-import threading
 
 import numpy as np
 import pandas as pd
@@ -19,7 +18,7 @@ import torch
 import flwr as fl
 
 from app.ml.training.federated_client import RegionalFedRouteClient
-from app.ml.training.federated_server import get_strategy
+from app.ml.training.federated_server import get_strategy, get_adaptive_strategy
 
 logger = logging.getLogger(__name__)
 
@@ -47,13 +46,26 @@ def start_flower_client(cid: str, data_dir: Path):
     fl.client.start_client(server_address="127.0.0.1:8080", client=client)
 
 
-def run_simulation(data_dir: Path, global_feature_table: Path, output_dir: Path, num_rounds: int = 30):
+def run_simulation(
+    data_dir: Path, 
+    global_feature_table: Path, 
+    output_dir: Path, 
+    num_rounds: int = 30,
+    strategy_type: str = "adaptive",
+    alpha: float = 0.3,
+    beta: float = 0.3,
+    q_floor: float = 0.10,
+    g_threshold: float = 0.15,
+    g_min: float = 0.50,
+    rare_threshold: float = 0.05
+):
     seed_everything(42)
     output_dir.mkdir(parents=True, exist_ok=True)
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     config_dict = {
+        "strategy": strategy_type,
         "learning_rate": 1e-3,
         "optimizer": "AdamW",
         "batch_size": 128,
@@ -62,6 +74,15 @@ def run_simulation(data_dir: Path, global_feature_table: Path, output_dir: Path,
         "architecture_name": "EventClassifierMLP",
         "random_seed": 42
     }
+    if strategy_type == "adaptive":
+        config_dict["adaptive"] = {
+            "alpha": alpha,
+            "beta": beta,
+            "q_floor": q_floor,
+            "g_threshold": g_threshold,
+            "g_min": g_min,
+            "rare_threshold": rare_threshold
+        }
     (output_dir / "config.json").write_text(json.dumps(config_dict, indent=2), encoding="utf-8")
     
     logger.info("=" * 70)
@@ -89,7 +110,13 @@ def run_simulation(data_dir: Path, global_feature_table: Path, output_dir: Path,
         round_tracker["current_round"] += 1
         return {}
     
-    strategy = get_strategy(global_feature_table, output_dir, device, num_rounds)
+    if strategy_type == "adaptive":
+        strategy = get_adaptive_strategy(
+            global_feature_table, output_dir, device, num_rounds, 
+            alpha, beta, q_floor, g_threshold, g_min, rare_threshold
+        )
+    else:
+        strategy = get_strategy(global_feature_table, output_dir, device, num_rounds)
     strategy.fit_metrics_aggregation_fn = fit_metrics_aggregation_fn
 
     start_time = time.time()
@@ -131,8 +158,9 @@ def run_simulation(data_dir: Path, global_feature_table: Path, output_dir: Path,
             "Participating Clients": 8,
             "Total Time (s)": round(total_time, 2)
         })
-        df_history.to_csv(output_dir / "federated_history.csv", index=False)
-        logger.info(f"Saved federated history to {output_dir / 'federated_history.csv'}")
+        history_name = "adaptive_history.csv" if strategy_type == "adaptive" else "federated_history.csv"
+        df_history.to_csv(output_dir / history_name, index=False)
+        logger.info(f"Saved federated history to {output_dir / history_name}")
         
     # Wait for clients to terminate gracefully or force terminate
     for p in client_processes:
@@ -171,11 +199,35 @@ if __name__ == "__main__":
         default=30,
         help="Number of FL communication rounds.",
     )
+    parser.add_argument(
+        "--strategy",
+        choices=["fedavg", "adaptive"],
+        default="adaptive",
+        help="Federated learning strategy.",
+    )
+    parser.add_argument("--alpha", type=float, default=0.3, help="EMA smoothing factor")
+    parser.add_argument("--beta", type=float, default=0.3, help="Rare event bonus scale")
+    parser.add_argument("--q-floor", type=float, default=0.10, help="Quality floor")
+    parser.add_argument("--g-threshold", type=float, default=0.15, help="Gate threshold")
+    parser.add_argument("--g-min", type=float, default=0.50, help="Gate minimum")
+    parser.add_argument("--rare-threshold", type=float, default=0.05, help="Rare class threshold")
     args = parser.parse_args()
+    
+    # Auto-adjust output dir if adaptive is selected and user didn't override default
+    out_dir = Path(args.output_dir)
+    if args.strategy == "adaptive" and args.output_dir == "app/ml/artifacts/federated":
+        out_dir = Path("app/ml/artifacts/adaptive_federated")
 
     run_simulation(
         data_dir=Path(args.data_dir),
         global_feature_table=Path(args.global_feature_table),
-        output_dir=Path(args.output_dir),
-        num_rounds=args.rounds
+        output_dir=out_dir,
+        num_rounds=args.rounds,
+        strategy_type=args.strategy,
+        alpha=args.alpha,
+        beta=args.beta,
+        q_floor=args.q_floor,
+        g_threshold=args.g_threshold,
+        g_min=args.g_min,
+        rare_threshold=args.rare_threshold
     )

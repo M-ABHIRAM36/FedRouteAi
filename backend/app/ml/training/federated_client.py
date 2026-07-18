@@ -49,6 +49,13 @@ class RegionalFedRouteClient(fl.client.NumPyClient):
             self.val_loader = DataLoader(TensorDataset(X_val, y_val), batch_size=128, shuffle=False)
             self.n_samples = len(X_train)
             
+            # Compute class counts for rare_class_fraction calculation
+            self.class_counts = {}
+            for c in range(N_CLASSES):
+                count = int((y_train_np == c).sum())
+                if count > 0:
+                    self.class_counts[c] = count
+                    
             # Compute class weights for this specific region
             cw = compute_class_weights(y_train_np, n_classes=N_CLASSES)
             self.class_weights = torch.tensor(cw, dtype=torch.float32).to(self.device)
@@ -110,6 +117,15 @@ class RegionalFedRouteClient(fl.client.NumPyClient):
         
         train_time = time.time() - start_time
         
+        # Parse rare class indices from server config
+        rare_classes_str = config.get("rare_classes", "")
+        if rare_classes_str:
+            rare_classes = [int(c) for c in rare_classes_str.split(",")]
+            rare_count = sum(self.class_counts.get(c, 0) for c in rare_classes)
+            rare_class_fraction = rare_count / self.n_samples if self.n_samples > 0 else 0.0
+        else:
+            rare_class_fraction = 0.0
+        
         # Return local metrics for future AdaptiveFedAvg
         metrics = {
             "region_id": self.region_id,
@@ -117,7 +133,8 @@ class RegionalFedRouteClient(fl.client.NumPyClient):
             "val_loss": float(val_loss),
             "val_macro_f1": float(val_macro_f1),
             "train_time": float(train_time),
-            "dataset_size": self.n_samples
+            "dataset_size": int(self.n_samples),
+            "rare_class_fraction": float(rare_class_fraction)
         }
         
         return get_parameters(self.model), self.n_samples, metrics

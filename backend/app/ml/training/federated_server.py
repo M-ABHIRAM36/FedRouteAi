@@ -19,6 +19,7 @@ from app.ml.training.mlp_model import EventClassifierMLP, N_CLASSES
 from app.ml.features.pipeline import IDX_TO_LABEL
 from app.ml.training.federated_client import set_parameters
 from app.ml.training.train_baseline_mlp import load_and_split_data
+from app.ml.training.adaptive_fedavg import AdaptiveFedAvg
 
 logger = logging.getLogger(__name__)
 
@@ -144,4 +145,67 @@ def get_strategy(
         initial_parameters=initial_parameters,
         evaluate_fn=get_evaluate_fn(global_feature_table_path, output_dir, device),
         on_fit_config_fn=lambda round: {"num_rounds": num_rounds} # pass num_rounds to evaluate via config
+    )
+
+
+def compute_global_class_frequencies(global_feature_table_path: Path) -> dict[int, float]:
+    """Computes global class frequencies to identify rare classes."""
+    if not global_feature_table_path.exists():
+        logger.warning(f"Feature table not found at {global_feature_table_path}. Cannot compute class frequencies.")
+        return {}
+        
+    df = pd.read_parquet(global_feature_table_path)
+    if "label_idx" not in df.columns:
+        return {}
+        
+    counts = df["label_idx"].value_counts(normalize=True)
+    return counts.to_dict()
+
+
+def get_adaptive_strategy(
+    global_feature_table_path: Path,
+    output_dir: Path,
+    device: torch.device,
+    num_rounds: int,
+    alpha: float = 0.3,
+    beta: float = 0.3,
+    q_floor: float = 0.10,
+    g_threshold: float = 0.15,
+    g_min: float = 0.50,
+    rare_threshold: float = 0.05
+) -> fl.server.strategy.Strategy:
+    """Returns configured AdaptiveFedAvg strategy."""
+    
+    # We must provide initial_parameters so it can evaluate at round 0
+    model = EventClassifierMLP()
+    from app.ml.training.federated_client import get_parameters
+    initial_parameters = fl.common.ndarrays_to_parameters(get_parameters(model))
+    
+    global_class_frequencies = compute_global_class_frequencies(global_feature_table_path)
+    
+    rare_classes = [
+        cls_idx for cls_idx, freq in global_class_frequencies.items() 
+        if freq < rare_threshold
+    ]
+    rare_classes_str = ",".join(str(c) for c in rare_classes)
+    
+    return AdaptiveFedAvg(
+        global_class_frequencies=global_class_frequencies,
+        alpha=alpha,
+        beta=beta,
+        q_floor=q_floor,
+        g_threshold=g_threshold,
+        g_min=g_min,
+        rare_threshold=rare_threshold,
+        weight_log_path=output_dir / "adaptive_weights.csv",
+        fraction_fit=1.0,  # Sample all 8 clients
+        fraction_evaluate=0.0, # We use centralized evaluation, so no distributed eval
+        min_fit_clients=8,
+        min_available_clients=8,
+        initial_parameters=initial_parameters,
+        evaluate_fn=get_evaluate_fn(global_feature_table_path, output_dir, device),
+        on_fit_config_fn=lambda round: {
+            "num_rounds": num_rounds,
+            "rare_classes": rare_classes_str
+        }
     )
