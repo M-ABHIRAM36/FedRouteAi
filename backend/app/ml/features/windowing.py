@@ -90,8 +90,12 @@ def extract_windowed_features(
                      speed_kmph, timestamp (datetime), is_uturn_flag, label
         segments_df: Segment metadata with: segment_id, region_id, road_type,
                      number_of_lanes, flood_prone, neighbor_segments
-        memory_df:   Per-segment-per-hour baselines: segment_id, hour_of_day,
-                     avg_speed_kmph, std_speed_kmph, avg_vehicle_count, uturn_rate
+        memory_df:   Per-segment-per-hour baselines. Supports two formats:
+                     V1: segment_id, hour_of_day, avg_speed_kmph, std_speed_kmph,
+                         avg_vehicle_count, uturn_rate
+                     V2: adds day_type ('weekday'|'weekend') and
+                         avg_vehicle_count_per_20min (already per-window, not per-hour)
+                     The correct format is auto-detected from the columns present.
 
     Returns:
         DataFrame with columns:
@@ -100,8 +104,8 @@ def extract_windowed_features(
         One row per (segment_id, 20-min tumbling window) that has a valid baseline.
 
     Dropped:
-        - Windows where no baseline exists for that segment + hour
-        - Rows with *_neighbor_effect labels (not a direct event on this segment)
+        - Windows where no baseline exists for that segment + hour (+ day_type in V2)
+        - Rows with *_neighbor_effect labels (V1 datasets only; V2 never generates them)
         - Windows with 0 pings (shouldn't happen, but defensive)
     """
     # ---- Ensure timestamp is datetime ----
@@ -116,20 +120,35 @@ def extract_windowed_features(
         ].to_dict("index")
     )
 
-    # ---- Build baseline lookup: (segment_id, hour_of_day) → baseline row ----
+    # ---- Auto-detect memory format (V1 vs V2) and build baseline lookup ----
     memory_df = memory_df.copy()
-    memory_df["_key"] = list(zip(memory_df["segment_id"], memory_df["hour_of_day"]))
-    baseline_lookup: dict[tuple[str, int], dict] = {
-        row["_key"]: row.to_dict()
-        for _, row in memory_df.iterrows()
-    }
+    _is_v2_memory = "day_type" in memory_df.columns and "avg_vehicle_count_per_20min" in memory_df.columns
+    _density_col = "avg_vehicle_count_per_20min" if _is_v2_memory else "avg_vehicle_count"
 
-    # ---- Drop neighbor_effect labels — these are graph-reasoning territory ----
+    if _is_v2_memory:
+        # V2: key is (segment_id, hour_of_day, day_type)
+        memory_df["_key"] = list(zip(
+            memory_df["segment_id"],
+            memory_df["hour_of_day"],
+            memory_df["day_type"],
+        ))
+    else:
+        # V1: key is (segment_id, hour_of_day)
+        memory_df["_key"] = list(zip(memory_df["segment_id"], memory_df["hour_of_day"]))
+
+    baseline_lookup: dict = {row["_key"]: row.to_dict() for _, row in memory_df.iterrows()}
+
+    # ---- Drop neighbor_effect labels (V1 datasets only; V2 never generates them) ----
     gps_df = gps_df[~gps_df["label"].str.endswith("_neighbor_effect", na=False)].copy()
 
     # ---- Add tumbling window key (floor timestamp to 20-min bucket) ----
     gps_df["window_start"] = gps_df["timestamp"].dt.floor(f"{WINDOW_MINUTES}min")
     gps_df["hour_of_day"] = gps_df["timestamp"].dt.hour
+    if _is_v2_memory:
+        gps_df["day_of_week"] = gps_df["timestamp"].dt.dayofweek
+        gps_df["day_type"] = gps_df["day_of_week"].apply(
+            lambda d: "weekday" if d < 5 else "weekend"
+        )
 
     # ---- Group by (segment_id, window_start) ----
     records = []
@@ -144,12 +163,22 @@ def extract_windowed_features(
             continue  # segment not in segments.csv (shouldn't happen)
 
         hour = int(group["hour_of_day"].iloc[0])
-        baseline = baseline_lookup.get((segment_id, hour))
+        if _is_v2_memory:
+            day_type = group["day_type"].iloc[0] if "day_type" in group.columns else "weekday"
+            baseline = baseline_lookup.get((segment_id, hour, day_type))
+            # Fallback: if exact (seg, hour, day_type) is missing, try (seg, hour, weekday)
+            if baseline is None:
+                baseline = baseline_lookup.get((segment_id, hour, "weekday"))
+        else:
+            baseline = baseline_lookup.get((segment_id, hour))
         if baseline is None:
             continue  # no historical baseline for this hour → can't compute ratios
 
-        # Expected vehicle count scaled to window length (mirrors signature_extractor.py)
-        baseline_density_for_window = baseline["avg_vehicle_count"] * (WINDOW_MINUTES / 60.0)
+        # V2: density is already per-20-min. V1: scale hourly count to window.
+        if _is_v2_memory:
+            baseline_density_for_window = float(baseline.get(_density_col, 1.0))
+        else:
+            baseline_density_for_window = baseline["avg_vehicle_count"] * (WINDOW_MINUTES / 60.0)
 
         speed_ratio, density_ratio, uturn_ratio, variance_ratio = _compute_ratios(
             group,
