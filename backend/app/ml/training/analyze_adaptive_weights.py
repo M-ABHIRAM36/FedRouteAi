@@ -5,8 +5,7 @@ Verifies the correctness of the adaptive weighting mechanics, generates
 publication-quality visualizations, and produces an automated markdown report.
 
 Usage:
-    cd backend
-    PYTHONPATH=. python app/ml/training/analyze_adaptive_weights.py
+    python backend/app/ml/training/analyze_adaptive_weights.py
 """
 from __future__ import annotations
 

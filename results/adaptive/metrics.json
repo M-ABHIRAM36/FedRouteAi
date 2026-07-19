@@ -1,0 +1,6 @@
+{
+  "round": 27,
+  "accuracy": 0.8221,
+  "macro_f1": 0.6401,
+  "roc_auc_macro": 0.972
+}

@@ -19,14 +19,12 @@ data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
-backend/app/ml/artifacts/*
 backend/data/calibration/high/features/*
-# Generated datasets
 backend/data/calibration/*
-!backend/app/ml/artifacts/.gitkeep
 
 # OS / editor
 .DS_Store
+Thumbs.db
 .vscode/
 .idea/
 
@@ -37,15 +35,16 @@ data/calibration/
 *.parquet
 
 # Trained models
-*.pt
 *.pth
 *.ubj
+# Ignore intermediate checkpoints
+round_*.pt
+checkpoints/
+**/checkpoints/
+
+# Keep best global model
+!best_global_model.pt
+!results/
 
 # Logs
 *.log
-
-# Checkpoints
-checkpoints/
-
-# Python cache
-__pycache__/

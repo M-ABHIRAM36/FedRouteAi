@@ -1,0 +1,18 @@
+{
+  "strategy": "adaptive",
+  "learning_rate": 0.001,
+  "optimizer": "AdamW",
+  "batch_size": 128,
+  "local_epochs": 3,
+  "num_rounds": 30,
+  "architecture_name": "EventClassifierMLP",
+  "random_seed": 42,
+  "adaptive": {
+    "alpha": 0.3,
+    "beta": 0.3,
+    "q_floor": 0.1,
+    "g_threshold": 0.15,
+    "g_min": 0.5,
+    "rare_threshold": 0.05
+  }
+}

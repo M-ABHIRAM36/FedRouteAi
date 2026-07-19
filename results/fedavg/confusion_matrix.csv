@@ -1,0 +1,9 @@
+,normal,congestion,construction,flood,road_block,road_damage,accident,diversion
+normal,2924,23,110,5,0,155,0,248
+congestion,0,138,23,3,1,7,1,0
+construction,10,36,118,11,1,25,2,5
+flood,0,1,0,45,0,0,1,1
+road_block,0,0,0,0,16,0,8,0
+road_damage,27,17,41,9,1,385,1,19
+accident,0,1,0,6,8,1,59,0
+diversion,4,0,1,0,0,0,0,32

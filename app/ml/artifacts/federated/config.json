@@ -1,0 +1,10 @@
+{
+  "strategy": "fedavg",
+  "learning_rate": 0.001,
+  "optimizer": "AdamW",
+  "batch_size": 128,
+  "local_epochs": 3,
+  "num_rounds": 30,
+  "architecture_name": "EventClassifierMLP",
+  "random_seed": 42
+}

@@ -1,0 +1,11 @@
+{
+  "normal": 0.9741,
+  "congestion": 0.9766,
+  "construction": 0.9294,
+  "flood": 0.9983,
+  "road_block": 0.9967,
+  "road_damage": 0.941,
+  "accident": 0.9973,
+  "diversion": 0.9626,
+  "_macro_avg": 0.972
+}

@@ -1,4 +1,13 @@
-# FedRouteAI
+# 🚦 FedRouteAI
+
+Adaptive Federated Learning for Real-Time Route Detection
+
+![Python](https://img.shields.io/badge/Python-3.10-blue)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.x-red)
+![Flower](https://img.shields.io/badge/Flower-Federated%20Learning-orange)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Status](https://img.shields.io/badge/Status-Stable-success)
+![Release](https://img.shields.io/badge/Release-v1.0-blue)
 
 Real-time road-event detection via privacy-preserving federated learning
 and road-graph reasoning. See `docs/architecture.md` for the full design
