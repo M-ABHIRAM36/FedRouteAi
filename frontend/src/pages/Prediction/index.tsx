@@ -1,19 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { PageContainer } from '../../components/common/PageContainer';
+import { useMutation } from '@tanstack/react-query';
 import { PageHeader } from '../../components/common/PageHeader';
 import { PredictionForm, type PredictionFormData } from '../../components/prediction/PredictionForm';
 import { PredictionResult } from '../../components/prediction/PredictionResult';
-import { predictTrafficEvent, type PredictionResponse } from '../../services/api/predictionApi';
+import { predictTrafficEvent } from '../../services/api/predictionApi';
 
 const Prediction: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<PredictionResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const handlePredict = async (data: PredictionFormData) => {
-    setIsLoading(true);
-    setError(null);
-    try {
+  const predictMutation = useMutation({
+    mutationFn: (data: PredictionFormData) => {
       const requestData = {
         road_id: data.road_id,
         speed: Number(data.speed) || 0,
@@ -21,13 +16,12 @@ const Prediction: React.FC = () => {
         travel_time: Number(data.travel_time) || 0,
         heading: Number(data.heading) || 0,
       };
-      const response = await predictTrafficEvent(requestData);
-      setResult(response);
-    } catch (err: any) {
-      setError(err.message || "Failed to run prediction. Please try again.");
-    } finally {
-      setIsLoading(false);
+      return predictTrafficEvent(requestData);
     }
+  });
+
+  const handlePredict = (data: PredictionFormData) => {
+    predictMutation.mutate(data);
   };
 
   return (
@@ -38,16 +32,16 @@ const Prediction: React.FC = () => {
       />
 
       <div className="space-y-6 max-w-4xl">
-        <PredictionForm onSubmit={handlePredict} isLoading={isLoading} />
+        <PredictionForm onSubmit={handlePredict} isLoading={predictMutation.isPending} />
         
-        {error && (
+        {predictMutation.isError && (
           <div className="bg-danger/10 border border-danger/20 text-danger p-4 rounded-lg text-sm font-medium">
-            {error}
+            {predictMutation.error instanceof Error ? predictMutation.error.message : "Failed to run prediction. Backend may be offline."}
           </div>
         )}
 
-        {result && (
-          <PredictionResult result={result} />
+        {predictMutation.isSuccess && predictMutation.data && (
+          <PredictionResult result={predictMutation.data} />
         )}
       </div>
     </PageContainer>

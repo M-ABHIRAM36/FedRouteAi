@@ -8,6 +8,11 @@ export interface SegmentData {
   type?: 'Normal' | 'Construction' | 'Flood' | 'Accident' | 'Diversion';
   base_speed?: number;
   base_density?: number;
+  start_lat: number;
+  start_lon: number;
+  end_lat: number;
+  end_lon: number;
+  max_speed_kmph?: number;
 }
 
 interface SegmentPopupProps {

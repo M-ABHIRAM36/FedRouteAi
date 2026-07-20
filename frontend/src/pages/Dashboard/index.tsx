@@ -4,17 +4,23 @@ import { PageContainer } from '../../components/common/PageContainer';
 import { PageHeader } from '../../components/common/PageHeader';
 import { PipelineDiagram } from '../../components/common/PipelineDiagram';
 import { StatCard } from '../../components/cards/StatCard';
-import { EventCard, type EventLog } from '../../components/cards/EventCard';
+import { EventCard } from '../../components/cards/EventCard';
 import { ModelComparisonCard } from '../../components/cards/ModelComparisonCard';
 
-const mockRecentEvents: EventLog[] = [
-  { id: '1', roadId: 'R12', type: 'Construction', timeAgo: '2 mins ago' },
-  { id: '2', roadId: 'R45', type: 'Accident', timeAgo: '15 mins ago' },
-  { id: '3', roadId: 'R08', type: 'Flood', timeAgo: '1 hour ago' },
-  { id: '4', roadId: 'R22', type: 'Diversion', timeAgo: '2 hours ago' },
-];
+import { useQuery } from '@tanstack/react-query';
+import { fetchDashboardMetrics } from '../../services/api/metricsApi';
+import { fetchActiveEvents } from '../../services/api/eventsApi';
 
 const Dashboard: React.FC = () => {
+  const { data: metrics, isLoading: isMetricsLoading, isError: isMetricsError } = useQuery({
+    queryKey: ['metrics'],
+    queryFn: fetchDashboardMetrics
+  });
+
+  const { data: events, isLoading: isEventsLoading, isError: isEventsError } = useQuery({
+    queryKey: ['events'],
+    queryFn: fetchActiveEvents
+  });
   return (
     <PageContainer>
       <PageHeader 
@@ -27,11 +33,19 @@ const Dashboard: React.FC = () => {
 
       {/* 2. Statistics Cards Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        <StatCard title="Road Segments" value={352} icon={Map} />
-        <StatCard title="Regions" value={8} icon={Layers} />
-        <StatCard title="Training Rounds" value={30} icon={Target} />
-        <StatCard title="Accuracy" value="81.67%" icon={Target} trend="+0.67% vs Baseline" trendUp={true} />
-        <StatCard title="Macro F1" value="0.639" icon={Target} trend="+0.010 vs Baseline" trendUp={true} />
+        {isMetricsLoading ? (
+          <div className="col-span-5 p-4 text-center text-textSecondary">Loading telemetry...</div>
+        ) : isMetricsError ? (
+          <div className="col-span-5 p-4 text-center text-danger">Failed to load metrics. Backend may be offline.</div>
+        ) : metrics ? (
+          <>
+            <StatCard title="Road Segments" value={metrics.total_segments} icon={Map} />
+            <StatCard title="Regions" value={metrics.active_regions} icon={Layers} />
+            <StatCard title="Active Events" value={metrics.total_events} icon={Target} />
+            <StatCard title="System Health" value={metrics.system_health} icon={Target} />
+            <StatCard title="Training Rounds" value={30} icon={Target} />
+          </>
+        ) : null}
       </div>
 
       {/* 3. Lower Section: Comparison, Events, Map Placeholder */}
@@ -45,9 +59,20 @@ const Dashboard: React.FC = () => {
           <div className="bg-surface border border-border rounded-lg p-5">
             <h3 className="text-sm font-medium text-textSecondary mb-4">Recent Network Events</h3>
             <div className="space-y-3 flex flex-col">
-              {mockRecentEvents.map(event => (
-                <EventCard key={event.id} event={event} />
-              ))}
+              {isEventsLoading ? (
+                <div className="text-sm text-textSecondary text-center py-4">Loading events...</div>
+              ) : isEventsError ? (
+                <div className="text-sm text-danger text-center py-4">Failed to load events.</div>
+              ) : events && events.length > 0 ? (
+                events.slice(0, 5).map(event => (
+                  <EventCard key={event.id} event={{ id: String(event.id), roadId: event.segment_id, type: event.event_type, timeAgo: new Date(event.start_time).toLocaleTimeString() }} />
+                ))
+              ) : (
+                <div className="text-sm text-textSecondary text-center py-8">
+                  <Target className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  No active events in the network.
+                </div>
+              )}
             </div>
           </div>
         </div>

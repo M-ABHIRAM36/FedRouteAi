@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, FileText, BarChart2, CheckCircle, Database } from 'lucide-react';
+import { Download, FileText } from 'lucide-react';
 import { PageContainer } from '../../components/common/PageContainer';
 import { PageHeader } from '../../components/common/PageHeader';
 
@@ -32,15 +32,14 @@ const ArtifactRow: React.FC<ArtifactProps> = ({ title, filename, icon: Icon, url
   </div>
 );
 
+import { useQuery } from '@tanstack/react-query';
+import { fetchAvailableArtifacts } from '../../services/api/resultsApi';
+
 const Results: React.FC = () => {
-  const artifacts = [
-    { title: 'Global Model Weights', filename: 'best_global_model.pt', icon: Database, url: 'http://localhost:8000/results/adaptive/best_global_model.pt' },
-    { title: 'Global Metrics', filename: 'metrics.json', icon: CheckCircle, url: 'http://localhost:8000/results/adaptive/metrics.json' },
-    { title: 'Classification Report', filename: 'classification_report.txt', icon: FileText, url: 'http://localhost:8000/results/adaptive/classification_report.txt' },
-    { title: 'Training History', filename: 'adaptive_history.csv', icon: BarChart2, url: 'http://localhost:8000/results/adaptive/adaptive_history.csv' },
-    { title: 'Adaptive Weights Log', filename: 'adaptive_weights.csv', icon: FileText, url: 'http://localhost:8000/results/adaptive/adaptive_weights.csv' },
-    { title: 'Per-Client Metrics', filename: 'client_metrics.csv', icon: BarChart2, url: 'http://localhost:8000/results/adaptive/client_metrics.csv' },
-  ];
+  const { data: artifacts, isLoading, isError, error } = useQuery({
+    queryKey: ['results_artifacts'],
+    queryFn: fetchAvailableArtifacts
+  });
 
   return (
     <PageContainer>
@@ -53,10 +52,30 @@ const Results: React.FC = () => {
         <div className="px-6 py-4 border-b border-border bg-surfaceHover">
           <h3 className="text-sm font-semibold text-white">AdaptiveFedAvg Run Outputs</h3>
         </div>
-        <div className="flex flex-col">
-          {artifacts.map((artifact, i) => (
-            <ArtifactRow key={i} {...artifact} />
-          ))}
+        <div className="flex flex-col min-h-[300px]">
+          {isLoading ? (
+            <div className="flex-1 flex items-center justify-center text-textSecondary text-sm p-8">
+              Scanning for available artifacts...
+            </div>
+          ) : isError ? (
+            <div className="flex-1 flex items-center justify-center text-danger text-sm font-medium p-8">
+              {error instanceof Error ? error.message : "Failed to load artifacts."}
+            </div>
+          ) : artifacts && artifacts.length > 0 ? (
+            artifacts.map((artifact, i) => (
+              <ArtifactRow 
+                key={i} 
+                title={artifact.title} 
+                filename={artifact.filename} 
+                icon={FileText} 
+                url={artifact.url} 
+              />
+            ))
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-textSecondary text-sm p-8">
+              No artifacts have been generated yet.
+            </div>
+          )}
         </div>
       </div>
     </PageContainer>

@@ -29,11 +29,6 @@ export const PredictionResult: React.FC<PredictionResultProps> = ({ result }) =>
           <Zap className="w-4 h-4 text-warning" />
           Inference Result
         </h3>
-        {result.demo_mode && (
-          <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-surfaceHover text-textSecondary border border-border">
-            Demo Mode
-          </span>
-        )}
       </div>
 
       <div className="flex flex-col md:flex-row gap-6">

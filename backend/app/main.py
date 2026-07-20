@@ -2,6 +2,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+import os
 
 from app.core.config import settings
 from app.core.logging_config import get_logger
@@ -37,6 +39,12 @@ app.add_middleware(
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
+import os
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+artifacts_dir = os.path.join(BASE_DIR, "app", "ml", "artifacts", "adaptive_federated")
+
+if os.path.exists(artifacts_dir):
+    app.mount("/artifacts", StaticFiles(directory=artifacts_dir), name="artifacts")
 
 @app.get("/")
 def root():
