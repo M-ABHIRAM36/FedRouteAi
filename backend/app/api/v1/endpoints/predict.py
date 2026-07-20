@@ -60,23 +60,25 @@ def predict_road_event(request: PredictionRequest, db: Session = Depends(get_db)
     # From signature_extractor.py: expected = baseline.avg_vehicle_count * (20.0 / 60.0)
     expected_density = max(baseline.avg_vehicle_count * (20.0 / 60.0), 0.5)
     
-    speed_ratio = float(np.clip(request.speed / baseline_speed, 0.0, 5.0))
-    density_ratio = float(np.clip(request.density / expected_density, 0.0, 10.0))
+    speed_ratio = request.speed / baseline_speed
+    density_ratio = request.density / expected_density
     
-    # We don't have uturn or variance from the frontend UI. We'll use 1.0 as fallback.
-    uturn_ratio = 1.0
-    variance_ratio = 1.0
+    # We don't have live uturn or variance from the frontend UI.
+    # Following windowing.py fallback logic when len(speeds) <= 1 or uturn_count == 0
+    uturn_ratio = 0.0
+    variance_ratio = 0.0
     
-    # Simple hour_of_day mock for the UI (assume midday)
-    hour_of_day = 12.0 / 24.0
+    from datetime import datetime
+    hour_of_day = datetime.utcnow().hour / 24.0
     
     road_type_idx = ROAD_TYPE_ORDINAL.get(segment.road_type, 0)
     lane_count = float(segment.number_of_lanes or 1.0)
     flood_prone = float(segment.flood_prone or 0.0)
     
-    # neighbor stats mock for single segment inference (assume 1.0 ratios)
-    neighbor_avg_speed = 1.0
-    neighbor_density = 1.0
+    # We don't have live neighbor stats from a single segment prediction request.
+    # Following windowing.py fallback logic when neighbors are missing
+    neighbor_avg_speed = 0.0
+    neighbor_density = 0.0
 
     # Build the exact 10-feature vector expected by the model
     feature_vector = np.array([
@@ -106,10 +108,25 @@ def predict_road_event(request: PredictionRequest, db: Session = Depends(get_db)
     probabilities = {IDX_TO_LABEL[i]: float(proba[i].item()) for i in range(len(proba))}
     
     inference_time_ms = int((time.time() - start_time) * 1000)
+    
+    # OOD Detection
+    is_ood = bool(speed_ratio > 3.0 or density_ratio > 7.0)
+    warning_msg = None
+    if is_ood:
+        warning_msg = "Input is outside the training distribution. Prediction may be unreliable."
+    else:
+        warning_msg = "Prediction generated with partial feature availability (Missing: uturn, variance, neighbors)."
+
+    # Feature completeness: 10 features total. 4 are missing live data (uturn, variance, neighbor_speed, neighbor_density)
+    # 6 features are fully available (speed, density, hour, road_type, lane, flood)
+    completeness = 60.0
 
     return PredictionResponse(
         prediction=prediction,
         confidence=confidence,
         probabilities=probabilities,
-        inference_time_ms=inference_time_ms
+        inference_time_ms=inference_time_ms,
+        feature_completeness=completeness,
+        ood=is_ood,
+        warning=warning_msg
     )
