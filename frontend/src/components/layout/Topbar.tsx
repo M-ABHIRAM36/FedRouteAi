@@ -14,6 +14,7 @@ const Topbar: React.FC<TopbarProps> = ({ onMenuClick }) => {
       <div className="flex items-center gap-3">
         <button 
           onClick={onMenuClick}
+          aria-label="Toggle navigation menu"
           className="md:hidden p-2 -ml-2 text-textSecondary hover:text-textPrimary hover:bg-surfaceHover rounded-md transition-colors"
         >
           <Menu className="w-5 h-5" />
@@ -28,7 +29,10 @@ const Topbar: React.FC<TopbarProps> = ({ onMenuClick }) => {
           Model Status: Stable
         </div>
         
-        <button className="p-2 text-textSecondary hover:text-textPrimary hover:bg-surfaceHover rounded-md transition-colors">
+        <button 
+          aria-label="Toggle dark mode"
+          className="p-2 text-textSecondary hover:text-textPrimary hover:bg-surfaceHover rounded-md transition-colors"
+        >
           {isDark ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
         </button>
       </div>

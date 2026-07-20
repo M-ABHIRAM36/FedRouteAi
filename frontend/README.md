@@ -1,32 +1,43 @@
-# React + TypeScript + Vite
+# FedRouteAI Frontend Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+This is the official frontend interface for the **FedRouteAI** research project—a Federated Learning based Traffic Analysis and Road Event Detection platform.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Performance**: Built with React 18 and Vite for fast execution and Hot Module Replacement (HMR). Uses `React.lazy` and `Suspense` for aggressive code-splitting.
+- **Accessibility (a11y)**: Semantic HTML and proper ARIA labels are used across the dashboard.
+- **Design System**: Dark-mode primary, minimal, research-oriented UI (TensorBoard/Grafana style) using Tailwind CSS v4.
+- **Visualizations**: Synthetic road network mapped onto `react-leaflet` with `CRS.Simple`, and telemetry visualized using `recharts`.
+- **API Resilience**: Auto-fallback Demo Mode for predictions when the backend ML server is offline.
 
-## React Compiler
+## Project Architecture (Milestones 1-7)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- `Dashboard`: Pipeline telemetry and aggregated statistics.
+- `TrafficMap`: Synthetic road segment status visualization.
+- `Prediction`: Real-time / demo-mode global model inference UI.
+- `Federated`: AdaptiveFedAvg client weight dynamics.
+- `Training`: Global loss, accuracy, and macro F1 curves.
+- `Analysis`: Auto-generated markdown reports from the ML experiments.
+- `Results`: Experiment artifact explorer.
 
-## Expanding the Oxlint configuration
+## Local Development
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+1. Ensure you have Node 18+ installed.
+2. Install dependencies:
+   \`\`\`bash
+   npm install
+   \`\`\`
+3. Run the development server:
+   \`\`\`bash
+   npm run dev
+   \`\`\`
+4. Open [http://localhost:5173](http://localhost:5173).
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+## Production Deployment (Vercel / Render)
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+This project includes a `vercel.json` file designed to handle React Router's client-side routing.
+
+1. Push your code to GitHub.
+2. Import the `frontend` directory into your Vercel dashboard.
+3. Vercel will automatically detect Vite and run `npm run build`.
+4. Deploy. The `vercel.json` ensures all sub-routes correctly redirect to `index.html`.

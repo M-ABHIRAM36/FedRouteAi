@@ -56,6 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                 )
               }
               onClick={() => setIsOpen(false)}
+              aria-label={`Navigate to ${item.name}`}
             >
               <item.icon className="w-4 h-4" />
               {item.name}
