@@ -1,0 +1,14 @@
+              precision    recall  f1-score   support
+
+      normal     0.9873    0.8306    0.9022      3465
+  congestion     0.6587    0.7919    0.7192       173
+construction     0.3914    0.5721    0.4648       208
+       flood     0.6232    0.8958    0.7350        48
+  road_block     0.4348    0.8333    0.5714        24
+ road_damage     0.6582    0.7780    0.7131       500
+    accident     0.8500    0.6800    0.7556        75
+   diversion     0.0950    0.8649    0.1711        37
+
+    accuracy                         0.8099      4530
+   macro avg     0.5873    0.7808    0.6291      4530
+weighted avg     0.8947    0.8099    0.8423      4530

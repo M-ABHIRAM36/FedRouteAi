@@ -1,0 +1,22 @@
+{
+  "model": "EventClassifierMLP",
+  "n_train": 21136,
+  "n_val": 4529,
+  "n_test": 4530,
+  "n_features": 10,
+  "n_classes": 8,
+  "accuracy": 0.8099,
+  "macro_f1": 0.6291,
+  "weighted_f1": 0.8423,
+  "roc_auc_macro": 0.9759,
+  "class_weights": {
+    "normal": 0.02,
+    "congestion": 0.398,
+    "construction": 0.331,
+    "flood": 1.442,
+    "road_block": 2.897,
+    "road_damage": 0.138,
+    "accident": 0.916,
+    "diversion": 1.859
+  }
+}
