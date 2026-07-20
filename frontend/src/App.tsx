@@ -10,6 +10,7 @@ import Training from './pages/Training';
 import Analysis from './pages/Analysis';
 import Results from './pages/Results';
 import About from './pages/About';
+import NotFound from './pages/NotFound';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
         <Route path="analysis" element={<Analysis />} />
         <Route path="results" element={<Results />} />
         <Route path="about" element={<About />} />
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   );

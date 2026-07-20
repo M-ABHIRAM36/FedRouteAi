@@ -1,14 +1,25 @@
 import React from 'react';
-import { Moon, Sun, ShieldCheck } from 'lucide-react';
+import { Moon, Sun, ShieldCheck, Menu } from 'lucide-react';
 
-const Topbar: React.FC = () => {
+interface TopbarProps {
+  onMenuClick: () => void;
+}
+
+const Topbar: React.FC<TopbarProps> = ({ onMenuClick }) => {
   // Hardcoded dark mode for Milestone 1 as requested (dark mode first).
   const isDark = true;
 
   return (
-    <div className="h-16 border-b border-border bg-surface/50 backdrop-blur-sm flex items-center justify-between px-6">
-      <div className="flex items-center gap-4">
-        <h2 className="text-sm font-semibold text-textPrimary">Project / FedRouteAI v1.0</h2>
+    <div className="h-16 border-b border-border bg-surface/50 backdrop-blur-sm flex items-center justify-between px-4 sm:px-6">
+      <div className="flex items-center gap-3">
+        <button 
+          onClick={onMenuClick}
+          className="md:hidden p-2 -ml-2 text-textSecondary hover:text-textPrimary hover:bg-surfaceHover rounded-md transition-colors"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <h2 className="text-sm font-semibold text-textPrimary hidden sm:block">Project / FedRouteAI v1.0</h2>
+        <h2 className="text-sm font-semibold text-textPrimary sm:hidden">FedRouteAI v1.0</h2>
       </div>
       
       <div className="flex items-center gap-4">
