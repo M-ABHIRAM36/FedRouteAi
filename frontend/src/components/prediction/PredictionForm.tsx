@@ -52,7 +52,7 @@ const InputWrapper: React.FC<InputWrapperProps> = ({
 
 export const PredictionForm: React.FC<PredictionFormProps> = ({ onSubmit, isLoading }) => {
   const [formData, setFormData] = useState<PredictionFormData>({
-    road_id: 'R123',
+    road_id: 'HYD_SEG_0001',
     speed: 45,
     density: 30,
     travel_time: 12,

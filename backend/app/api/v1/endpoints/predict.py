@@ -16,7 +16,7 @@ router = APIRouter(prefix="/predict", tags=["predict"])
 
 # Global state for loaded model
 _MODEL = None
-_MODEL_PATH = Path("app/ml/artifacts/adaptive_federated/best_global_model.pt")
+_MODEL_PATH = Path(__file__).resolve().parents[5] / "app" / "ml" / "artifacts" / "adaptive_federated" / "best_global_model.pt"
 
 def get_model():
     global _MODEL
@@ -60,8 +60,8 @@ def predict_road_event(request: PredictionRequest, db: Session = Depends(get_db)
     # From signature_extractor.py: expected = baseline.avg_vehicle_count * (20.0 / 60.0)
     expected_density = max(baseline.avg_vehicle_count * (20.0 / 60.0), 0.5)
     
-    speed_ratio = request.speed / baseline_speed
-    density_ratio = request.density / expected_density
+    speed_ratio = float(np.clip(request.speed / baseline_speed, 0.0, 5.0))
+    density_ratio = float(np.clip(request.density / expected_density, 0.0, 10.0))
     
     # We don't have uturn or variance from the frontend UI. We'll use 1.0 as fallback.
     uturn_ratio = 1.0
