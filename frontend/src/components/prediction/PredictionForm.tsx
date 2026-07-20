@@ -4,10 +4,10 @@ import { clsx } from 'clsx';
 
 export interface PredictionFormData {
   road_id: string;
-  speed: number;
-  density: number;
-  travel_time: number;
-  heading: number;
+  speed: number | string;
+  density: number | string;
+  travel_time: number | string;
+  heading: number | string;
 }
 
 interface PredictionFormProps {
@@ -63,7 +63,7 @@ export const PredictionForm: React.FC<PredictionFormProps> = ({ onSubmit, isLoad
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'road_id' ? value : Number(value)
+      [name]: name === 'road_id' ? value : (value === '' ? '' : Number(value))
     }));
   };
 

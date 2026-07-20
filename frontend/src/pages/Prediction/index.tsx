@@ -14,7 +14,14 @@ const Prediction: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await predictTrafficEvent(data);
+      const requestData = {
+        road_id: data.road_id,
+        speed: Number(data.speed) || 0,
+        density: Number(data.density) || 0,
+        travel_time: Number(data.travel_time) || 0,
+        heading: Number(data.heading) || 0,
+      };
+      const response = await predictTrafficEvent(requestData);
       setResult(response);
     } catch (err: any) {
       setError(err.message || "Failed to run prediction. Please try again.");
