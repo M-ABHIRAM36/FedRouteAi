@@ -7,8 +7,8 @@
     module/.style={draw=black!80, line width=0.5pt, fill=white, rounded corners=3pt, align=center, font=\sffamily\fontsize{8}{9.5}\selectfont, inner sep=4pt},
     accentmodule/.style={draw=ieeeblue, line width=0.8pt, fill=ieeeblue!5, rounded corners=3pt, align=center, font=\sffamily\fontsize{8}{9.5}\selectfont, inner sep=4pt},
     subsystem/.style={draw=bordergray, line width=0.5pt, dashed, fill=lightbg!50, rounded corners=4pt, inner sep=6pt},
-    arrow/.style={-{-Latex[length=4pt, width=3pt]}, line width=0.6pt, draw=black!80},
-    accentarrow/.style={-{-Latex[length=4pt, width=3pt]}, line width=0.8pt, draw=ieeeblue},
+    arrow/.style={-{Latex[length=4pt, width=3pt]}, line width=0.6pt, draw=black!80},
+    accentarrow/.style={-{Latex[length=4pt, width=3pt]}, line width=0.8pt, draw=ieeeblue},
     lbl/.style={font=\sffamily\fontsize{7}{8}\selectfont, text=black!70}
 }
 
@@ -117,7 +117,7 @@
     \draw[arrow] (warn) |- (out);
 \end{tikzpicture}%
 }
-\caption{Deployment-aware inference execution flow incorporating deterministic zero-imputation for missing attributes and dynamic Out-of-Distribution (OOD) threshold alert generation ($speed\_ratio > 3.0$).}
+\caption{Deployment-aware inference execution flow incorporating deterministic zero-imputation for missing attributes and dynamic Out-of-Distribution (OOD) threshold alert generation ($speed\_ratio > 3.0$ or $density\_ratio > 7.0$).}
 \label{fig:inference_pipeline}
 \end{figure}
 }
@@ -128,10 +128,10 @@
 \centering
 \resizebox{\linewidth}{!}{%
 \begin{tikzpicture}[node distance=0.8cm and 1.0cm]
-    \node[module] (updates) {Client Updates ($w_t^k, L_k, n_k$)};
-    \node[accentmodule, below=0.7cm of updates] (quality) {Quality Factor: $q_k = e^{-L_k}$};
-    \node[accentmodule, right=0.8cm of quality] (rarity) {Rarity Bonus: $\rho_k = 1/\sqrt{F_{normal}^k}$};
-    \node[accentmodule, below=0.7cm of quality] (gate) {Reliability Gate: $g_k = 1 - \alpha \max(0, V_k - V_{thresh})$};
+    \node[module] (updates) {Client Updates ($w_t^k, F_{1,k}, f_{rare}^k$)};
+    \node[accentmodule, below=0.7cm of updates] (quality) {Quality Factor: $q_k = \max(q_{floor}, F_{1,k})$};
+    \node[accentmodule, right=0.8cm of quality] (rarity) {Rarity Bonus: $\rho_k = 1 + \beta f_{rare}^k$};
+    \node[accentmodule, below=0.7cm of quality] (gate) {Reliability Gate: $g_k = f(\text{EMA}_{F1})$};
     \node[module, below=0.7cm of rarity] (weight) {Weighting: $\omega_k = n_k \cdot q_k \cdot \rho_k \cdot g_k$};
     \node[accentmodule, below=0.7cm of weight] (norm) {Normalize: $\hat{\omega}_k = \omega_k / \sum \omega_j$};
     \node[module, below=0.7cm of norm] (agg) {Global Model: $w_{t+1} = \sum \hat{\omega}_k w_t^k$};
@@ -145,7 +145,7 @@
     \draw[accentarrow] (norm) -- (agg);
 \end{tikzpicture}%
 }
-\caption{Server-side AdaptiveFedAvg aggregation workflow showing the multi-factor dynamic weight calculation combining dataset volume ($n_k$), validation quality ($q_k$), rarity bonus ($\rho_k$), and temporal reliability gating ($g_k$).}
+\caption{Server-side AdaptiveFedAvg aggregation workflow showing the multi-factor dynamic weight calculation combining dataset volume ($n_k$), floored validation quality ($q_k$), bounded rarity bonus ($\rho_k$), and EMA reliability gating ($g_k$).}
 \label{fig:adaptivefedavg_workflow}
 \end{figure}
 }
@@ -167,10 +167,10 @@
     \draw[accentarrow] (server) -- (c3);
     \draw[accentarrow] (server) -- node[lbl, right] {1. Broadcast $w_t$} (cK);
 
-    \draw[arrow] (c1) -- node[lbl, right] {2. Upload $w_{t+1}^1, L_1$} (server);
+    \draw[arrow] (c1) -- node[lbl, right] {2. Upload $w_{t+1}^1, F_{1,1}$} (server);
     \draw[arrow] (c2) -- (server);
     \draw[arrow] (c3) -- (server);
-    \draw[arrow] (cK) -- node[lbl, left] {2. Upload $w_{t+1}^8, L_8$} (server);
+    \draw[arrow] (cK) -- node[lbl, left] {2. Upload $w_{t+1}^8, F_{1,8}$} (server);
 \end{tikzpicture}%
 }
 \caption{Federated learning communication protocol detailing parameter exchanges (12.96 KB per client) across 8 simulated edge nodes.}
