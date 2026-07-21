@@ -1,10 +1,12 @@
 \section{Experimental Setup}
 
+\drawFigExperimentalPipeline
+
 \subsection{Dataset Generation and Preprocessing}
 
 A critical challenge in evaluating deployment-aware edge intelligence is the lack of public Intelligent Transportation Systems (ITS) datasets that explicitly capture hardware-induced data volatility, such as sensor packet drops and extreme Out-of-Distribution (OOD) telemetry. Consequently, we generated a comprehensive synthetic traffic anomaly dataset to serve as a rigorous testbed for non-IID (Independent and Identically Distributed) edge failures.
 
-The dataset simulates vehicular telemetry across distinct geographical zones, calibrated for high, medium, and low traffic densities. It comprises an 8-class distribution, encompassing normal traffic conditions alongside seven specific anomaly types (e.g., road damage, sudden congestion). To accurately reflect real-world vehicular environments, the dataset is intentionally highly imbalanced; normal traffic constitutes approximately 76.5\% of the samples, while specific anomalies represent a minor fraction (e.g., road damage at 11.0\%). During preprocessing, raw absolute values are converted into localized relative ratios, ensuring that the feature vectors fed into the local models are standardized across disparate geographic zones, as detailed in Section III-B.
+The dataset simulates vehicular telemetry across distinct geographical zones, calibrated for high, medium, and low traffic densities (summarized in Table \ref{tab:dataset_statistics} and Figure \ref{fig:experimental_pipeline}). It comprises an 8-class distribution, encompassing normal traffic conditions alongside seven specific anomaly types (e.g., road damage, sudden congestion). To accurately reflect real-world vehicular environments, the dataset is intentionally highly imbalanced; normal traffic constitutes approximately 76.5\% of the samples, while specific anomalies represent a minor fraction (e.g., road damage at 11.0\%). During preprocessing, raw absolute values are converted into localized relative ratios (detailed in Table \ref{tab:dataset_features}), ensuring that the feature vectors fed into the local models are standardized across disparate geographic zones, as detailed in Section III-B.
 
 \input{tables/dataset_statistics.tex}
 
@@ -48,6 +50,6 @@ All remaining hyperparameters are kept constant across the ablation studies unle
 For reproducibility, the federated framework is implemented in Python 3.10. The deep learning models are developed using PyTorch 2.0. The federated architecture relies on the Flower framework (flwr 1.5). The edge-backend engineering infrastructure utilizes FastAPI for endpoint routing and PostgreSQL 15 for the Historical Memory Module.
 
 \textbf{Hardware Configuration:}
-The centralized simulation and inference benchmarking were executed on a system equipped with an Intel Core i9 processor, 32GB RAM, and an NVIDIA RTX 4080 GPU running Ubuntu 22.04.
+The centralized simulation and inference benchmarking were executed on a system equipped with an Intel Core i9 processor, 32GB RAM, and an NVIDIA RTX 4080 GPU running Ubuntu 22.04. The detailed experimental parameters and hardware specifications are summarized in Table \ref{tab:experimental_configuration}.
 
 \input{tables/experimental_configuration.tex}

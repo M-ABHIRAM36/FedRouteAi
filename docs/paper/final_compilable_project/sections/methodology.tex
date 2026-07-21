@@ -8,25 +8,17 @@ From an engineering perspective, the system is orchestrated using a high-perform
 
 The primary research contribution resides within the interaction between the edge clients and the central aggregation server. Raw spatial-temporal telemetry---such as GPS coordinates and instantaneous vehicular speeds---is collected by edge nodes. To preserve strict V2X privacy constraints, these raw trajectories are never transmitted to the central server. Instead, local edge models generate traffic anomaly classifications using a lightweight Multi-Layer Perceptron (MLP) architecture. The central server is exclusively responsible for executing the adaptive federated aggregation algorithm, asynchronously compiling model weights rather than raw data. This decoupled architectural design ensures that the engineering infrastructure seamlessly supports the privacy-preserving machine learning workflow without conflating software implementation with algorithmic novelty.
 
-\begin{figure}[htbp]
-\centering
-% \includegraphics[width=\linewidth]{figures/architecture.pdf}
-\caption{Overall System Architecture comprising Edge Client Layer, Central Backend Layer, and Historical Memory Module.}
-\label{fig:architecture}
-\end{figure}
+\drawFigSystemArchitecture
 
 \subsection{Historical Memory and Feature Engineering}
 
 Directly classifying raw spatial telemetry poses both severe privacy risks and significant generalization challenges. To address this, the proposed architecture employs a Historical Memory Module, implemented within a PostgreSQL database, to maintain time-synchronized traffic baselines for distinct geographical zones (illustrated in Figure 2). This module computes and stores aggregated historical statistics, such as average speed and traffic density, decoupled from individual vehicle identities. 
 
-During both federated training and edge inference, the feature engineering pipeline transforms absolute telemetry into relative feature vectors. When an edge device records an instantaneous metric---for example, a vehicle traveling at a specific absolute speed---the system queries the Historical Memory Module to retrieve the corresponding historical average for that specific zone and time window. The pipeline then computes a normalized metric, such as the speed\_ratio (the ratio of current speed to the historical average). By deriving relative features rather than relying on absolute GPS coordinates or raw velocity bounds, the framework effectively standardizes inputs across disparate road typologies (e.g., residential streets versus highways). This precise feature preprocessing methodology ensures that the local Multi-Layer Perceptron model operates on a consistent, privacy-preserving state representation, which is critical for the subsequent out-of-distribution mitigation strategy.
+During both federated training and edge inference, the feature engineering pipeline transforms absolute telemetry into relative feature vectors (as shown in Figure \ref{fig:feature_engineering}). When an edge device records an instantaneous metric---for example, a vehicle traveling at a specific absolute speed---the system queries the Historical Memory Module to retrieve the corresponding historical average for that specific zone and time window. The pipeline then computes a normalized metric, such as the speed\_ratio (the ratio of current speed to the historical average). By deriving relative features rather than relying on absolute GPS coordinates or raw velocity bounds, the framework effectively standardizes inputs across disparate road typologies (e.g., residential streets versus highways). This precise feature preprocessing methodology ensures that the local Multi-Layer Perceptron model operates on a consistent, privacy-preserving state representation, which is critical for the subsequent out-of-distribution mitigation strategy.
 
-\begin{figure}[htbp]
-\centering
-% \includegraphics[width=\linewidth]{figures/historical_memory.pdf}
-\caption{Historical Memory Module computing normalized relative features for localized geographic zones.}
-\label{fig:historical_memory}
-\end{figure}
+\drawFigHistoricalMemory
+
+\drawFigFeatureEngineering
 
 \subsection{Deployment-Aware Inference and OOD Mitigation}
 
@@ -34,15 +26,18 @@ The central methodological contribution of FedRouteAI is its deployment-aware in
 
 To address this vulnerability, our framework integrates a proactive anomaly detection layer directly into the edge inference execution. During the federated training phase, the system establishes explicit distributional thresholds for normalized feature vectors (e.g., speed\_ratio $> 3.0$ and density\_ratio $> 7.0$). When deployed for real-time inference, the edge prediction module actively monitors incoming telemetry. If an edge sensor records malformed or extreme inputs that exceed these thresholds, the pipeline does not actively modify the input data; instead, it dynamically flags the prediction with an Out-of-Distribution (OOD) warning, alerting downstream orchestration systems that the generated inference may be unreliable due to hardware degradation or severe environmental noise.
 
-For missing localized features (such as neighbor segment velocities), the pipeline employs deterministic zero-imputation, which maps the missing data to a normalized baseline state rather than allowing the model to process null values. By aligning the inference-time feature generation with the training pipeline, the system ensures that the Multi-Layer Perceptron operates on complete, properly normalized tensors, while explicitly deferring the handling of extreme OOD inputs to system-level alerts.
+For missing localized features (such as neighbor segment velocities), the pipeline employs deterministic zero-imputation, which maps the missing data to a normalized baseline state rather than allowing the model to process null values. By aligning the inference-time feature generation with the training pipeline, the system ensures that the Multi-Layer Perceptron operates on complete, properly normalized tensors, while explicitly deferring the handling of extreme OOD inputs to system-level alerts (illustrated in Figure \ref{fig:inference_pipeline}).
+
+\drawFigInferencePipeline
 
 \subsection{Adaptive Federated Aggregation} 
 
 While the deployment-aware inference pipeline stabilizes local predictions, the global intelligence of the framework relies on a robust decentralized training mechanism. Standard Federated Averaging (FedAvg) aggregates client updates primarily according to local dataset size, implicitly assuming that all participating clients contribute equally reliable model updates. However, vehicular edge nodes exhibit high variability in both computational capacity and the statistical quality of their local telemetry, which can lead to divergent or unstable global convergence.
 
-To address this heterogeneity, the proposed framework employs an Adaptive Federated Aggregation strategy (AdaptiveFedAvg). Rather than weighting local updates using dataset size alone, the central aggregation server calculates a dynamic weight $w_k$ for each client $k$ using a four-factor formulation:
+To address this heterogeneity, the proposed framework employs an Adaptive Federated Aggregation strategy (AdaptiveFedAvg), detailed in Algorithm \ref{alg:adaptivefedavg}. Rather than weighting local updates using dataset size alone, the central aggregation server calculates a dynamic weight $w_k$ for each client $k$ using a four-factor formulation:
 
 \begin{equation}
+\label{eq:adaptivefedavg_weight}
 w_k = n_k \cdot q_k \cdot \rho_k \cdot g_k
 \end{equation}
 
@@ -54,6 +49,10 @@ where:
     \item $g_k$ (Reliability Gate): A temporal stability multiplier computed from an Exponential Moving Average (EMA) of the client's historical Macro F1 scores. 
 \end{itemize}
 
-By integrating the temporal stability gate ($g_k$) alongside the local validation quality ($q_k$), the central server actively penalizes edge nodes that present highly volatile feature distributions over time. This adaptive weighting approach enhances the overall convergence stability of the global Multi-Layer Perceptron model, ensuring that erratic data from degraded sensors does not disproportionately skew the central weights, thereby supporting robust traffic anomaly detection across heterogeneous urban environments.
+By integrating the temporal stability gate ($g_k$) alongside the local validation quality ($q_k$) as defined in Equation (\ref{eq:adaptivefedavg_weight}), the central server actively penalizes edge nodes that present highly volatile feature distributions over time (illustrated in Figure \ref{fig:adaptivefedavg_workflow} and Figure \ref{fig:fl_communication}). This adaptive weighting approach enhances the overall convergence stability of the global Multi-Layer Perceptron model, ensuring that erratic data from degraded sensors does not disproportionately skew the central weights, thereby supporting robust traffic anomaly detection across heterogeneous urban environments.
+
+\drawFigAdaptiveFedAvg
+
+\drawFigFLCommunication
 
 \input{tables/algorithm_adaptivefedavg.tex}

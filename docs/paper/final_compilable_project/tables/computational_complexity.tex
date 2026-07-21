@@ -1,0 +1,17 @@
+\begin{table}[htbp]
+\centering
+\caption{Computational Complexity and Resource Bounds}
+\label{tab:computational_complexity}
+\begin{tabular}{lll}
+\toprule
+\textbf{Phase / Component} & \textbf{Time Complexity} & \textbf{Memory / Payload} \\
+\midrule
+Historical Feature Scaling & $\mathcal{O}(d_{raw})$ & $\mathcal{O}(1)$ query overhead \\
+Edge MLP Inference & $\mathcal{O}(L \cdot d_{mlp})$ & $3,240$ parameters ($\approx 12.96$ KB) \\
+Local Training Epoch & $\mathcal{O}(E \cdot N_k \cdot d_{mlp})$ & Batch size 32 tensors \\
+AdaptiveWeight Calculation & $\mathcal{O}(1)$ per client & 4 scalar floats \\
+Federated Weight Payload & $\mathcal{O}(|\theta|)$ & $12.96$ KB upload / download \\
+Server Aggregation Round & $\mathcal{O}(|\mathcal{K}| \cdot |\theta|)$ & $207.36$ KB total network \\
+\bottomrule
+\end{tabular}
+\end{table}
