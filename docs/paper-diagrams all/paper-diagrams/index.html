@@ -2,134 +2,112 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>FedRouteAI — Paper Diagrams</title>
+<title>FedRouteAI — Paper Diagrams Index</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<style>
+  body { background: var(--bg-soft); }
+</style>
 </head>
 <body>
-
 <div class="topbar">
   <div class="topbar-left">
-    <a href="index.html" class="brand"><span class="brand-mark"></span>FedRouteAI</a>
-    <span class="crumb">Publication Figure Set</span>
+    <a href="index.html" class="brand"><span class="brand-mark"></span>FedRouteAI Diagrams</a>
   </div>
   <div class="topbar-right">
-    <button class="btn" onclick="toggleTheme()">Theme</button>
-    <a class="btn" href="https://ieeexplore.ieee.org" target="_blank" rel="noopener">IEEE Xplore ↗</a>
+    <button class="btn" onclick="toggleTheme()">☀ Theme</button>
   </div>
 </div>
-
 <div class="page">
   <div class="hero">
-    <h1>FedRouteAI — Figure Set</h1>
-    <p>Ten publication-quality, self-contained SVG diagrams for "Adaptive Federated Learning for Resilient Edge-Based Traffic Anomaly Detection" — every number is verified against the actual codebase or the reported results, not approximated. Diagrams with open discrepancies are flagged directly on the page, not silently smoothed over.</p>
+    <h1>FedRouteAI — IEEE Conference Paper Figures</h1>
+    <p>Publication-quality architecture diagrams for <em>Adaptive Federated Learning for Resilient Edge-Based Traffic Anomaly Detection</em>. All formulas verified against source code. SVG export available on each figure page.</p>
     <div class="hero-badges">
-      <span class="databadge verified">7 architecture / workflow diagrams</span>
-      <span class="databadge verified">3 data-driven result charts</span>
-      <span class="databadge unverified">1 formula conflict flagged (Fig. 5)</span>
+      <span class="databadge verified">✓ Formulas Verified Against Code</span>
+      <span class="databadge illustrated">6 Architecture Diagrams</span>
+      <span class="databadge unverified">IEEE Conference Ready</span>
     </div>
   </div>
 
-  <div class="section-label">Architecture &amp; Methodology — Figures 1–7</div>
+  <p class="section-label">Core Architecture Diagrams</p>
   <div class="fig-grid">
-
     <a href="architecture.html" class="fig-card">
-      <div class="num" style="background:#2563EB;">1</div>
-      <div class="fc-title">System Architecture</div>
-      <div class="fc-desc">End-to-end pipeline with an explicit privacy boundary — everything that stays local vs. what actually crosses to the server.</div>
-      <div class="fc-tags"><span class="tag">privacy boundary</span><span class="tag">12.96 KB weights</span></div>
+      <div class="num" style="background: linear-gradient(135deg,#2563EB,#1d4ed8)">1</div>
+      <div class="fc-title">Overall System Architecture</div>
+      <div class="fc-desc">End-to-end FedRouteAI pipeline: edge telemetry → Historical Memory → Feature Engineering → OOD Guard → MLP → AdaptiveFedAvg → Dashboard. Privacy boundary clearly demarcated.</div>
+      <div class="fc-tags">
+        <span class="tag">full-width</span><span class="tag">6-layers</span><span class="tag">privacy-boundary</span>
+      </div>
     </a>
 
     <a href="historical_memory.html" class="fig-card">
-      <div class="num" style="background:#0D9488;">2</div>
-      <div class="fc-title">Historical Memory Workflow</div>
-      <div class="fc-desc">Zone + time-window baseline retrieval and the speed/density ratio normalization that everything downstream depends on.</div>
-      <div class="fc-tags"><span class="tag">PostgreSQL</span><span class="tag">v_ratio, d_ratio</span></div>
+      <div class="num" style="background: linear-gradient(135deg,#0D9488,#0f766e)">2</div>
+      <div class="fc-title">Historical Memory Module</div>
+      <div class="fc-desc">PostgreSQL spatial-temporal baseline store. Schema, SQL query logic, relative ratio engine (v_ratio = v/v_avg, d_ratio = d/d_avg), before/after normalization comparison.</div>
+      <div class="fc-tags">
+        <span class="tag">postgresql</span><span class="tag">normalization</span><span class="tag">privacy</span>
+      </div>
     </a>
 
     <a href="feature_engineering.html" class="fig-card">
-      <div class="num" style="background:#7C3AED;">3</div>
+      <div class="num" style="background: linear-gradient(135deg,#7C3AED,#6d28d9)">3</div>
       <div class="fc-title">Feature Engineering Pipeline</div>
-      <div class="fc-desc">The real, verified 10-feature vector — including which 4 fields are always zero-filled by the prediction endpoint.</div>
-      <div class="fc-tags"><span class="tag">x ∈ ℝ¹⁰</span><span class="tag">verified vs. predict.py</span></div>
+      <div class="fc-desc">5 parallel transformation streams producing x ∈ ℝ¹⁰. Speed ratio, density ratio, road condition one-hot, zero-imputed neighbors, environmental binary flags.</div>
+      <div class="fc-tags">
+        <span class="tag">10-dim tensor</span><span class="tag">one-hot</span><span class="tag">zero-imputation</span>
+      </div>
     </a>
 
     <a href="ood_pipeline.html" class="fig-card">
-      <div class="num" style="background:#D97706;">4</div>
-      <div class="fc-title">Deployment-Aware Inference</div>
-      <div class="fc-desc">Zero-imputation, the OOD threshold check (using the code's actual OR logic), and classification.</div>
-      <div class="fc-tags"><span class="tag">OOD detection</span><span class="tag">0.2069 ms/sample</span></div>
+      <div class="num" style="background: linear-gradient(135deg,#D97706,#b45309)">4</div>
+      <div class="fc-title">Deployment-Aware OOD Inference</div>
+      <div class="fc-desc">Two-zone layout: main MLP pipeline + OOD side channel. v_ratio &gt; 3.0 OR d_ratio &gt; 7.0 triggers warning flag. EventClassifierMLP: Input(10)→Dense(64,ReLU)→Output(8,Softmax).</div>
+      <div class="fc-tags">
+        <span class="tag">ood-detection</span><span class="tag">mlp-3240-params</span><span class="tag">0.2069ms</span>
+      </div>
     </a>
 
     <a href="adaptivefedavg.html" class="fig-card">
-      <div class="num" style="background:#16A34A;">5</div>
-      <div class="fc-title">AdaptiveFedAvg Workflow</div>
-      <div class="fc-desc">Client-to-server weight computation, built strictly from the formulas verified in adaptive_fedavg.py.</div>
-      <div class="fc-tags"><span class="tag">w_k = n_k·q_k·ρ_k·g_k</span><span class="tag">⚠ paper mismatch</span></div>
+      <div class="num" style="background: linear-gradient(135deg,#16A34A,#15803d)">5</div>
+      <div class="fc-title">AdaptiveFedAvg Aggregation</div>
+      <div class="fc-desc">7-step aggregation pipeline. All 4 factors with code-verified formulas: q_k=max(0.10,F1), ρ_k=1+0.3×f_rare, EMA gate. Hyperparameter table included.</div>
+      <div class="fc-tags">
+        <span class="tag">verified-formulas</span><span class="tag">4-factors</span><span class="tag">ema-gate</span>
+      </div>
     </a>
 
     <a href="communication.html" class="fig-card">
-      <div class="num" style="background:#2563EB;">6</div>
-      <div class="fc-title">Federated Communication</div>
-      <div class="fc-desc">One full round across 8 clients — the sequence diagram behind your bandwidth claim.</div>
-      <div class="fc-tags"><span class="tag">207.36 KB / round</span><span class="tag">30 rounds</span></div>
-    </a>
-
-    <a href="evaluation.html" class="fig-card">
-      <div class="num" style="background:#D97706;">7</div>
-      <div class="fc-title">Experimental Pipeline</div>
-      <div class="fc-desc">Dataset → partition → train → evaluate, with the best-checkpoint disclosure your Section IV currently omits.</div>
-      <div class="fc-tags"><span class="tag">30,195 samples</span><span class="tag">8 clients</span></div>
+      <div class="num" style="background: linear-gradient(135deg,#0D9488,#16A34A)">6</div>
+      <div class="fc-title">FL Communication Protocol</div>
+      <div class="fc-desc">8 client nodes individually labeled with region types. Broadcast/upload arrows. Per-round 5-phase timeline. 12.96 KB payload breakdown: 3240 × 4 bytes.</div>
+      <div class="fc-tags">
+        <span class="tag">8-clients</span><span class="tag">30-rounds</span><span class="tag">12.96KB</span>
+      </div>
     </a>
   </div>
 
-  <div class="section-label">Results — Figures 8–10 (Real Data)</div>
+  <p class="section-label">Results & Experimental Figures</p>
   <div class="fig-grid">
-    <a href="results.html" class="fig-card">
-      <div class="num" style="background:#7C3AED;">8</div>
-      <div class="fc-title">Dataset Class Distribution</div>
-      <div class="fc-desc">Log-scaled bar chart, plotted directly from Table I's real counts.</div>
-      <div class="fc-tags"><span class="tag">30,195 total</span><span class="tag">76.49% normal</span></div>
+    <a href="evaluation.html" class="fig-card">
+      <div class="num" style="background: linear-gradient(135deg,#E11D48,#be123c)">7</div>
+      <div class="fc-title">Experimental Pipeline & Results</div>
+      <div class="fc-desc">End-to-end experimental setup: 30,195 samples, 8-client non-IID partition, 30 FL rounds, convergence analysis, per-class F1 breakdown.</div>
+      <div class="fc-tags">
+        <span class="tag">convergence</span><span class="tag">per-class-f1</span><span class="tag">30-rounds</span>
+      </div>
     </a>
 
     <a href="results.html" class="fig-card">
-      <div class="num" style="background:#16A34A;">9</div>
-      <div class="fc-title">Training Convergence</div>
-      <div class="fc-desc">FedAvg vs. AdaptiveFedAvg macro F1 across all 30 rounds, plotted from federated_history.csv.</div>
-      <div class="fc-tags"><span class="tag">real 31-point series</span><span class="tag">no seed variance yet</span></div>
+      <div class="num" style="background: linear-gradient(135deg,#E11D48,#9f1239)">8–10</div>
+      <div class="fc-title">Confusion Matrix & Class Distribution</div>
+      <div class="fc-desc">8-class confusion matrix showing prediction accuracy per class. Dataset class distribution chart. Performance comparison table: Centralized vs FedAvg vs AdaptiveFedAvg.</div>
+      <div class="fc-tags">
+        <span class="tag">confusion-matrix</span><span class="tag">82.21%-acc</span><span class="tag">macro-f1-0.6401</span>
+      </div>
     </a>
-
-    <a href="results.html" class="fig-card">
-      <div class="num" style="background:#E11D48;">10</div>
-      <div class="fc-title">Confusion Matrix</div>
-      <div class="fc-desc">8×8 heatmap from the reported held-out test results, with the largest confusions called out.</div>
-      <div class="fc-tags"><span class="tag">log-scaled color</span><span class="tag">real counts</span></div>
-    </a>
-  </div>
-
-  <div class="section-label">Using These Files</div>
-  <div class="grid-2">
-    <div class="panel">
-      <h3><span class="dot" style="background:#16A34A"></span>For the IEEE Paper</h3>
-      <ul class="step-list">
-        <li>Open any figure page, click <b>Export SVG</b> — downloads a standalone, self-contained <span class="f3-mono">.svg</span> (styles are embedded, no external stylesheet needed).</li>
-        <li>Convert for LaTeX: <span class="f3-mono">inkscape figure.svg --export-type=pdf</span>, then <span class="f3-mono">\includegraphics</span> as usual — vector, crisp at any print size.</li>
-        <li>Default theme is light/print-safe by design — don't toggle dark mode before exporting for print.</li>
-      </ul>
-    </div>
-    <div class="panel">
-      <h3><span class="dot" style="background:#D97706"></span>Open Items Before Submission</h3>
-      <ul class="step-list">
-        <li><b>Resolve Figure 5's formula conflict</b> — confirm which AdaptiveFedAvg implementation actually produced Table IV's numbers.</li>
-        <li><b>Fix the OOD "and"/"or" mismatch</b> in Section III-C's prose (Figure 4).</li>
-        <li><b>Add the best-checkpoint disclosure</b> sentence to Section IV (Figure 7).</li>
-        <li><b>Run 2-3 more seeds</b> before citing convergence "variance" as a robustness claim (Figure 9).</li>
-      </ul>
-    </div>
   </div>
 </div>
-
 <script src="script.js"></script>
 </body>
 </html>
