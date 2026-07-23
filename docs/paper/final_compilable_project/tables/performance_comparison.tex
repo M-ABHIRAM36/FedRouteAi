@@ -2,16 +2,20 @@
 \centering
 \caption{Classification Performance Comparison on 8-Class Traffic Anomaly Dataset}
 \label{tab:performance_comparison}
-\setlength{\tabcolsep}{5pt}
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{lccccc}
 \toprule
 \textbf{Method} & \textbf{Acc.~(\%)} & \textbf{Macro F1} & \textbf{Comm.~(KB/rnd)} & \textbf{Clients} & \textbf{Privacy} \\
 \midrule
 Centralized MLP      & 80.99          & 0.6291          & N/A        & 1 & None \\
 Standard FedAvg      & 82.05          & 0.6417          & 207.36     & 8 & FL   \\
-\textbf{AdaptiveFedAvg (ours)} & \textbf{82.21} & 0.6401 & 207.36 & 8 & FL   \\
+\textbf{AdaptiveFedAvg (ours)} & \textbf{82.21} & \textbf{0.6401} & 207.36 & 8 & FL   \\
 \bottomrule
-\multicolumn{6}{l}{\footnotesize{Comm.~= total upload bandwidth per round across all clients.}}\\
-\multicolumn{6}{l}{\footnotesize{All FL runs: 30 rounds, 5 local epochs, Adam lr=0.001.}}\\
-\end{tabular}
+\end{tabular}%
+}
+\vspace{2pt}
+\begin{flushleft}
+\footnotesize{* Comm.~= total upload bandwidth per round across all clients (8 $\times$ 12.96 KB).\\
+All FL runs: 30 rounds, 5 local epochs, Adam optimizer (lr=0.001).}
+\end{flushleft}
 \end{table}

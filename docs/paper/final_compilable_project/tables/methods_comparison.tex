@@ -1,15 +1,17 @@
 \begin{table*}[htbp]
 \centering
-\caption{Comparison with Existing Methods}
+\caption{Qualitative Architectural Comparison with Existing Federated and Edge Frameworks}
 \label{tab:methods_comparison}
+\resizebox{0.95\textwidth}{!}{%
 \begin{tabular}{lcccccc}
 \toprule
-\textbf{Method} & \textbf{Privacy} & \textbf{Adaptive Aggregation} & \textbf{OOD Handling} & \textbf{Deployment-Aware Inference} & \textbf{Low Communication} & \textbf{Edge Optimization} \\
+\textbf{Method} & \textbf{Privacy-Preserving} & \textbf{Adaptive Aggregation} & \textbf{OOD Detection} & \textbf{Deployment-Aware} & \textbf{Low Communication} & \textbf{Edge-Optimized} \\
 \midrule
-FedAvg & \checkmark & $\times$ & $\times$ & $\times$ & \checkmark & \checkmark \\
-FedAdam & \checkmark & \checkmark & $\times$ & $\times$ & \checkmark & \checkmark \\
-FedYogi & \checkmark & \checkmark & $\times$ & $\times$ & \checkmark & \checkmark \\
-\textbf{FedRouteAI} & \textbf{\checkmark} & \textbf{\checkmark} & \textbf{\checkmark} & \textbf{\checkmark} & \textbf{\checkmark} & \textbf{\checkmark} \\
+FedAvg \cite{McMahan_2017}     & \checkmark & $\times$    & $\times$    & $\times$    & \checkmark & \checkmark \\
+FedAdam \cite{Yang_2024}    & \checkmark & \checkmark & $\times$    & $\times$    & \checkmark & \checkmark \\
+FedYogi \cite{Yang_2024}    & \checkmark & \checkmark & $\times$    & $\times$    & \checkmark & \checkmark \\
+\textbf{FedRouteAI (ours)} & \textbf{\checkmark} & \textbf{\checkmark} & \textbf{\checkmark} & \textbf{\checkmark} & \textbf{\checkmark} & \textbf{\checkmark} \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table*}

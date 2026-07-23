@@ -7,7 +7,7 @@ FedRouteAI is an end-to-end, privacy-preserving federated learning framework for
 
 \begin{figure*}[t]
   \centering
-  \includegraphics[width=0.95\textwidth]{figures/fig1_system_architecture.png}
+  \includegraphics[width=0.95\textwidth]{figures/fig1_system_architecture}
   \caption{End-to-end FedRouteAI architecture. Raw GPS telemetry is processed entirely within the regional edge client (blue zone). Only 12.96\,KB model weights cross the privacy boundary (orange dashed line) to the central federated server (green zone). The six functional layers are: telemetry ingestion, Historical Memory normalization, feature engineering, deployment-aware MLP inference, AdaptiveFedAvg aggregation, and the React alerting dashboard.}
   \label{fig:architecture}
 \end{figure*}
@@ -31,7 +31,7 @@ A ratio of 1.0 indicates current conditions are at historical norm; values signi
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig2_historical_memory.png}
+  \includegraphics[width=\linewidth]{figures/fig2_historical_memory}
   \caption{Historical Memory Module dataflow. Raw telemetry is normalized against zone-specific PostgreSQL baselines to produce privacy-preserving relative ratios $v_{ratio}$ and $d_{ratio}$. The module employs EMA-based baseline updates to track gradual temporal shifts in zone traffic patterns.}
   \label{fig:historical_memory}
 \end{figure}
@@ -48,7 +48,7 @@ The subsequent feature engineering stage transforms these ratios alongside categ
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig3_feature_engineering.png}
+  \includegraphics[width=\linewidth]{figures/fig3_feature_engineering}
   \caption{Feature engineering pipeline producing $\mathbf{x} \in \mathbb{R}^{10}$ from five parallel transformation streams. Neighbor segment dimensions (dims 5--6) are zero-imputed when sensor feeds are unavailable, mapping missing data to a neutral baseline without requiring global population statistics.}
   \label{fig:feature_engineering}
 \end{figure}
@@ -70,7 +70,7 @@ If either condition is triggered, the pipeline generates a dynamic OOD warning f
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig4_ood_pipeline.png}
+  \includegraphics[width=\linewidth]{figures/fig4_ood_pipeline}
   \caption{Deployment-aware inference pipeline. The main path processes $\mathbf{x} \in \mathbb{R}^{10}$ through zero-imputation and the EventClassifierMLP at all times (0.2069\,ms/sample). A concurrent OOD side-channel checks Eq.~(\ref{eq:ood}) and injects a warning flag into the response without suppressing the prediction.}
   \label{fig:ood_pipeline}
 \end{figure}
@@ -118,14 +118,14 @@ Fig.~\ref{fig:adaptivefedavg_workflow} shows the complete server-side aggregatio
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig5_adaptivefedavg.png}
+  \includegraphics[width=\linewidth]{figures/fig5_adaptivefedavg}
   \caption{AdaptiveFedAvg server-side aggregation workflow (7 steps). Client metrics ($n_k$, $F_{1,k}$, $f_{rare}^k$) drive four parallel factor computations, which are combined into a normalized weight vector and applied layer-wise to produce the updated global model $w_{t+1}$. All three formulas are verified against \texttt{adaptive\_fedavg.py}.}
   \label{fig:adaptivefedavg_workflow}
 \end{figure}
 
 \begin{figure*}[t]
   \centering
-  \includegraphics[width=0.95\textwidth]{figures/fig6_fl_communication.png}
+  \includegraphics[width=0.95\textwidth]{figures/fig6_fl_communication}
   \caption{Federated learning communication protocol across 8 regional edge clients over 30 training rounds. The server broadcasts the global model $w_t$ (12.96\,KB) at each round start (green arrows) and receives updated weights plus validation metrics from all clients at round end (blue arrows). Total upload bandwidth per round: $8 \times 12.96 = 207.36$\,KB.}
   \label{fig:fl_communication}
 \end{figure*}

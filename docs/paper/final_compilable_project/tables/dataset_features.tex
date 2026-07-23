@@ -1,19 +1,23 @@
 \begin{table}[htbp]
 \centering
-\caption{Dataset Features}
+\caption{10-Dimensional Normalized Feature Tensor Structure}
 \label{tab:dataset_features}
-\begin{tabular}{lll}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{c l l l}
 \toprule
-\textbf{Feature} & \textbf{Type} & \textbf{Description} \\
+\textbf{Dim} & \textbf{Feature Name} & \textbf{Type} & \textbf{Transformation / Threshold} \\
 \midrule
-latitude & Continuous & Vehicle GPS latitude coordinate \\
-longitude & Continuous & Vehicle GPS longitude coordinate \\
-speed & Continuous & Instantaneous absolute vehicle speed \\
-density & Continuous & Local traffic density metric \\
-timestamp & Temporal & Time of telemetry packet capture \\
-road\_condition & Categorical & Structural condition of the road \\
-speed\_ratio & Continuous & Relative speed vs historical average \\
-density\_ratio & Continuous & Relative density vs historical average \\
+$x[0]$ & \texttt{speed\_ratio}     & Continuous & $v / v_{avg}$ (OOD if $> 3.0$) \\
+$x[1]$ & \texttt{density\_ratio}   & Continuous & $d / d_{avg}$ (OOD if $> 7.0$) \\
+$x[2]$ & \texttt{road\_dry}        & One-Hot    & Binary surface indicator \\
+$x[3]$ & \texttt{road\_wet}        & One-Hot    & Binary surface indicator \\
+$x[4]$ & \texttt{road\_snow}       & One-Hot    & Binary surface indicator \\
+$x[5]$ & \texttt{upstream\_vel}    & Continuous & Velocity (imputed $0.0$ if absent) \\
+$x[6]$ & \texttt{downstream\_den}  & Continuous & Density (imputed $0.0$ if absent) \\
+$x[7]$ & \texttt{weather\_encoded} & Categorical& Numerical weather code ($0\text{--}3$) \\
+$x[8]$ & \texttt{accident\_flag}   & Binary     & Incident active indicator \\
+$x[9]$ & \texttt{roadwork\_flag}   & Binary     & Construction active indicator \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}

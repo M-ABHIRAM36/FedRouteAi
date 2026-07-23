@@ -15,7 +15,7 @@ The convergence behavior of AdaptiveFedAvg and standard FedAvg over 30 communica
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig7_training_convergence.png}
+  \includegraphics[width=\linewidth]{figures/fig7_training_convergence}
   \caption{Federated training convergence across 30 communication rounds. AdaptiveFedAvg (blue) and standard FedAvg (orange) exhibit nearly identical convergence trajectories from round 10 onward. AdaptiveFedAvg achieves the highest final accuracy (82.21\%) while preserving global model stability.}
   \label{fig:training_convergence}
 \end{figure}
@@ -28,7 +28,7 @@ The 8-class confusion matrix for AdaptiveFedAvg is shown in Fig.~\ref{fig:confus
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.9\linewidth]{figures/fig8_confusion_matrix.png}
+  \includegraphics[width=0.9\linewidth]{figures/fig8_confusion_matrix}
   \caption{Confusion matrix for the AdaptiveFedAvg model on the held-out test set across eight traffic anomaly categories. Strong diagonal dominance confirms high classification accuracy. Minor misclassification between rare classes (\texttt{flood}, \texttt{diversion}) stems from class imbalance in local edge partitions.}
   \label{fig:confusion_matrix}
 \end{figure}
@@ -39,7 +39,7 @@ The class distribution of the 30,195 synthetic dataset samples across 8 anomaly 
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig9_class_distribution.png}
+  \includegraphics[width=\linewidth]{figures/fig9_class_distribution}
   \caption{Synthetic dataset class distribution across eight anomaly categories (30,195 total samples). Severe class imbalance---where \texttt{normal} dominates 76.5\% of data while minority classes fall below 1\%---motivates the bounded rarity bonus $\rho_k$ in AdaptiveFedAvg (Eq.~\ref{eq:adaptivefedavg_weight}).}
   \label{fig:class_distribution}
 \end{figure}

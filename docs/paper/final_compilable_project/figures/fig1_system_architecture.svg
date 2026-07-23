@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg id="fig1-svg" viewBox="0 0 1400 900" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>
+          .f1-xl { font-family: 'Space Grotesk', sans-serif; font-weight: 700; }
+          .f1-lg { font-family: 'Space Grotesk', sans-serif; font-weight: 600; }
+          .f1-md { font-family: 'Inter', sans-serif; font-weight: 500; }
+          .f1-sm { font-family: 'Inter', sans-serif; font-weight: 400; }
+          .f1-mono { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+        </style>
+        <marker id="ah-dark" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto">
+          <path d="M0,0 L9,4 L0,8 Z" fill="#4B5361"/>
+        </marker>
+        <marker id="ah-green" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto">
+          <path d="M0,0 L9,4 L0,8 Z" fill="#16A34A"/>
+        </marker>
+        <marker id="ah-orange" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto">
+          <path d="M0,0 L9,4 L0,8 Z" fill="#D97706"/>
+        </marker>
+        <marker id="ah-blue" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto">
+          <path d="M0,0 L9,4 L0,8 Z" fill="#2563EB"/>
+        </marker>
+        <filter id="shadow" x="-5%" y="-5%" width="115%" height="130%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.08"/>
+        </filter>
+      </defs>
+
+      <!-- ====== BACKGROUND ZONES ====== -->
+      <!-- Edge Client Zone -->
+      <rect x="18" y="60" width="820" height="800" rx="18" fill="#EFF4FF" opacity="0.6" stroke="#2563EB" stroke-width="1.5" stroke-dasharray="4 5"/>
+      <text x="428" y="90" text-anchor="middle" class="f1-xl" font-size="13" fill="#2563EB" letter-spacing="0.07em">REGIONAL EDGE CLIENT  (8 CLIENTS SIMULATED — NON-IID PARTITION)</text>
+
+      <!-- Server Zone -->
+      <rect x="858" y="60" width="520" height="600" rx="18" fill="#EEFBF2" opacity="0.6" stroke="#16A34A" stroke-width="1.5" stroke-dasharray="4 5"/>
+      <text x="1118" y="90" text-anchor="middle" class="f1-xl" font-size="13" fill="#16A34A" letter-spacing="0.07em">CENTRAL FEDERATED SERVER</text>
+
+      <!-- Privacy Boundary Line -->
+      <line x1="840" y1="50" x2="840" y2="870" stroke="#D97706" stroke-width="2.5" stroke-dasharray="6 5"/>
+      <rect x="764" y="26" width="152" height="28" rx="14" fill="#FEF6E8" stroke="#D97706" stroke-width="1.5"/>
+      <text x="840" y="44" text-anchor="middle" class="f1-mono" font-size="11" fill="#D97706">⚡ PRIVACY BOUNDARY</text>
+
+      <!-- ====== ROW 1: RAW TELEMETRY ====== -->
+      <!-- Label -->
+      <text x="32" y="122" class="f1-mono" font-size="10.5" fill="#2563EB" letter-spacing="0.05em">① TELEMETRY INGESTION</text>
+
+      <!-- Node 1 -->
+      <rect x="32" y="130" width="160" height="78" rx="10" fill="white" stroke="#2563EB" stroke-width="1.6" filter="url(#shadow)"/>
+      <rect x="32" y="130" width="160" height="20" rx="10" fill="#2563EB"/>
+      <rect x="32" y="142" width="160" height="8" rx="0" fill="#2563EB"/>
+      <text x="112" y="144" text-anchor="middle" class="f1-lg" font-size="10" fill="white">GPS Telemetry</text>
+      <text x="112" y="162" text-anchor="middle" class="f1-md" font-size="9.5" fill="#12151C">speed_kmh, lat, lon</text>
+      <text x="112" y="176" text-anchor="middle" class="f1-sm" font-size="9" fill="#4B5361">zone_id, timestamp</text>
+      <text x="112" y="197" text-anchor="middle" class="f1-mono" font-size="8.5" fill="#2563EB">raw ∈ ℝ⁶ per sample</text>
+
+      <!-- Node 2 -->
+      <rect x="214" y="130" width="160" height="78" rx="10" fill="white" stroke="#2563EB" stroke-width="1.6" filter="url(#shadow)"/>
+      <rect x="214" y="130" width="160" height="20" rx="10" fill="#2563EB"/>
+      <rect x="214" y="142" width="160" height="8" rx="0" fill="#2563EB"/>
+      <text x="294" y="144" text-anchor="middle" class="f1-lg" font-size="10" fill="white">Traffic Density</text>
+      <text x="294" y="162" text-anchor="middle" class="f1-md" font-size="9.5" fill="#12151C">density_veh_km</text>
+      <text x="294" y="176" text-anchor="middle" class="f1-sm" font-size="9" fill="#4B5361">road_condition, lane_id</text>
+      <text x="294" y="197" text-anchor="middle" class="f1-mono" font-size="8.5" fill="#2563EB">categorical + numeric</text>
+
+      <!-- Node 3 -->
+      <rect x="396" y="130" width="160" height="78" rx="10" fill="white" stroke="#2563EB" stroke-width="1.6" filter="url(#shadow)"/>
+      <rect x="396" y="130" width="160" height="20" rx="10" fill="#2563EB"/>
+      <rect x="396" y="142" width="160" height="8" rx="0" fill="#2563EB"/>
+      <text x="476" y="144" text-anchor="middle" class="f1-lg" font-size="10" fill="white">Neighbor Segment</text>
+      <text x="476" y="162" text-anchor="middle" class="f1-md" font-size="9.5" fill="#12151C">upstream_velocity</text>
+      <text x="476" y="176" text-anchor="middle" class="f1-sm" font-size="9" fill="#4B5361">downstream_density</text>
+      <text x="476" y="197" text-anchor="middle" class="f1-mono" font-size="8.5" fill="#2563EB">zero-imputed if absent</text>
+
+      <!-- Node 4 -->
+      <rect x="578" y="130" width="160" height="78" rx="10" fill="white" stroke="#2563EB" stroke-width="1.6" filter="url(#shadow)"/>
+      <rect x="578" y="130" width="160" height="20" rx="10" fill="#2563EB"/>
+      <rect x="578" y="142" width="160" height="8" rx="0" fill="#2563EB"/>
+      <text x="658" y="144" text-anchor="middle" class="f1-lg" font-size="10" fill="white">Weather / Road Flags</text>
+      <text x="658" y="162" text-anchor="middle" class="f1-md" font-size="9.5" fill="#12151C">weather_encoded</text>
+      <text x="658" y="176" text-anchor="middle" class="f1-sm" font-size="9" fill="#4B5361">accident_flag, roadwork</text>
+      <text x="658" y="197" text-anchor="middle" class="f1-mono" font-size="8.5" fill="#2563EB">one-hot encoded</text>
+
+      <!-- ====== DOWN ARROW ROW 1 → HISTORICAL MEMORY ====== -->
+      <line x1="428" y1="208" x2="428" y2="248" stroke="#4B5361" stroke-width="1.8" marker-end="url(#ah-dark)"/>
+      <rect x="360" y="218" width="136" height="18" rx="9" fill="#F7F8FA" stroke="#E2E5EA" stroke-width="1"/>
+      <text x="428" y="230" text-anchor="middle" class="f1-mono" font-size="9" fill="#4B5361">raw telemetry batch</text>
+
+      <!-- ====== ROW 2: HISTORICAL MEMORY MODULE ====== -->
+      <text x="32" y="264" class="f1-mono" font-size="10.5" fill="#0D9488" letter-spacing="0.05em">② HISTORICAL MEMORY MODULE</text>
+
+      <rect x="32" y="272" width="760" height="106" rx="12" fill="white" stroke="#0D9488" stroke-width="1.8" filter="url(#shadow)"/>
+      <rect x="32" y="272" width="760" height="26" rx="12" fill="#0D9488"/>
+      <rect x="32" y="285" width="760" height="13" rx="0" fill="#0D9488"/>
+      <text x="412" y="288" text-anchor="middle" class="f1-xl" font-size="11.5" fill="white">Historical Memory Module — PostgreSQL Spatial-Temporal Baseline Store</text>
+
+      <!-- Sub-boxes inside Historical Memory -->
+      <rect x="50" y="306" width="185" height="60" rx="7" fill="#EDFAF8" stroke="#0D9488" stroke-width="1.2"/>
+      <text x="143" y="322" text-anchor="middle" class="f1-lg" font-size="10" fill="#0D9488">Zone Baseline Query</text>
+      <text x="143" y="337" text-anchor="middle" class="f1-mono" font-size="8.5" fill="#4B5361">SELECT vavg, davg</text>
+      <text x="143" y="350" text-anchor="middle" class="f1-mono" font-size="8.5" fill="#4B5361">WHERE zone_id=? AND hour=?</text>
+      <text x="143" y="362" text-anchor="middle" class="f1-sm" font-size="8" fill="#4B5361">Input: zone_id, timestamp</text>
+
+      <rect x="250" y="306" width="190" height="60" rx="7" fill="#EDFAF8" stroke="#0D9488" stroke-width="1.2"/>
+      <text x="345" y="322" text-anchor="middle" class="f1-lg" font-size="10" fill="#0D9488">Baseline Statistics</text>
+      <text x="345" y="337" text-anchor="middle" class="f1-mono" font-size="8.5" fill="#4B5361">v_avg: historical avg speed</text>
+      <text x="345" y="350" text-anchor="middle" class="f1-mono" font-size="8.5" fill="#4B5361">d_avg: historical avg density</text>
+      <text x="345" y="362" text-anchor="middle" class="f1-sm" font-size="8" fill="#4B5361">per zone, per time-of-day</text>
+
+      <rect x="454" y="306" width="190" height="60" rx="7" fill="#EDFAF8" stroke="#0D9488" stroke-width="1.2"/>
+      <text x="549" y="322" text-anchor="middle" class="f1-lg" font-size="10" fill="#0D9488">Relative Ratio Engine</text>
+      <text x="549" y="337" text-anchor="middle" class="f1-mono" font-size="8.5" fill="#4B5361">v_ratio = v / v_avg</text>
+      <text x="549" y="350" text-anchor="middle" class="f1-mono" font-size="8.5" fill="#4B5361">d_ratio = d / d_avg</text>
+      <text x="549" y="362" text-anchor="middle" class="f1-sm" font-size="8" fill="#4B5361">privacy-preserving normalization</text>
+
+      <rect x="658" y="306" width="118" height="60" rx="7" fill="#EDFAF8" stroke="#0D9488" stroke-width="1.2"/>
+      <text x="717" y="322" text-anchor="middle" class="f1-lg" font-size="10" fill="#0D9488">Output</text>
+      <text x="717" y="337" text-anchor="middle" class="f1-mono" font-size="8.5" fill="#4B5361">v_ratio, d_ratio</text>
+      <text x="717" y="350" text-anchor="middle" class="f1-mono" font-size="8.5" fill="#4B5361">+ orig features</text>
+      <text x="717" y="362" text-anchor="middle" class="f1-sm" font-size="8" fill="#4B5361">→ Feature Engineering</text>
+
+      <line x1="235" y1="336" x2="250" y2="336" stroke="#0D9488" stroke-width="1.2" marker-end="url(#ah-green)"/>
+      <line x1="440" y1="336" x2="454" y2="336" stroke="#0D9488" stroke-width="1.2" marker-end="url(#ah-green)"/>
+      <line x1="644" y1="336" x2="658" y2="336" stroke="#0D9488" stroke-width="1.2" marker-end="url(#ah-green)"/>
+
+      <!-- ====== DOWN ARROW ROW 2 → FEATURE ENGINEERING ====== -->
+      <line x1="428" y1="378" x2="428" y2="415" stroke="#4B5361" stroke-width="1.8" marker-end="url(#ah-dark)"/>
+      <rect x="340" y="388" width="176" height="18" rx="9" fill="#F7F8FA" stroke="#E2E5EA" stroke-width="1"/>
+      <text x="428" y="400" text-anchor="middle" class="f1-mono" font-size="9" fill="#4B5361">normalized ratio vectors</text>
+
+      <!-- ====== ROW 3: FEATURE ENGINEERING ====== -->
+      <text x="32" y="430" class="f1-mono" font-size="10.5" fill="#7C3AED" letter-spacing="0.05em">③ FEATURE ENGINEERING</text>
+
+      <rect x="32" y="438" width="760" height="96" rx="12" fill="white" stroke="#7C3AED" stroke-width="1.8" filter="url(#shadow)"/>
+      <rect x="32" y="438" width="760" height="24" rx="12" fill="#7C3AED"/>
+      <rect x="32" y="450" width="760" height="12" rx="0" fill="#7C3AED"/>
+      <text x="412" y="454" text-anchor="middle" class="f1-xl" font-size="11.5" fill="white">Feature Engineering — 10-Dimensional Normalized Tensor Construction</text>
+
+      <rect x="50" y="470" width="130" height="52" rx="7" fill="#F5F0FE" stroke="#7C3AED" stroke-width="1.2"/>
+      <text x="115" y="486" text-anchor="middle" class="f1-lg" font-size="9.5" fill="#7C3AED">Speed Ratio</text>
+      <text x="115" y="499" text-anchor="middle" class="f1-mono" font-size="9" fill="#4B5361">v / v_avg</text>
+      <text x="115" y="514" text-anchor="middle" class="f1-sm" font-size="8" fill="#4B5361">OOD threshold: 3.0</text>
+
+      <rect x="196" y="470" width="130" height="52" rx="7" fill="#F5F0FE" stroke="#7C3AED" stroke-width="1.2"/>
+      <text x="261" y="486" text-anchor="middle" class="f1-lg" font-size="9.5" fill="#7C3AED">Density Ratio</text>
+      <text x="261" y="499" text-anchor="middle" class="f1-mono" font-size="9" fill="#4B5361">d / d_avg</text>
+      <text x="261" y="514" text-anchor="middle" class="f1-sm" font-size="8" fill="#4B5361">OOD threshold: 7.0</text>
+
+      <rect x="342" y="470" width="130" height="52" rx="7" fill="#F5F0FE" stroke="#7C3AED" stroke-width="1.2"/>
+      <text x="407" y="486" text-anchor="middle" class="f1-lg" font-size="9.5" fill="#7C3AED">Categorical Enc.</text>
+      <text x="407" y="499" text-anchor="middle" class="f1-mono" font-size="9" fill="#4B5361">road_condition</text>
+      <text x="407" y="514" text-anchor="middle" class="f1-sm" font-size="8" fill="#4B5361">one-hot → 3 dims</text>
+
+      <rect x="488" y="470" width="130" height="52" rx="7" fill="#F5F0FE" stroke="#7C3AED" stroke-width="1.2"/>
+      <text x="553" y="486" text-anchor="middle" class="f1-lg" font-size="9.5" fill="#7C3AED">Neighbor Impute</text>
+      <text x="553" y="499" text-anchor="middle" class="f1-mono" font-size="9" fill="#4B5361">→ 0.0 if absent</text>
+      <text x="553" y="514" text-anchor="middle" class="f1-sm" font-size="8" fill="#4B5361">upstream, downstream</text>
+
+      <rect x="634" y="470" width="142" height="52" rx="7" fill="#7C3AED"/>
+      <text x="705" y="486" text-anchor="middle" class="f1-lg" font-size="9.5" fill="white">Output Tensor</text>
+      <text x="705" y="500" text-anchor="middle" class="f1-mono" font-size="9.5" fill="white">x ∈ ℝ¹⁰</text>
+      <text x="705" y="515" text-anchor="middle" class="f1-sm" font-size="8" fill="rgba(255,255,255,0.8)">→ MLP inference</text>
+
+      <!-- ====== DOWN ARROW ROW 3 → OOD / MLP ====== -->
+      <line x1="428" y1="534" x2="428" y2="570" stroke="#4B5361" stroke-width="1.8" marker-end="url(#ah-dark)"/>
+      <rect x="352" y="544" width="152" height="18" rx="9" fill="#F7F8FA" stroke="#E2E5EA" stroke-width="1"/>
+      <text x="428" y="556" text-anchor="middle" class="f1-mono" font-size="9" fill="#4B5361">x ∈ ℝ¹⁰ feature tensor</text>
+
+      <!-- ====== ROW 4: OOD + MLP ====== -->
+      <text x="32" y="586" class="f1-mono" font-size="10.5" fill="#D97706" letter-spacing="0.05em">④ DEPLOYMENT-AWARE INFERENCE</text>
+
+      <!-- OOD Block -->
+      <rect x="32" y="594" width="340" height="118" rx="12" fill="white" stroke="#D97706" stroke-width="1.8" filter="url(#shadow)"/>
+      <rect x="32" y="594" width="340" height="24" rx="12" fill="#D97706"/>
+      <rect x="32" y="606" width="340" height="12" rx="0" fill="#D97706"/>
+      <text x="202" y="610" text-anchor="middle" class="f1-xl" font-size="11" fill="white">OOD Guard — Threshold Check</text>
+      <text x="202" y="636" text-anchor="middle" class="f1-mono" font-size="10.5" fill="#D97706">v_ratio &gt; 3.0  OR  d_ratio &gt; 7.0</text>
+      <text x="202" y="654" text-anchor="middle" class="f1-sm" font-size="9.5" fill="#4B5361">→ Generates dynamic OOD warning flag</text>
+      <text x="202" y="670" text-anchor="middle" class="f1-sm" font-size="9" fill="#4B5361">Marks prediction as UNRELIABLE_OOD</text>
+      <text x="202" y="686" text-anchor="middle" class="f1-sm" font-size="9" fill="#4B5361">Alert propagated to dashboard header</text>
+      <text x="202" y="702" text-anchor="middle" class="f1-sm" font-size="8.5" fill="#7C8494">Inference still executes — sensor fault is flagged, not blocked</text>
+
+      <!-- MLP Block -->
+      <rect x="392" y="594" width="400" height="118" rx="12" fill="white" stroke="#D97706" stroke-width="1.8" filter="url(#shadow)"/>
+      <rect x="392" y="594" width="400" height="24" rx="12" fill="#D97706"/>
+      <rect x="392" y="606" width="400" height="12" rx="0" fill="#D97706"/>
+      <text x="592" y="610" text-anchor="middle" class="f1-xl" font-size="11" fill="white">EventClassifierMLP — Edge Inference Engine</text>
+      <text x="592" y="634" text-anchor="middle" class="f1-mono" font-size="10" fill="#12151C">Input(10) → Dense(64, ReLU) → Output(8, Softmax)</text>
+      <text x="592" y="650" text-anchor="middle" class="f1-sm" font-size="9.5" fill="#4B5361">3,240 trainable parameters · 12.96 KB weight payload</text>
+      <text x="592" y="666" text-anchor="middle" class="f1-sm" font-size="9.5" fill="#4B5361">Latency: 0.2069 ms/sample on CPU</text>
+      <text x="592" y="684" text-anchor="middle" class="f1-mono" font-size="9" fill="#D97706">8 classes: normal · congestion · accident · road_damage</text>
+      <text x="592" y="699" text-anchor="middle" class="f1-mono" font-size="9" fill="#D97706">construction · flood · diversion · road_block</text>
+
+      <!-- Arrow OOD → MLP -->
+      <line x1="372" y1="653" x2="392" y2="653" stroke="#D97706" stroke-width="1.8" marker-end="url(#ah-orange)"/>
+      <text x="382" y="648" text-anchor="middle" class="f1-mono" font-size="8" fill="#D97706">flag</text>
+
+      <!-- ====== DOWN ARROW ROW 4 → LOCAL TRAINING ====== -->
+      <line x1="428" y1="712" x2="428" y2="750" stroke="#4B5361" stroke-width="1.8" marker-end="url(#ah-dark)"/>
+      <rect x="342" y="722" width="172" height="18" rx="9" fill="#F7F8FA" stroke="#E2E5EA" stroke-width="1"/>
+      <text x="428" y="734" text-anchor="middle" class="f1-mono" font-size="9" fill="#4B5361">prediction + OOD flag</text>
+
+      <!-- ====== ROW 5: LOCAL FL TRAINING ====== -->
+      <text x="32" y="766" class="f1-mono" font-size="10.5" fill="#16A34A" letter-spacing="0.05em">⑤ LOCAL FL TRAINING (CLIENT-SIDE)</text>
+
+      <rect x="32" y="774" width="760" height="72" rx="12" fill="white" stroke="#16A34A" stroke-width="1.8" filter="url(#shadow)"/>
+      <rect x="32" y="774" width="760" height="22" rx="12" fill="#16A34A"/>
+      <rect x="32" y="784" width="760" height="12" rx="0" fill="#16A34A"/>
+      <text x="412" y="789" text-anchor="middle" class="f1-xl" font-size="11" fill="white">Local Training — 5 Epochs, Adam (lr=0.001), CrossEntropyLoss</text>
+
+      <rect x="50" y="804" width="200" height="34" rx="7" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+      <text x="150" y="818" text-anchor="middle" class="f1-lg" font-size="9.5" fill="#16A34A">Compute val_macro_f1</text>
+      <text x="150" y="831" text-anchor="middle" class="f1-mono" font-size="8.5" fill="#4B5361">F₁,k — used for q_k, EMA_k</text>
+
+      <rect x="270" y="804" width="200" height="34" rx="7" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+      <text x="370" y="818" text-anchor="middle" class="f1-lg" font-size="9.5" fill="#16A34A">Compute rare_class_fraction</text>
+      <text x="370" y="831" text-anchor="middle" class="f1-mono" font-size="8.5" fill="#4B5361">f_rare,k — used for ρ_k</text>
+
+      <rect x="490" y="804" width="280" height="34" rx="7" fill="#16A34A"/>
+      <text x="630" y="818" text-anchor="middle" class="f1-lg" font-size="9.5" fill="white">Upload: w_k, F₁,k, n_k, f_rare,k → Server</text>
+      <text x="630" y="831" text-anchor="middle" class="f1-mono" font-size="8.5" fill="rgba(255,255,255,0.85)">payload = 12.96 KB weights only</text>
+
+      <!-- ====== CROSS-BOUNDARY ARROW ====== -->
+      <line x1="792" y1="820" x2="870" y2="820" stroke="#16A34A" stroke-width="2.2" marker-end="url(#ah-green)"/>
+      <rect x="806" y="808" width="52" height="16" rx="8" fill="#EEFBF2" stroke="#16A34A" stroke-width="1"/>
+      <text x="832" y="819" text-anchor="middle" class="f1-mono" font-size="8" fill="#16A34A">12.96 KB</text>
+
+      <!-- ====== SERVER SIDE ====== -->
+      <!-- AdaptiveFedAvg -->
+      <text x="870" y="122" class="f1-mono" font-size="10.5" fill="#16A34A" letter-spacing="0.05em">ADAPTIVEFEDAVG AGGREGATION</text>
+
+      <rect x="870" y="130" width="490" height="200" rx="12" fill="white" stroke="#16A34A" stroke-width="1.8" filter="url(#shadow)"/>
+      <rect x="870" y="130" width="490" height="24" rx="12" fill="#16A34A"/>
+      <rect x="870" y="142" width="490" height="12" rx="0" fill="#16A34A"/>
+      <text x="1115" y="147" text-anchor="middle" class="f1-xl" font-size="11.5" fill="white">AdaptiveFedAvg — 4-Factor Dynamic Weighting</text>
+
+      <!-- Factor boxes -->
+      <rect x="886" y="162" width="102" height="56" rx="7" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+      <text x="937" y="177" text-anchor="middle" class="f1-lg" font-size="9" fill="#16A34A">Dataset Size</text>
+      <text x="937" y="191" text-anchor="middle" class="f1-mono" font-size="9" fill="#12151C">n_k</text>
+      <text x="937" y="204" text-anchor="middle" class="f1-sm" font-size="7.5" fill="#4B5361">FedAvg baseline</text>
+      <text x="937" y="214" text-anchor="middle" class="f1-sm" font-size="7.5" fill="#4B5361">examples per client</text>
+
+      <rect x="998" y="162" width="112" height="56" rx="7" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+      <text x="1054" y="177" text-anchor="middle" class="f1-lg" font-size="9" fill="#16A34A">Quality q_k</text>
+      <text x="1054" y="191" text-anchor="middle" class="f1-mono" font-size="8.5" fill="#12151C">max(0.10, F₁,k)</text>
+      <text x="1054" y="204" text-anchor="middle" class="f1-sm" font-size="7.5" fill="#4B5361">floor=0.10 prevents</text>
+      <text x="1054" y="214" text-anchor="middle" class="f1-sm" font-size="7.5" fill="#4B5361">collapse domination</text>
+
+      <rect x="1120" y="162" width="112" height="56" rx="7" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+      <text x="1176" y="177" text-anchor="middle" class="f1-lg" font-size="9" fill="#16A34A">Rarity ρ_k</text>
+      <text x="1176" y="191" text-anchor="middle" class="f1-mono" font-size="8.5" fill="#12151C">1 + 0.3 × f_rare</text>
+      <text x="1176" y="204" text-anchor="middle" class="f1-sm" font-size="7.5" fill="#4B5361">boosts rare-class</text>
+      <text x="1176" y="214" text-anchor="middle" class="f1-sm" font-size="7.5" fill="#4B5361">contributor clients</text>
+
+      <rect x="1242" y="162" width="102" height="56" rx="7" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+      <text x="1293" y="177" text-anchor="middle" class="f1-lg" font-size="9" fill="#16A34A">Gate g_k</text>
+      <text x="1293" y="191" text-anchor="middle" class="f1-mono" font-size="8.5" fill="#12151C">f(EMA_F1,k)</text>
+      <text x="1293" y="204" text-anchor="middle" class="f1-sm" font-size="7.5" fill="#4B5361">EMA temporal</text>
+      <text x="1293" y="214" text-anchor="middle" class="f1-sm" font-size="7.5" fill="#4B5361">reliability gate</text>
+
+      <!-- Weight formula -->
+      <rect x="886" y="228" width="458" height="42" rx="8" fill="#12151C"/>
+      <text x="1115" y="245" text-anchor="middle" class="f1-mono" font-size="11.5" fill="white">ω_k  =  n_k  ×  q_k  ×  ρ_k  ×  g_k</text>
+      <text x="1115" y="263" text-anchor="middle" class="f1-mono" font-size="10" fill="#4ADE80">ω̂_k  =  ω_k  /  Σⱼ ωⱼ      →      w_{t+1}  =  Σ_k  ω̂_k · w_k^t</text>
+
+      <!-- Arrow → Broadcast -->
+      <line x1="1115" y1="330" x2="1115" y2="375" stroke="#16A34A" stroke-width="1.8" marker-end="url(#ah-green)"/>
+
+      <!-- Broadcast box -->
+      <rect x="870" y="375" width="490" height="62" rx="12" fill="white" stroke="#16A34A" stroke-width="1.6" filter="url(#shadow)"/>
+      <rect x="870" y="375" width="490" height="20" rx="12" fill="#16A34A"/>
+      <rect x="870" y="385" width="490" height="10" rx="0" fill="#16A34A"/>
+      <text x="1115" y="389" text-anchor="middle" class="f1-xl" font-size="11" fill="white">Global Model Broadcast — 12.96 KB to All 8 Clients</text>
+      <text x="1115" y="414" text-anchor="middle" class="f1-mono" font-size="10" fill="#4B5361">30 communication rounds · w_t updated each round · All clients receive same global w_{t+1}</text>
+      <text x="1115" y="430" text-anchor="middle" class="f1-sm" font-size="9" fill="#4B5361">Total bandwidth per round: 8 × 12.96 KB = 207.36 KB upload</text>
+
+      <!-- Flower Server -->
+      <rect x="870" y="458" width="490" height="54" rx="12" fill="white" stroke="#16A34A" stroke-width="1.6" filter="url(#shadow)"/>
+      <rect x="870" y="458" width="490" height="18" rx="12" fill="#0D9488"/>
+      <rect x="870" y="468" width="490" height="8" rx="0" fill="#0D9488"/>
+      <text x="1115" y="472" text-anchor="middle" class="f1-xl" font-size="10.5" fill="white">FastAPI REST Backend + Flower v1.5 FL Server</text>
+      <text x="1115" y="493" text-anchor="middle" class="f1-sm" font-size="9.5" fill="#4B5361">Handles real-time /predict endpoint  ·  Orchestrates FL training rounds  ·  Stores weight logs to CSV</text>
+      <text x="1115" y="507" text-anchor="middle" class="f1-mono" font-size="8.5" fill="#0D9488">Latency: 0.2069 ms/sample  ·  Accuracy (AdaptiveFedAvg): 82.21%  ·  Macro F1: 0.6401</text>
+
+      <!-- Dashboard -->
+      <rect x="870" y="530" width="490" height="64" rx="12" fill="white" stroke="#E11D48" stroke-width="1.6" filter="url(#shadow)"/>
+      <rect x="870" y="530" width="490" height="20" rx="12" fill="#E11D48"/>
+      <rect x="870" y="540" width="490" height="10" rx="0" fill="#E11D48"/>
+      <text x="1115" y="545" text-anchor="middle" class="f1-xl" font-size="11" fill="white">React Dashboard — Real-Time Anomaly Alert Visualization</text>
+      <text x="1115" y="567" text-anchor="middle" class="f1-sm" font-size="9.5" fill="#4B5361">Renders zone anomaly maps, prediction confidence, OOD warning banners</text>
+      <text x="1115" y="582" text-anchor="middle" class="f1-mono" font-size="9" fill="#E11D48">Displays: event_class · confidence · ood_warning · zone_id · timestamp</text>
+
+      <!-- Down arrow from broadcast back to edge (federated loop) -->
+      <path d="M858,450 Q820,450 820,580 Q820,820 792,820" stroke="#16A34A" stroke-width="1.8" fill="none" stroke-dasharray="6 4" marker-end="url(#ah-green)"/>
+      <text x="828" y="635" text-anchor="middle" class="f1-mono" font-size="9" fill="#16A34A" transform="rotate(-90,828,635)">updated w_{t+1}</text>
+
+      <!-- FL round counter -->
+      <rect x="878" y="628" width="174" height="38" rx="9" fill="#12151C"/>
+      <text x="965" y="643" text-anchor="middle" class="f1-mono" font-size="10" fill="#4ADE80">FL Simulation Stats</text>
+      <text x="965" y="659" text-anchor="middle" class="f1-mono" font-size="9" fill="white">30 rounds · 8 clients · Non-IID</text>
+
+    </svg>
