@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 2720px; height: 1440px; background: #ffffff; overflow: hidden; }
+  svg { display: block; width: 2720px; height: 1440px; }
+</style>
+</head>
+<body>
+<svg id="fig6-svg" viewBox="0 0 1360 720" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>
+          .f6-xl { font-family: 'Space Grotesk', sans-serif; font-weight: 700; }
+          .f6-lg { font-family: 'Space Grotesk', sans-serif; font-weight: 600; }
+          .f6-md { font-family: 'Inter', sans-serif; font-weight: 500; }
+          .f6-sm { font-family: 'Inter', sans-serif; font-weight: 400; }
+          .f6-mono { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+        </style>
+        <marker id="f6-down" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#16A34A"/>
+        </marker>
+        <marker id="f6-up" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#2563EB"/>
+        </marker>
+        <filter id="f6-shadow">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.1"/>
+        </filter>
+      </defs>
+
+      <!-- ====== SERVER (TOP) ====== -->
+      <rect x="380" y="18" width="600" height="84" rx="14" fill="white" stroke="#16A34A" stroke-width="2" filter="url(#f6-shadow)"/>
+      <rect x="380" y="18" width="600" height="28" rx="14" fill="#16A34A"/>
+      <rect x="380" y="34" width="600" height="14" rx="0" fill="#16A34A"/>
+      <text x="680" y="39" text-anchor="middle" class="f6-xl" font-size="12.5" fill="white">Flower FL Server + AdaptiveFedAvg Aggregator</text>
+      <text x="680" y="60" text-anchor="middle" class="f6-lg" font-size="11.5" fill="#16A34A">Central Backend  ·  30 Communication Rounds</text>
+      <text x="680" y="76" text-anchor="middle" class="f6-mono" font-size="9.5" fill="#4B5361">Global model w_t  ·  AdaptiveFedAvg aggregation  ·  Weight log CSV recording</text>
+      <text x="680" y="90" text-anchor="middle" class="f6-mono" font-size="9.5" fill="#4B5361">Results: Acc 82.21%  ·  Macro F1 0.6401  ·  Bandwidth 207.36 KB/round upload</text>
+
+      <!-- ====== 8 CLIENT BOXES ====== -->
+      <!-- Client positions: 4 below-left, 4 below-right of server -->
+      <!-- Labels -->
+      <!-- Client 1 -->
+      <rect x="18" y="330" width="148" height="120" rx="10" fill="white" stroke="#2563EB" stroke-width="1.6" filter="url(#f6-shadow)"/>
+      <rect x="18" y="330" width="148" height="22" rx="10" fill="#2563EB"/>
+      <rect x="18" y="342" width="148" height="10" rx="0" fill="#2563EB"/>
+      <text x="92" y="347" text-anchor="middle" class="f6-xl" font-size="10" fill="white">Client 1 — Region A</text>
+      <text x="92" y="368" text-anchor="middle" class="f6-mono" font-size="9" fill="#12151C">n_1: 3,774 samples</text>
+      <text x="92" y="382" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">5 local epochs</text>
+      <text x="92" y="396" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">Adam lr=0.001</text>
+      <text x="92" y="410" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ val_macro_f1</text>
+      <text x="92" y="422" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ rare_fraction</text>
+      <text x="92" y="435" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ w_k (12.96 KB)</text>
+      <text x="92" y="448" text-anchor="middle" class="f6-sm" font-size="7.5" fill="#7C8494">Non-IID partition</text>
+
+      <!-- Client 2 -->
+      <rect x="182" y="330" width="148" height="120" rx="10" fill="white" stroke="#2563EB" stroke-width="1.6" filter="url(#f6-shadow)"/>
+      <rect x="182" y="330" width="148" height="22" rx="10" fill="#2563EB"/>
+      <rect x="182" y="342" width="148" height="10" rx="0" fill="#2563EB"/>
+      <text x="256" y="347" text-anchor="middle" class="f6-xl" font-size="10" fill="white">Client 2 — Region B</text>
+      <text x="256" y="368" text-anchor="middle" class="f6-mono" font-size="9" fill="#12151C">n_2: 3,774 samples</text>
+      <text x="256" y="382" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">5 local epochs</text>
+      <text x="256" y="396" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">Adam lr=0.001</text>
+      <text x="256" y="410" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ val_macro_f1</text>
+      <text x="256" y="422" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ rare_fraction</text>
+      <text x="256" y="435" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ w_k (12.96 KB)</text>
+      <text x="256" y="448" text-anchor="middle" class="f6-sm" font-size="7.5" fill="#7C8494">Majority class: normal</text>
+
+      <!-- Client 3 -->
+      <rect x="346" y="330" width="148" height="120" rx="10" fill="white" stroke="#2563EB" stroke-width="1.6" filter="url(#f6-shadow)"/>
+      <rect x="346" y="330" width="148" height="22" rx="10" fill="#2563EB"/>
+      <rect x="346" y="342" width="148" height="10" rx="0" fill="#2563EB"/>
+      <text x="420" y="347" text-anchor="middle" class="f6-xl" font-size="10" fill="white">Client 3 — Region C</text>
+      <text x="420" y="368" text-anchor="middle" class="f6-mono" font-size="9" fill="#12151C">n_3: 3,774 samples</text>
+      <text x="420" y="382" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">5 local epochs</text>
+      <text x="420" y="396" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">Adam lr=0.001</text>
+      <text x="420" y="410" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ val_macro_f1</text>
+      <text x="420" y="422" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ rare_fraction</text>
+      <text x="420" y="435" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ w_k (12.96 KB)</text>
+      <text x="420" y="448" text-anchor="middle" class="f6-sm" font-size="7.5" fill="#7C8494">Heavy congestion</text>
+
+      <!-- Client 4 -->
+      <rect x="510" y="330" width="148" height="120" rx="10" fill="white" stroke="#2563EB" stroke-width="1.6" filter="url(#f6-shadow)"/>
+      <rect x="510" y="330" width="148" height="22" rx="10" fill="#2563EB"/>
+      <rect x="510" y="342" width="148" height="10" rx="0" fill="#2563EB"/>
+      <text x="584" y="347" text-anchor="middle" class="f6-xl" font-size="10" fill="white">Client 4 — Region D</text>
+      <text x="584" y="368" text-anchor="middle" class="f6-mono" font-size="9" fill="#12151C">n_4: 3,774 samples</text>
+      <text x="584" y="382" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">5 local epochs</text>
+      <text x="584" y="396" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">Adam lr=0.001</text>
+      <text x="584" y="410" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ val_macro_f1</text>
+      <text x="584" y="422" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ rare_fraction</text>
+      <text x="584" y="435" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ w_k (12.96 KB)</text>
+      <text x="584" y="448" text-anchor="middle" class="f6-sm" font-size="7.5" fill="#7C8494">Road damage focus</text>
+
+      <!-- Client 5 -->
+      <rect x="700" y="330" width="148" height="120" rx="10" fill="white" stroke="#2563EB" stroke-width="1.6" filter="url(#f6-shadow)"/>
+      <rect x="700" y="330" width="148" height="22" rx="10" fill="#2563EB"/>
+      <rect x="700" y="342" width="148" height="10" rx="0" fill="#2563EB"/>
+      <text x="774" y="347" text-anchor="middle" class="f6-xl" font-size="10" fill="white">Client 5 — Region E</text>
+      <text x="774" y="368" text-anchor="middle" class="f6-mono" font-size="9" fill="#12151C">n_5: 3,774 samples</text>
+      <text x="774" y="382" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">5 local epochs</text>
+      <text x="774" y="396" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">Adam lr=0.001</text>
+      <text x="774" y="410" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ val_macro_f1</text>
+      <text x="774" y="422" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ rare_fraction</text>
+      <text x="774" y="435" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ w_k (12.96 KB)</text>
+      <text x="774" y="448" text-anchor="middle" class="f6-sm" font-size="7.5" fill="#7C8494">Construction zone</text>
+
+      <!-- Client 6 -->
+      <rect x="864" y="330" width="148" height="120" rx="10" fill="white" stroke="#2563EB" stroke-width="1.6" filter="url(#f6-shadow)"/>
+      <rect x="864" y="330" width="148" height="22" rx="10" fill="#2563EB"/>
+      <rect x="864" y="342" width="148" height="10" rx="0" fill="#2563EB"/>
+      <text x="938" y="347" text-anchor="middle" class="f6-xl" font-size="10" fill="white">Client 6 — Region F</text>
+      <text x="938" y="368" text-anchor="middle" class="f6-mono" font-size="9" fill="#12151C">n_6: 3,774 samples</text>
+      <text x="938" y="382" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">5 local epochs</text>
+      <text x="938" y="396" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">Adam lr=0.001</text>
+      <text x="938" y="410" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ val_macro_f1</text>
+      <text x="938" y="422" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ rare_fraction</text>
+      <text x="938" y="435" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ w_k (12.96 KB)</text>
+      <text x="938" y="448" text-anchor="middle" class="f6-sm" font-size="7.5" fill="#7C8494">Mixed urban</text>
+
+      <!-- Client 7 -->
+      <rect x="1028" y="330" width="148" height="120" rx="10" fill="white" stroke="#2563EB" stroke-width="1.6" filter="url(#f6-shadow)"/>
+      <rect x="1028" y="330" width="148" height="22" rx="10" fill="#2563EB"/>
+      <rect x="1028" y="342" width="148" height="10" rx="0" fill="#2563EB"/>
+      <text x="1102" y="347" text-anchor="middle" class="f6-xl" font-size="10" fill="white">Client 7 — Region G</text>
+      <text x="1102" y="368" text-anchor="middle" class="f6-mono" font-size="9" fill="#12151C">n_7: 3,774 samples</text>
+      <text x="1102" y="382" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">5 local epochs</text>
+      <text x="1102" y="396" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">Adam lr=0.001</text>
+      <text x="1102" y="410" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ val_macro_f1</text>
+      <text x="1102" y="422" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ rare_fraction</text>
+      <text x="1102" y="435" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ w_k (12.96 KB)</text>
+      <text x="1102" y="448" text-anchor="middle" class="f6-sm" font-size="7.5" fill="#7C8494">Accident-heavy</text>
+
+      <!-- Client 8 -->
+      <rect x="1192" y="330" width="148" height="120" rx="10" fill="white" stroke="#2563EB" stroke-width="1.6" filter="url(#f6-shadow)"/>
+      <rect x="1192" y="330" width="148" height="22" rx="10" fill="#2563EB"/>
+      <rect x="1192" y="342" width="148" height="10" rx="0" fill="#2563EB"/>
+      <text x="1266" y="347" text-anchor="middle" class="f6-xl" font-size="10" fill="white">Client 8 — Region H</text>
+      <text x="1266" y="368" text-anchor="middle" class="f6-mono" font-size="9" fill="#12151C">n_8: 3,774 samples</text>
+      <text x="1266" y="382" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">5 local epochs</text>
+      <text x="1266" y="396" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">Adam lr=0.001</text>
+      <text x="1266" y="410" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ val_macro_f1</text>
+      <text x="1266" y="422" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ rare_fraction</text>
+      <text x="1266" y="435" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#2563EB">→ w_k (12.96 KB)</text>
+      <text x="1266" y="448" text-anchor="middle" class="f6-sm" font-size="7.5" fill="#7C8494">Flood-prone zone</text>
+
+      <!-- ====== BROADCAST ARROWS ↓ (green dashed) ====== -->
+      <line x1="500" y1="102" x2="92" y2="330" stroke="#16A34A" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#f6-down)"/>
+      <line x1="540" y1="102" x2="256" y2="330" stroke="#16A34A" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#f6-down)"/>
+      <line x1="570" y1="102" x2="420" y2="330" stroke="#16A34A" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#f6-down)"/>
+      <line x1="620" y1="102" x2="584" y2="330" stroke="#16A34A" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#f6-down)"/>
+      <line x1="740" y1="102" x2="774" y2="330" stroke="#16A34A" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#f6-down)"/>
+      <line x1="800" y1="102" x2="938" y2="330" stroke="#16A34A" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#f6-down)"/>
+      <line x1="840" y1="102" x2="1102" y2="330" stroke="#16A34A" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#f6-down)"/>
+      <line x1="860" y1="102" x2="1266" y2="330" stroke="#16A34A" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#f6-down)"/>
+
+      <!-- Broadcast label -->
+      <rect x="594" y="180" width="172" height="30" rx="15" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+      <text x="680" y="193" text-anchor="middle" class="f6-lg" font-size="10" fill="#16A34A">① Broadcast  w_t  (12.96 KB)</text>
+      <text x="680" y="205" text-anchor="middle" class="f6-sm" font-size="8.5" fill="#4B5361">each round start</text>
+
+      <!-- ====== UPLOAD ARROWS ↑ (blue solid) ====== -->
+      <line x1="92" y1="450" x2="500" y2="248" stroke="#2563EB" stroke-width="1.5" marker-end="url(#f6-up)"/>
+      <line x1="256" y1="450" x2="540" y2="248" stroke="#2563EB" stroke-width="1.5" marker-end="url(#f6-up)"/>
+      <line x1="420" y1="450" x2="570" y2="248" stroke="#2563EB" stroke-width="1.5" marker-end="url(#f6-up)"/>
+      <line x1="584" y1="450" x2="620" y2="248" stroke="#2563EB" stroke-width="1.5" marker-end="url(#f6-up)"/>
+      <line x1="774" y1="450" x2="740" y2="248" stroke="#2563EB" stroke-width="1.5" marker-end="url(#f6-up)"/>
+      <line x1="938" y1="450" x2="800" y2="248" stroke="#2563EB" stroke-width="1.5" marker-end="url(#f6-up)"/>
+      <line x1="1102" y1="450" x2="840" y2="248" stroke="#2563EB" stroke-width="1.5" marker-end="url(#f6-up)"/>
+      <line x1="1266" y1="450" x2="860" y2="248" stroke="#2563EB" stroke-width="1.5" marker-end="url(#f6-up)"/>
+
+      <!-- Upload label -->
+      <rect x="594" y="254" width="172" height="30" rx="15" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.2"/>
+      <text x="680" y="267" text-anchor="middle" class="f6-lg" font-size="10" fill="#2563EB">② Upload  w_k, metrics</text>
+      <text x="680" y="279" text-anchor="middle" class="f6-sm" font-size="8.5" fill="#4B5361">after local training</text>
+
+      <!-- ====== COMMUNICATION STATS ====== -->
+      <rect x="18" y="474" width="1322" height="90" rx="12" fill="white" stroke="#16A34A" stroke-width="1.6" filter="url(#f6-shadow)"/>
+      <rect x="18" y="474" width="1322" height="26" rx="12" fill="#12151C"/>
+      <rect x="18" y="488" width="1322" height="12" rx="0" fill="#12151C"/>
+      <text x="679" y="494" text-anchor="middle" class="f6-xl" font-size="12" fill="white">Communication Efficiency Statistics — Verified from Implementation</text>
+
+      <rect x="34" y="508" width="194" height="48" rx="8" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+      <text x="131" y="525" text-anchor="middle" class="f6-xl" font-size="12" fill="#16A34A">12.96 KB</text>
+      <text x="131" y="541" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">per-client payload</text>
+      <text x="131" y="553" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">upload + download each round</text>
+
+      <rect x="240" y="508" width="194" height="48" rx="8" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+      <text x="337" y="525" text-anchor="middle" class="f6-xl" font-size="12" fill="#16A34A">207.36 KB</text>
+      <text x="337" y="541" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">total upload per round</text>
+      <text x="337" y="553" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">8 clients × 12.96 KB</text>
+
+      <rect x="446" y="508" width="194" height="48" rx="8" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+      <text x="543" y="525" text-anchor="middle" class="f6-xl" font-size="12" fill="#16A34A">30 rounds</text>
+      <text x="543" y="541" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">federated training</text>
+      <text x="543" y="553" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">convergence achieved</text>
+
+      <rect x="652" y="508" width="194" height="48" rx="8" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+      <text x="749" y="525" text-anchor="middle" class="f6-xl" font-size="12" fill="#16A34A">3,240 params</text>
+      <text x="749" y="541" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">model size (float32)</text>
+      <text x="749" y="553" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">3240 × 4 bytes = 12.96 KB</text>
+
+      <rect x="858" y="508" width="194" height="48" rx="8" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+      <text x="955" y="525" text-anchor="middle" class="f6-xl" font-size="12" fill="#16A34A">0 raw data</text>
+      <text x="955" y="541" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">transmitted to server</text>
+      <text x="955" y="553" text-anchor="middle" class="f6-sm" font-size="9" fill="#4B5361">privacy-preserving</text>
+
+      <rect x="1064" y="508" width="260" height="48" rx="8" fill="#16A34A"/>
+      <text x="1194" y="525" text-anchor="middle" class="f6-xl" font-size="12" fill="white">82.21% Accuracy</text>
+      <text x="1194" y="541" text-anchor="middle" class="f6-sm" font-size="9" fill="rgba(255,255,255,0.9)">AdaptiveFedAvg final result</text>
+      <text x="1194" y="553" text-anchor="middle" class="f6-mono" font-size="9" fill="rgba(255,255,255,0.9)">Macro F1: 0.6401</text>
+
+      <!-- ====== ROUND LOOP ILLUSTRATION ====== -->
+      <rect x="18" y="582" width="1322" height="120" rx="12" fill="#F7F8FA" stroke="#E2E5EA" stroke-width="1"/>
+      <text x="679" y="602" text-anchor="middle" class="f6-xl" font-size="11.5" fill="#12151C">One Round Execution Timeline (per round t = 1 to 30)</text>
+
+      <!-- Timeline boxes -->
+      <rect x="34" y="612" width="190" height="78" rx="8" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+      <text x="129" y="628" text-anchor="middle" class="f6-lg" font-size="10" fill="#16A34A">Server Broadcasts</text>
+      <text x="129" y="643" text-anchor="middle" class="f6-mono" font-size="9" fill="#12151C">w_t → all 8 clients</text>
+      <text x="129" y="656" text-anchor="middle" class="f6-sm" font-size="8.5" fill="#4B5361">12.96 KB per client</text>
+      <text x="129" y="668" text-anchor="middle" class="f6-sm" font-size="8.5" fill="#4B5361">103.68 KB total</text>
+      <text x="129" y="682" text-anchor="middle" class="f6-mono" font-size="8" fill="#16A34A">Flower send_parameters</text>
+
+      <text x="235" y="658" text-anchor="middle" class="f6-xl" font-size="14" fill="#16A34A">→</text>
+
+      <rect x="248" y="612" width="210" height="78" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.2"/>
+      <text x="353" y="628" text-anchor="middle" class="f6-lg" font-size="10" fill="#2563EB">Clients Train Locally</text>
+      <text x="353" y="643" text-anchor="middle" class="f6-mono" font-size="9" fill="#12151C">5 epochs each, parallel</text>
+      <text x="353" y="656" text-anchor="middle" class="f6-sm" font-size="8.5" fill="#4B5361">CrossEntropyLoss, Adam</text>
+      <text x="353" y="668" text-anchor="middle" class="f6-sm" font-size="8.5" fill="#4B5361">Compute val_macro_f1</text>
+      <text x="353" y="682" text-anchor="middle" class="f6-mono" font-size="8" fill="#2563EB">Flower fit() callback</text>
+
+      <text x="469" y="658" text-anchor="middle" class="f6-xl" font-size="14" fill="#2563EB">→</text>
+
+      <rect x="482" y="612" width="220" height="78" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.2"/>
+      <text x="592" y="628" text-anchor="middle" class="f6-lg" font-size="10" fill="#2563EB">Clients Upload</text>
+      <text x="592" y="643" text-anchor="middle" class="f6-mono" font-size="9" fill="#12151C">w_k^{t+1}, F1,k, n_k, f_rare,k</text>
+      <text x="592" y="656" text-anchor="middle" class="f6-sm" font-size="8.5" fill="#4B5361">12.96 KB weights + scalars</text>
+      <text x="592" y="668" text-anchor="middle" class="f6-sm" font-size="8.5" fill="#4B5361">207.36 KB total upload</text>
+      <text x="592" y="682" text-anchor="middle" class="f6-mono" font-size="8" fill="#2563EB">FitRes with metrics dict</text>
+
+      <text x="713" y="658" text-anchor="middle" class="f6-xl" font-size="14" fill="#16A34A">→</text>
+
+      <rect x="726" y="612" width="230" height="78" rx="8" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+      <text x="841" y="628" text-anchor="middle" class="f6-lg" font-size="10" fill="#16A34A">AdaptiveFedAvg Runs</text>
+      <text x="841" y="643" text-anchor="middle" class="f6-mono" font-size="9" fill="#12151C">ω_k = n_k·q_k·ρ_k·g_k</text>
+      <text x="841" y="656" text-anchor="middle" class="f6-sm" font-size="8.5" fill="#4B5361">4-factor weighting per client</text>
+      <text x="841" y="668" text-anchor="middle" class="f6-sm" font-size="8.5" fill="#4B5361">Normalized weights sum = 1.0</text>
+      <text x="841" y="682" text-anchor="middle" class="f6-mono" font-size="8" fill="#16A34A">aggregate_fit() method</text>
+
+      <text x="967" y="658" text-anchor="middle" class="f6-xl" font-size="14" fill="#16A34A">→</text>
+
+      <rect x="980" y="612" width="220" height="78" rx="8" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+      <text x="1090" y="628" text-anchor="middle" class="f6-lg" font-size="10" fill="#16A34A">w_{t+1} Updated</text>
+      <text x="1090" y="643" text-anchor="middle" class="f6-mono" font-size="9" fill="#12151C">Σ ω̂_k · w_k^{t+1}</text>
+      <text x="1090" y="656" text-anchor="middle" class="f6-sm" font-size="8.5" fill="#4B5361">Layer-wise weighted sum</text>
+      <text x="1090" y="668" text-anchor="middle" class="f6-sm" font-size="8.5" fill="#4B5361">Logged to weight_log.csv</text>
+      <text x="1090" y="682" text-anchor="middle" class="f6-mono" font-size="8" fill="#16A34A">ndarrays_to_parameters</text>
+
+      <text x="1211" y="658" text-anchor="middle" class="f6-xl" font-size="14" fill="#16A34A">→</text>
+
+      <rect x="1224" y="612" width="100" height="78" rx="8" fill="#16A34A"/>
+      <text x="1274" y="632" text-anchor="middle" class="f6-xl" font-size="10" fill="white">t = t+1</text>
+      <text x="1274" y="648" text-anchor="middle" class="f6-sm" font-size="9" fill="rgba(255,255,255,0.9)">Repeat</text>
+      <text x="1274" y="662" text-anchor="middle" class="f6-sm" font-size="9" fill="rgba(255,255,255,0.9)">until</text>
+      <text x="1274" y="676" text-anchor="middle" class="f6-sm" font-size="9" fill="rgba(255,255,255,0.9)">t = 30</text>
+    </svg>
+</body>
+</html>

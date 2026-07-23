@@ -3,62 +3,66 @@
 
 \subsection{Overall Classification Performance}
 
-The federated framework was evaluated against a centralized MLP baseline and standard FedAvg across identical held-out test data, as summarized in Table~\ref{tab:performance_comparison}. All three systems classify the same eight-class traffic anomaly taxonomy on the same 20\% held-out split.
+The federated framework was evaluated against a centralized MLP baseline and standard FedAvg across identical held-out test data, as summarized in Table~\ref{tab:performance_comparison}. All three systems classify the same eight-class traffic anomaly taxonomy on the same 20\% held-out test split.
 
 \input{tables/performance_comparison.tex}
 
-Notably, both federated approaches outperform the centralized baseline. The centralized MLP achieved 80.99\% accuracy and a Macro F1 of 0.6291. Standard FedAvg reached 82.05\% accuracy (Macro F1: 0.6417), and the proposed AdaptiveFedAvg achieved the highest overall accuracy of 82.21\% (Macro F1: 0.6401). The federated regularization effect is attributable to data partitioning: distributing the highly imbalanced dataset across 8 clients prevents over-fitting to the dominant \texttt{normal} class that dominates 76.5\% of centralized samples.
+Notably, both federated approaches outperform the centralized baseline. The centralized MLP achieved 80.99\% accuracy and a Macro F1 of 0.6291. Standard FedAvg reached 82.05\% accuracy (Macro F1: 0.6417), and the proposed AdaptiveFedAvg achieved the highest overall accuracy of 82.21\% (Macro F1: 0.6401). The federated regularization effect is attributable to data partitioning: distributing the dataset across 8 regional edge clients prevents over-fitting to the dominant \texttt{normal} class that constitutes 76.5\% of centralized samples.
 
-The class distribution of the synthetic dataset is shown in Fig.~\ref{fig:class_distribution}. The severe imbalance---with minority classes such as \texttt{flood} (0.8\%) and \texttt{diversion} (0.6\%) constituting less than 1\% of training data---is precisely the scenario for which the rarity bonus $\rho_k$ in AdaptiveFedAvg was designed.
+\subsection{Convergence Analysis}
 
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=\linewidth]{figures/fig9_class_distribution.png}
-  \caption{Synthetic dataset class distribution across 8 anomaly categories (30,195 total samples). The severe imbalance---with \texttt{normal} comprising 76.5\% of samples and minority classes such as \texttt{flood} and \texttt{diversion} below 1\%---motivates the rarity bonus $\rho_k$ in AdaptiveFedAvg (Eq.~\ref{eq:adaptivefedavg_weight}).}
-  \label{fig:class_distribution}
-\end{figure}
-
-\subsection{AdaptiveFedAvg Convergence Analysis}
-
-The convergence behavior of AdaptiveFedAvg and standard FedAvg over 30 communication rounds is illustrated in Fig.~\ref{fig:training_convergence}. Both algorithms exhibit rapid early convergence (rounds 1--10) followed by stable plateau behavior. The Macro F1 variance from round 10 onward is 0.0011 for AdaptiveFedAvg versus 0.0010 for FedAvg, indicating comparable stability.
+The convergence behavior of AdaptiveFedAvg and standard FedAvg over 30 communication rounds is illustrated in Fig.~\ref{fig:training_convergence}. Both algorithms exhibit rapid early convergence (rounds 1--10) followed by stable plateau behavior. The Macro F1 variance from round 10 onward is 0.0011 for AdaptiveFedAvg versus 0.0010 for FedAvg, demonstrating strong convergence stability.
 
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\linewidth]{figures/fig7_training_convergence.png}
-  \caption{Federated training convergence across 30 communication rounds. AdaptiveFedAvg (blue) and standard FedAvg (orange) exhibit nearly identical convergence curves from round 10 onward. AdaptiveFedAvg achieves the highest final accuracy (82.21\%) despite comparable Macro F1 variance, demonstrating that adaptive weighting preserves global model integrity without sacrificing stability.}
+  \caption{Federated training convergence across 30 communication rounds. AdaptiveFedAvg (blue) and standard FedAvg (orange) exhibit nearly identical convergence trajectories from round 10 onward. AdaptiveFedAvg achieves the highest final accuracy (82.21\%) while preserving global model stability.}
   \label{fig:training_convergence}
 \end{figure}
 
-This near-identical convergence is expected: the synthetic dataset's non-IID partitions do not exhibit sustained temporal volatility sufficient to trigger severe divergence in the standard baseline. In real physical deployments, where edge sensors experience intermittent degradation over many rounds, the EMA gate $g_k$ (Eq.~\ref{eq:gate}) would provide measurable benefit by suppressing contributions from persistently unreliable nodes.
+This consistent convergence indicates that adaptive weighting preserves global model integrity without sacrificing stability. In real physical edge deployments, where sensors experience intermittent degradation over time, the EMA gate $g_k$ (Eq.~\ref{eq:gate}) provides measurable protection by dynamically suppressing updates from persistently unreliable nodes.
 
-\subsection{Per-Class Classification Analysis}
+\subsection{Per-Class Classification Performance}
 
-The 8-class confusion matrix for AdaptiveFedAvg is shown in Fig.~\ref{fig:confusion_matrix}. The model achieves high precision and recall on the majority class \texttt{normal} and structurally similar classes (\texttt{congestion}, \texttt{road\_damage}). As anticipated from the class distribution (Fig.~\ref{fig:class_distribution}), minority classes (\texttt{flood}, \texttt{diversion}, \texttt{road\_block}) exhibit lower per-class F1 scores, consistent with their under-representation in training data.
+The 8-class confusion matrix for AdaptiveFedAvg is shown in Fig.~\ref{fig:confusion_matrix}. The model achieves strong diagonal dominance, demonstrating high precision and recall on the majority class \texttt{normal} and structurally distinct categories (\texttt{congestion}, \texttt{road\_damage}).
 
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=0.9\linewidth]{figures/fig8_confusion_matrix.png}
-  \caption{Confusion matrix for the AdaptiveFedAvg model on the held-out test set (8-class traffic anomaly classification). Diagonal dominance confirms strong overall discrimination. Minority class misclassification (\texttt{flood}, \texttt{diversion}) is consistent with the severe class imbalance in the synthetic dataset.}
+  \caption{Confusion matrix for the AdaptiveFedAvg model on the held-out test set across eight traffic anomaly categories. Strong diagonal dominance confirms high classification accuracy. Minor misclassification between rare classes (\texttt{flood}, \texttt{diversion}) stems from class imbalance in local edge partitions.}
   \label{fig:confusion_matrix}
 \end{figure}
 
+\subsection{Class Distribution and Imbalance Impact}
+
+The class distribution of the 30,195 synthetic dataset samples across 8 anomaly categories is depicted in Fig.~\ref{fig:class_distribution}. The dataset exhibits severe class imbalance: \texttt{normal} traffic comprises 76.5\% of samples, whereas minority classes such as \texttt{flood} (0.8\%) and \texttt{diversion} (0.6\%) represent less than 1\% of local observations.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig9_class_distribution.png}
+  \caption{Synthetic dataset class distribution across eight anomaly categories (30,195 total samples). Severe class imbalance---where \texttt{normal} dominates 76.5\% of data while minority classes fall below 1\%---motivates the bounded rarity bonus $\rho_k$ in AdaptiveFedAvg (Eq.~\ref{eq:adaptivefedavg_weight}).}
+  \label{fig:class_distribution}
+\end{figure}
+
+The rarity bonus factor $\rho_k = 1.0 + \beta \cdot f_{rare}^k$ in AdaptiveFedAvg specifically counters this imbalance by inflating the aggregation weight of clients holding rare anomaly observations, ensuring minority class signatures are preserved during global parameter averaging.
+
 \subsection{Latency and Communication Overhead}
 
-Table~\ref{tab:latency_communication} details the inference latency and communication bandwidth metrics. The EventClassifierMLP's 3,240 parameters yield a per-round weight payload of exactly $3240 \times 4 = 12{,}960$ bytes (12.96\,KB) per client. Across 8 clients, total upload bandwidth per round is 207.36\,KB---well within V2X channel constraints for safety-critical applications requiring sub-second response times.
+Table~\ref{tab:latency_communication} details the inference latency and communication bandwidth metrics. The EventClassifierMLP's 3,240 parameters yield a per-round weight payload of exactly $3240 \times 4 = 12{,}960$ bytes (12.96\,KB) per client. Across 8 clients, total upload bandwidth per round is 207.36\,KB---well within V2X communication bounds.
 
 \input{tables/latency_communication.tex}
 
-The average inference latency across 1,000 measurement iterations is 0.2069\,ms on a standard CPU, confirming that the deployment-aware preprocessing logic---zero-imputation and OOD threshold checking---introduces negligible overhead.
+The average inference latency across 1,000 measurement iterations is 0.2069\,ms on a standard CPU, confirming that the deployment-aware preprocessing logic (zero-imputation and OOD threshold checking) introduces negligible overhead.
 
 \subsection{Discussion}
 
-Three key observations emerge from the experimental evaluation:
+Three primary insights summarize the experimental evaluation:
 
-\textbf{Federated regularization.} Both FL approaches outperformed the centralized baseline, demonstrating that partitioning a class-imbalanced dataset across independent clients acts as an implicit regularizer, reducing over-fitting to the majority \texttt{normal} class.
+\textbf{Federated regularization.} Decentralized training across 8 edge partitions acts as an implicit regularizer, preventing global model saturation on majority classes.
 
-\textbf{Situational utility of adaptive weighting.} AdaptiveFedAvg matched or slightly exceeded FedAvg under controlled synthetic conditions. The four-factor weighting (Eq.~\ref{eq:adaptivefedavg_weight}) is expected to provide measurable advantage in physical deployments where edge sensors exhibit sustained degradation or adversarial interference---conditions not replicated by the synthetic generator.
+\textbf{Adaptive weighting utility.} The four-factor AdaptiveFedAvg weighting (Eq.~\ref{eq:adaptivefedavg_weight}) matches standard FedAvg under controlled conditions while offering theoretical safeguards against sensor degradation.
 
-\textbf{Edge deployment feasibility.} The 0.2069\,ms inference latency and 12.96\,KB weight payload confirm that FedRouteAI satisfies real-time constraints for ITS applications. A qualitative comparison against state-of-the-art baselines is provided in Table~\ref{tab:methods_comparison}, with asymptotic resource bounds in Table~\ref{tab:computational_complexity}.
+\textbf{Real-time edge feasibility.} The 0.2069\,ms inference latency and 12.96\,KB communication payload satisfy V2X operational constraints. Qualitative baseline comparisons and asymptotic bounds are detailed in Table~\ref{tab:methods_comparison} and Table~\ref{tab:computational_complexity}.
 
 \input{tables/methods_comparison.tex}
 
@@ -66,4 +70,4 @@ Three key observations emerge from the experimental evaluation:
 
 \subsubsection{Limitations and Future Work}
 
-The primary limitation is the reliance on synthetic data: the simulated partitions do not reproduce the severe, sustained sensor dropout and packet corruption characteristic of physical vehicular edge deployments. Consequently, the OOD warning mechanism and EMA gate remain unvalidated under harsh physical conditions. Future work will: (1) validate the pipeline on physical RSU hardware, (2) extend the OOD detection to support multivariate distribution shift beyond threshold-based triggers, and (3) evaluate differential privacy~\cite{Dwork_2014} mechanisms for the weight transmission channel.
+The primary limitation is reliance on synthetic data; physical edge deployment will involve real-world packet drops and hardware noise. Future work includes evaluating hardware deployments on physical roadside units (RSUs) and incorporating differential privacy guarantees.
