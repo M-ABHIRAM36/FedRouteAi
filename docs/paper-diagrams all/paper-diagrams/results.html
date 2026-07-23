@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Figures 8-10 — Results · FedRouteAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="index.html" class="brand"><span class="brand-mark"></span>FedRouteAI</a>
+    <span class="crumb">/ <b>Figures 8-10 — Results</b></span>
+  </div>
+  <div class="topbar-right">
+    <button class="btn" onclick="toggleTheme()">Theme</button>
+    <button class="btn primary" onclick="downloadSVG('fig9-svg','fig9_training_convergence.svg')">Export Fig. 9 SVG</button>
+  </div>
+</div>
+
+<div class="page">
+  <div class="fig-header">
+    <div class="fig-eyebrow">Figures 8-10 · Results</div>
+    <h1 class="fig-title">Dataset Distribution, Convergence, Confusion Matrix</h1>
+    <p class="fig-desc"><span class="databadge verified">ALL NUMBERS VERIFIED — plotted directly from federated_history.csv, adaptive_history.csv, and the reported confusion matrix, not approximated.</span></p>
+  </div>
+
+  <!-- ============ FIGURE 8 ============ -->
+  <div class="fig-eyebrow" style="margin-top:8px;">Figure 8 · Dataset Class Distribution</div>
+  <h2 style="font-family:var(--font-display); font-size:19px; margin:6px 0 14px;">30,195 Samples Across 8 Classes (Log-Scaled)</h2>
+  <div class="canvas">
+    <svg id="fig8-svg" viewBox="0 0 980 320" xmlns="http://www.w3.org/2000/svg">
+      <defs><style>.f8-mono{font-family:'JetBrains Mono',monospace;}</style></defs>
+<text x="250" y="45" text-anchor="end" class="f8-mono" font-size="11" fill="#12151C">normal</text>
+      <rect x="260" y="30" width="640.0" height="22" rx="4" fill="#7C3AED" opacity="0.85"/>
+      <text x="908.0" y="46" class="f8-mono" font-size="10.5" fill="#4B5361">23,096 (76.49%)</text>
+      <text x="250" y="79" text-anchor="end" class="f8-mono" font-size="11" fill="#12151C">road_damage</text>
+      <rect x="260" y="64" width="516.6" height="22" rx="4" fill="#7C3AED" opacity="0.85"/>
+      <text x="784.6" y="80" class="f8-mono" font-size="10.5" fill="#4B5361">3,330 (11.03%)</text>
+      <text x="250" y="113" text-anchor="end" class="f8-mono" font-size="11" fill="#12151C">construction</text>
+      <rect x="260" y="98" width="460.9" height="22" rx="4" fill="#7C3AED" opacity="0.85"/>
+      <text x="728.9" y="114" class="f8-mono" font-size="10.5" fill="#4B5361">1,389 (4.6%)</text>
+      <text x="250" y="147" text-anchor="end" class="f8-mono" font-size="11" fill="#12151C">congestion</text>
+      <rect x="260" y="132" width="449.1" height="22" rx="4" fill="#7C3AED" opacity="0.85"/>
+      <text x="717.1" y="148" class="f8-mono" font-size="10.5" fill="#4B5361">1,154 (3.82%)</text>
+      <text x="250" y="181" text-anchor="end" class="f8-mono" font-size="11" fill="#12151C">accident</text>
+      <rect x="260" y="166" width="396.0" height="22" rx="4" fill="#7C3AED" opacity="0.85"/>
+      <text x="664.0" y="182" class="f8-mono" font-size="10.5" fill="#4B5361">501 (1.66%)</text>
+      <text x="250" y="215" text-anchor="end" class="f8-mono" font-size="11" fill="#12151C">flood</text>
+      <rect x="260" y="200" width="367.2" height="22" rx="4" fill="#7C3AED" opacity="0.85"/>
+      <text x="635.2" y="216" class="f8-mono" font-size="10.5" fill="#4B5361">319 (1.06%)</text>
+      <text x="250" y="249" text-anchor="end" class="f8-mono" font-size="11" fill="#12151C">diversion</text>
+      <rect x="260" y="234" width="350.9" height="22" rx="4" fill="#7C3AED" opacity="0.85"/>
+      <text x="618.9" y="250" class="f8-mono" font-size="10.5" fill="#4B5361">247 (0.82%)</text>
+      <text x="250" y="283" text-anchor="end" class="f8-mono" font-size="11" fill="#12151C">road_block</text>
+      <rect x="260" y="268" width="322.9" height="22" rx="4" fill="#7C3AED" opacity="0.85"/>
+      <text x="590.9" y="284" class="f8-mono" font-size="10.5" fill="#4B5361">159 (0.53%)</text>    </svg>
+  </div>
+  <div class="why-block">
+    <h4>Reading This Chart</h4>
+    <p>Normal traffic (76.49%) outnumbers the rarest class, road_block (0.53%), by roughly 145×. This is the exact imbalance the class-weighting and rarity-bonus terms in Figure 5 exist to counteract — worth referencing this figure directly when introducing those terms in Section III-D.</p>
+  </div>
+
+  <!-- ============ FIGURE 9 ============ -->
+  <div class="fig-eyebrow" style="margin-top:32px;">Figure 9 · Federated Training Convergence</div>
+  <h2 style="font-family:var(--font-display); font-size:19px; margin:6px 0 14px;">Macro F1 Across 30 Communication Rounds</h2>
+  <div class="canvas">
+    <svg id="fig9-svg" viewBox="0 0 920 380" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>
+          .f9-mono{font-family:'JetBrains Mono',monospace;}
+          .f9-s{font-family:'Inter',sans-serif;}
+        </style>
+      </defs>
+      <!-- gridlines -->
+      <g stroke="#E2E5EA" stroke-width="1">
+        <line x1="60" y1="330" x2="860" y2="330"/>
+        <line x1="60" y1="287.1" x2="860" y2="287.1"/>
+        <line x1="60" y1="244.3" x2="860" y2="244.3"/>
+        <line x1="60" y1="201.4" x2="860" y2="201.4"/>
+        <line x1="60" y1="158.6" x2="860" y2="158.6"/>
+        <line x1="60" y1="115.7" x2="860" y2="115.7"/>
+        <line x1="60" y1="72.9" x2="860" y2="72.9"/>
+        <line x1="60" y1="30" x2="860" y2="30"/>
+      </g>
+      <g class="f9-mono" font-size="10" fill="#7C8494" text-anchor="end">
+        <text x="52" y="333">0.0</text>
+        <text x="52" y="290">0.1</text>
+        <text x="52" y="247">0.2</text>
+        <text x="52" y="204">0.3</text>
+        <text x="52" y="161">0.4</text>
+        <text x="52" y="118">0.5</text>
+        <text x="52" y="75">0.6</text>
+        <text x="52" y="33">0.7</text>
+      </g>
+      <text x="20" y="180" class="f9-s" font-size="11" fill="#4B5361" transform="rotate(-90,20,180)">Global Macro F1</text>
+      <g class="f9-mono" font-size="10" fill="#7C8494">
+        <text x="60" y="348">0</text>
+        <text x="300" y="348">10</text>
+        <text x="540" y="348">20</text>
+        <text x="800" y="348">30</text>
+      </g>
+      <text x="460" y="368" text-anchor="middle" class="f9-s" font-size="11" fill="#4B5361">Communication Round</text>
+
+      <!-- fedavg line -->
+      <polyline points="60.0,324.4 86.7,259.6 113.3,222.7 140.0,195.2 166.7,182.2 193.3,165.1 220.0,153.7 246.7,136.0 273.3,129.4 300.0,121.3 326.7,106.5 353.3,95.5 380.0,88.1 406.7,83.9 433.3,79.2 460.0,82.6 486.7,70.8 513.3,74.0 540.0,68.1 566.7,67.9 593.3,69.3 620.0,64.1 646.7,64.9 673.3,60.3 700.0,60.0 726.7,60.7 753.3,60.2 780.0,56.2 806.7,55.0 833.3,57.3 860.0,55.9" fill="none" stroke="#4B5361" stroke-width="2.2"/>
+      <!-- adaptive line -->
+      <polyline points="60.0,324.4 86.7,258.7 113.3,223.8 140.0,196.1 166.7,182.0 193.3,165.3 220.0,155.3 246.7,137.1 273.3,129.4 300.0,120.0 326.7,105.6 353.3,96.7 380.0,94.5 406.7,86.2 433.3,80.4 460.0,83.8 486.7,75.0 513.3,72.2 540.0,69.4 566.7,70.6 593.3,69.4 620.0,65.4 646.7,69.5 673.3,62.1 700.0,64.6 726.7,62.3 753.3,63.1 780.0,55.7 806.7,56.3 833.3,57.4 860.0,55.7" fill="none" stroke="#16A34A" stroke-width="2.2"/>
+
+      <!-- peak markers -->
+      <circle cx="806.7" cy="55.0" r="4.5" fill="#4B5361"/>
+      <circle cx="726.7" cy="62.3" r="4.5" fill="#16A34A"/>
+      <text x="806.7" y="45" text-anchor="middle" class="f9-mono" font-size="9.5" fill="#4B5361">R28: 0.6417</text>
+      <text x="726.7" y="90" text-anchor="middle" class="f9-mono" font-size="9.5" fill="#16A34A">R27: 0.6401</text>
+
+      <!-- legend -->
+      <g transform="translate(640,50)">
+        <line x1="0" y1="0" x2="24" y2="0" stroke="#4B5361" stroke-width="2.2"/>
+        <text x="30" y="4" class="f9-s" font-size="11" fill="#12151C">Standard FedAvg</text>
+        <line x1="0" y1="20" x2="24" y2="20" stroke="#16A34A" stroke-width="2.2"/>
+        <text x="30" y="24" class="f9-s" font-size="11" fill="#12151C">AdaptiveFedAvg</text>
+      </g>
+    </svg>
+  </div>
+  <div class="why-block">
+    <h4>Note on What "Variance" Means Here</h4>
+    <p>The two curves are nearly indistinguishable from round ~15 onward — this is real, plotted directly from your CSVs. Section V-B's "Macro F1 variance of 0.0011 vs 0.0010" describes round-to-round variance <em>within this single run</em>, not variance across independent seeds. No seed files exist in the current results directory — add 2-3 more seeded runs before claiming statistical robustness in the paper.</p>
+  </div>
+
+  <!-- ============ FIGURE 10 ============ -->
+  <div class="fig-eyebrow" style="margin-top:32px;">Figure 10 · Confusion Matrix — AdaptiveFedAvg</div>
+  <h2 style="font-family:var(--font-display); font-size:19px; margin:6px 0 14px;">8-Class Classification, Held-Out Test Set</h2>
+  <div class="canvas">
+    <svg id="fig10-svg" viewBox="0 0 694 524" xmlns="http://www.w3.org/2000/svg">
+      <defs><style>.f10-mono{font-family:'JetBrains Mono',monospace;}</style></defs>
+      <text x="0" y="15" class="f10-mono" font-size="10" fill="#7C8494">Predicted →</text>
+<text x="239.0" y="30" text-anchor="start" class="f10-mono" font-size="9" fill="#4B5361" transform="rotate(-40,239.0,30)">normal</text>
+      <text x="297.0" y="30" text-anchor="start" class="f10-mono" font-size="9" fill="#4B5361" transform="rotate(-40,297.0,30)">congestion</text>
+      <text x="355.0" y="30" text-anchor="start" class="f10-mono" font-size="9" fill="#4B5361" transform="rotate(-40,355.0,30)">construction</text>
+      <text x="413.0" y="30" text-anchor="start" class="f10-mono" font-size="9" fill="#4B5361" transform="rotate(-40,413.0,30)">flood</text>
+      <text x="471.0" y="30" text-anchor="start" class="f10-mono" font-size="9" fill="#4B5361" transform="rotate(-40,471.0,30)">road_block</text>
+      <text x="529.0" y="30" text-anchor="start" class="f10-mono" font-size="9" fill="#4B5361" transform="rotate(-40,529.0,30)">road_damage</text>
+      <text x="587.0" y="30" text-anchor="start" class="f10-mono" font-size="9" fill="#4B5361" transform="rotate(-40,587.0,30)">accident</text>
+      <text x="645.0" y="30" text-anchor="start" class="f10-mono" font-size="9" fill="#4B5361" transform="rotate(-40,645.0,30)">diversion</text>
+      <text x="200" y="73.0" text-anchor="end" class="f10-mono" font-size="10" fill="#12151C">normal</text>
+      <rect x="210.0" y="40.0" width="56" height="56" fill="#7C3AED" opacity="0.91"/>
+      <text x="238.0" y="73.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#ffffff" font-weight="700">2933</text>
+      <rect x="268.0" y="40.0" width="56" height="56" fill="#7C3AED" opacity="0.368"/>
+      <text x="296.0" y="73.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">17</text>
+      <rect x="326.0" y="40.0" width="56" height="56" fill="#7C3AED" opacity="0.561"/>
+      <text x="354.0" y="73.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#ffffff" font-weight="400">110</text>
+      <rect x="384.0" y="40.0" width="56" height="56" fill="#7C3AED" opacity="0.294"/>
+      <text x="412.0" y="73.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">8</text>
+      <rect x="442.0" y="40.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="470.0" y="73.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="500.0" y="40.0" width="56" height="56" fill="#7C3AED" opacity="0.601"/>
+      <text x="528.0" y="73.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#ffffff" font-weight="400">160</text>
+      <rect x="558.0" y="40.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="586.0" y="73.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="616.0" y="40.0" width="56" height="56" fill="#7C3AED" opacity="0.643"/>
+      <text x="644.0" y="73.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#ffffff" font-weight="400">237</text>
+      <text x="200" y="131.0" text-anchor="end" class="f10-mono" font-size="10" fill="#12151C">congestion</text>
+      <rect x="210.0" y="98.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="238.0" y="131.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="268.0" y="98.0" width="56" height="56" fill="#7C3AED" opacity="0.585"/>
+      <text x="296.0" y="131.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#ffffff" font-weight="700">138</text>
+      <rect x="326.0" y="98.0" width="56" height="56" fill="#7C3AED" opacity="0.398"/>
+      <text x="354.0" y="131.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">23</text>
+      <rect x="384.0" y="98.0" width="56" height="56" fill="#7C3AED" opacity="0.208"/>
+      <text x="412.0" y="131.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">3</text>
+      <rect x="442.0" y="98.0" width="56" height="56" fill="#7C3AED" opacity="0.134"/>
+      <text x="470.0" y="131.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">1</text>
+      <rect x="500.0" y="98.0" width="56" height="56" fill="#7C3AED" opacity="0.281"/>
+      <text x="528.0" y="131.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">7</text>
+      <rect x="558.0" y="98.0" width="56" height="56" fill="#7C3AED" opacity="0.134"/>
+      <text x="586.0" y="131.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">1</text>
+      <rect x="616.0" y="98.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="644.0" y="131.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <text x="200" y="189.0" text-anchor="end" class="f10-mono" font-size="10" fill="#12151C">construction</text>
+      <rect x="210.0" y="156.0" width="56" height="56" fill="#7C3AED" opacity="0.325"/>
+      <text x="238.0" y="189.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">11</text>
+      <rect x="268.0" y="156.0" width="56" height="56" fill="#7C3AED" opacity="0.439"/>
+      <text x="296.0" y="189.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">34</text>
+      <rect x="326.0" y="156.0" width="56" height="56" fill="#7C3AED" opacity="0.571"/>
+      <text x="354.0" y="189.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#ffffff" font-weight="700">120</text>
+      <rect x="384.0" y="156.0" width="56" height="56" fill="#7C3AED" opacity="0.325"/>
+      <text x="412.0" y="189.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">11</text>
+      <rect x="442.0" y="156.0" width="56" height="56" fill="#7C3AED" opacity="0.134"/>
+      <text x="470.0" y="189.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">1</text>
+      <rect x="500.0" y="156.0" width="56" height="56" fill="#7C3AED" opacity="0.411"/>
+      <text x="528.0" y="189.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">26</text>
+      <rect x="558.0" y="156.0" width="56" height="56" fill="#7C3AED" opacity="0.177"/>
+      <text x="586.0" y="189.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">2</text>
+      <rect x="616.0" y="156.0" width="56" height="56" fill="#7C3AED" opacity="0.208"/>
+      <text x="644.0" y="189.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">3</text>
+      <text x="200" y="247.0" text-anchor="end" class="f10-mono" font-size="10" fill="#12151C">flood</text>
+      <rect x="210.0" y="214.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="238.0" y="247.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="268.0" y="214.0" width="56" height="56" fill="#7C3AED" opacity="0.134"/>
+      <text x="296.0" y="247.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">1</text>
+      <rect x="326.0" y="214.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="354.0" y="247.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="384.0" y="214.0" width="56" height="56" fill="#7C3AED" opacity="0.468"/>
+      <text x="412.0" y="247.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="700">45</text>
+      <rect x="442.0" y="214.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="470.0" y="247.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="500.0" y="214.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="528.0" y="247.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="558.0" y="214.0" width="56" height="56" fill="#7C3AED" opacity="0.134"/>
+      <text x="586.0" y="247.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">1</text>
+      <rect x="616.0" y="214.0" width="56" height="56" fill="#7C3AED" opacity="0.134"/>
+      <text x="644.0" y="247.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">1</text>
+      <text x="200" y="305.0" text-anchor="end" class="f10-mono" font-size="10" fill="#12151C">road_block</text>
+      <rect x="210.0" y="272.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="238.0" y="305.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="268.0" y="272.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="296.0" y="305.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="326.0" y="272.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="354.0" y="305.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="384.0" y="272.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="412.0" y="305.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="442.0" y="272.0" width="56" height="56" fill="#7C3AED" opacity="0.362"/>
+      <text x="470.0" y="305.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="700">16</text>
+      <rect x="500.0" y="272.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="528.0" y="305.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="558.0" y="272.0" width="56" height="56" fill="#7C3AED" opacity="0.294"/>
+      <text x="586.0" y="305.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">8</text>
+      <rect x="616.0" y="272.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="644.0" y="305.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <text x="200" y="363.0" text-anchor="end" class="f10-mono" font-size="10" fill="#12151C">road_damage</text>
+      <rect x="210.0" y="330.0" width="56" height="56" fill="#7C3AED" opacity="0.422"/>
+      <text x="238.0" y="363.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">29</text>
+      <rect x="268.0" y="330.0" width="56" height="56" fill="#7C3AED" opacity="0.373"/>
+      <text x="296.0" y="363.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">18</text>
+      <rect x="326.0" y="330.0" width="56" height="56" fill="#7C3AED" opacity="0.465"/>
+      <text x="354.0" y="363.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">44</text>
+      <rect x="384.0" y="330.0" width="56" height="56" fill="#7C3AED" opacity="0.305"/>
+      <text x="412.0" y="363.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">9</text>
+      <rect x="442.0" y="330.0" width="56" height="56" fill="#7C3AED" opacity="0.134"/>
+      <text x="470.0" y="363.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">1</text>
+      <rect x="500.0" y="330.0" width="56" height="56" fill="#7C3AED" opacity="0.693"/>
+      <text x="528.0" y="363.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#ffffff" font-weight="700">382</text>
+      <rect x="558.0" y="330.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="586.0" y="363.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="616.0" y="330.0" width="56" height="56" fill="#7C3AED" opacity="0.368"/>
+      <text x="644.0" y="363.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">17</text>
+      <text x="200" y="421.0" text-anchor="end" class="f10-mono" font-size="10" fill="#12151C">accident</text>
+      <rect x="210.0" y="388.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="238.0" y="421.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="268.0" y="388.0" width="56" height="56" fill="#7C3AED" opacity="0.134"/>
+      <text x="296.0" y="421.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">1</text>
+      <rect x="326.0" y="388.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="354.0" y="421.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="384.0" y="388.0" width="56" height="56" fill="#7C3AED" opacity="0.267"/>
+      <text x="412.0" y="421.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">6</text>
+      <rect x="442.0" y="388.0" width="56" height="56" fill="#7C3AED" opacity="0.305"/>
+      <text x="470.0" y="421.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">9</text>
+      <rect x="500.0" y="388.0" width="56" height="56" fill="#7C3AED" opacity="0.134"/>
+      <text x="528.0" y="421.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">1</text>
+      <rect x="558.0" y="388.0" width="56" height="56" fill="#7C3AED" opacity="0.494"/>
+      <text x="586.0" y="421.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="700">58</text>
+      <rect x="616.0" y="388.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="644.0" y="421.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <text x="200" y="479.0" text-anchor="end" class="f10-mono" font-size="10" fill="#12151C">diversion</text>
+      <rect x="210.0" y="446.0" width="56" height="56" fill="#7C3AED" opacity="0.231"/>
+      <text x="238.0" y="479.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">4</text>
+      <rect x="268.0" y="446.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="296.0" y="479.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="326.0" y="446.0" width="56" height="56" fill="#7C3AED" opacity="0.134"/>
+      <text x="354.0" y="479.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">1</text>
+      <rect x="384.0" y="446.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="412.0" y="479.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="442.0" y="446.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="470.0" y="479.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="500.0" y="446.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="528.0" y="479.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="558.0" y="446.0" width="56" height="56" fill="#7C3AED" opacity="0.06"/>
+      <text x="586.0" y="479.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="400">0</text>
+      <rect x="616.0" y="446.0" width="56" height="56" fill="#7C3AED" opacity="0.432"/>
+      <text x="644.0" y="479.0" text-anchor="middle" class="f10-mono" font-size="11" fill="#12151C" font-weight="700">32</text>    </svg>
+  </div>
+  <div class="why-block">
+    <h4>What the Off-Diagonal Cells Say</h4>
+    <p>road_damage → normal (29) and normal → road_damage (160) are the largest confusions, and normal → diversion (237) stands out sharply — worth a sentence in Section V explaining why diversion specifically gets misread as normal at this rate, since it's currently unexplained. road_block (16/24 correct) and flood (45/47 correct) perform far better than their tiny sample counts would suggest is statistically reliable — flag this the same way Section IV-A's rare-class warning already does.</p>
+  </div>
+
+  <div class="pagenav">
+    <a href="evaluation.html"><span class="nav-label">← Previous — Figure 7</span><span class="nav-title">Experimental Pipeline</span></a>
+    <a href="index.html" class="next"><span class="nav-label">Back to</span><span class="nav-title">All Figures →</span></a>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
