@@ -1,0 +1,427 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  FedRouteAI — Figure 6: Federated Communication Architecture
+  Communication-Bus design — CORRECTED version
+
+  CLIENT COUNTS: verified from results/adaptive/adaptive_weights.csv
+    REGION_01: 2,852  training samples (feature windows, 70% split)
+    REGION_02: 2,612
+    REGION_03: 3,483
+    REGION_04: 2,443
+    REGION_05: 2,464
+    REGION_06: 1,762
+    REGION_07: 3,521
+    REGION_08: 1,996
+
+  LOCAL EPOCHS: 3  (from federated_client.py line 82)
+
+  COMMUNICATION MATH:
+    3,240 params × 4 bytes = 12.96 KB per model payload
+    8 clients × 12.96 KB = 103.68 KB upload
+    8 clients × 12.96 KB = 103.68 KB download
+    Total bidirectional = 207.36 KB / round
+
+  BUS DIRECTION:
+    GREEN (dashed): Server  BROADCASTS DOWN  → clients
+    BLUE  (solid) : Clients UPLOAD   UP      → server
+    Zero diagonal crossings. No left/right arrowheads on the horizontal bus; upload exits via the right-side routed path.
+
+  LAYOUT: viewBox 0 0 1400 780
+    Centres (8 clients, w=148, gap=10):  (1400-8*148-7*10)/2 = 8px margin
+    Actual: start=8, spacing=158
+    Centres: 82, 240, 398, 556, 714, 872, 1030, 1188   (centre = start+74)
+    Adjusted to fit 1400 width with 18px side margin:
+    client_starts: 18, 176, 334, 492, 650, 808, 966, 1124   width=148 each
+    Centres:      92,  250, 408, 566, 724, 882, 1040, 1198
+-->
+<svg id="fig6-svg" viewBox="0 0 1400 836" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .f6-xl  { font-family: 'Space Grotesk', 'Segoe UI', sans-serif; font-weight: 700; }
+      .f6-lg  { font-family: 'Space Grotesk', 'Segoe UI', sans-serif; font-weight: 600; }
+      .f6-md  { font-family: 'Inter', 'Segoe UI', sans-serif; font-weight: 500; }
+      .f6-sm  { font-family: 'Inter', 'Segoe UI', sans-serif; font-weight: 400; }
+      .f6-mono{ font-family: 'JetBrains Mono', 'Consolas', monospace; font-weight: 500; }
+    </style>
+
+    <!-- Green broadcast arrowhead: always follows line direction -->
+    <marker id="arr-green-down" markerWidth="10" markerHeight="10"
+            refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse"
+            viewBox="0 0 10 10">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#16A34A"/>
+    </marker>
+
+    <!-- Blue upload arrowhead: always follows line direction -->
+    <marker id="arr-blue-up" markerWidth="10" markerHeight="10"
+            refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse"
+            viewBox="0 0 10 10">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#1D4ED8"/>
+    </marker>
+
+    <!-- Larger blue arrowhead for the single upload-bus → server stem -->
+    <marker id="arr-blue-up-lg" markerWidth="12" markerHeight="12"
+            refX="12" refY="6" orient="auto" markerUnits="userSpaceOnUse"
+            viewBox="0 0 12 12">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#1D4ED8"/>
+    </marker>
+
+    <filter id="shadow" x="-5%" y="-5%" width="115%" height="125%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#00000015"/>
+    </filter>
+  </defs>
+
+  <!-- ================================================================
+       BACKGROUND
+  ================================================================ -->
+  <rect x="0" y="0" width="1400" height="836" fill="#F7F9FC"/>
+
+  <!-- ================================================================
+       SERVER BOX   y: 14 → 108
+  ================================================================ -->
+  <rect x="300" y="14" width="800" height="94" rx="14"
+        fill="white" stroke="#16A34A" stroke-width="2.2" filter="url(#shadow)"/>
+  <!-- Green header strip -->
+  <rect x="300" y="14" width="800" height="32" rx="14" fill="#16A34A"/>
+  <rect x="300" y="32"  width="800" height="14" fill="#16A34A"/>
+  <text x="700" y="38"  text-anchor="middle" class="f6-xl"  font-size="13"   fill="white">
+    Flower FL Server — AdaptiveFedAvg Aggregator
+  </text>
+  <text x="700" y="68"  text-anchor="middle" class="f6-lg"  font-size="11.5" fill="#16A34A">
+    Central Backend · 30 Communication Rounds Evaluated
+  </text>
+  <text x="700" y="84"  text-anchor="middle" class="f6-mono" font-size="9.5"  fill="#4B5361">
+    Global model w_t · AdaptiveFedAvg aggregation · Weight log CSV recording
+  </text>
+  <text x="700" y="100" text-anchor="middle" class="f6-mono" font-size="9.5"  fill="#4B5361">
+    Results: Acc 82.21% · Macro F1 0.6401 · Total bidirectional 207.36 KB/round
+  </text>
+
+  <!-- ================================================================
+       GREEN BROADCAST BUS  y = 156
+       Server bottom (y=108) → short stem down → broadcast bus y=156
+       Bus runs x: 18 → 1382
+       Vertical dashed drop-lines: bus → client tops (y=290)
+  ================================================================ -->
+
+  <!-- Stem: server bottom → broadcast bus -->
+  <line x1="700" y1="108" x2="700" y2="154"
+        stroke="#16A34A" stroke-width="2.5" stroke-dasharray="7 4"/>
+
+  <!-- Broadcast bus label (above bus) -->
+  <rect x="572" y="112" width="256" height="36" rx="14"
+        fill="#EEFBF2" stroke="#16A34A" stroke-width="1.3"/>
+  <text x="700" y="126" text-anchor="middle" class="f6-lg"  font-size="10.5" fill="#16A34A">
+    ① Broadcast Global Model  w_t
+  </text>
+  <text x="700" y="141" text-anchor="middle" class="f6-sm"  font-size="8.5"  fill="#4B5361">
+    103.68 KB per round · 12.96 KB per client
+  </text>
+
+  <!-- Horizontal broadcast bus (dashed green) -->
+  <line x1="92"  y1="156" x2="1198" y2="156"
+        stroke="#16A34A" stroke-width="2.8" stroke-dasharray="8 5"/>
+
+  <!-- Vertical drop-lines: bus → client top (y=290) for 8 clients -->
+  <!-- Client centres: 92, 250, 408, 566, 724, 882, 1040, 1198 -->
+  <line x1="92"   y1="156" x2="92"   y2="288" stroke="#16A34A" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arr-green-down)"/>
+  <line x1="250"  y1="156" x2="250"  y2="288" stroke="#16A34A" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arr-green-down)"/>
+  <line x1="408"  y1="156" x2="408"  y2="288" stroke="#16A34A" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arr-green-down)"/>
+  <line x1="566"  y1="156" x2="566"  y2="288" stroke="#16A34A" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arr-green-down)"/>
+  <line x1="724"  y1="156" x2="724"  y2="288" stroke="#16A34A" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arr-green-down)"/>
+  <line x1="882"  y1="156" x2="882"  y2="288" stroke="#16A34A" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arr-green-down)"/>
+  <line x1="1040" y1="156" x2="1040" y2="288" stroke="#16A34A" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arr-green-down)"/>
+  <line x1="1198" y1="156" x2="1198" y2="288" stroke="#16A34A" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arr-green-down)"/>
+
+  <!-- ================================================================
+       8 CLIENT BOXES   y: 290 → 450
+       Width=148, Height=160, Gap=10
+       starts: 18, 176, 334, 492, 650, 808, 966, 1124
+       centres:92, 250, 408, 566, 724, 882, 1040, 1198
+  ================================================================ -->
+
+  <!-- === CLIENT 1 — REGION_01 === -->
+  <rect x="18"  y="290" width="148" height="160" rx="10"
+        fill="white" stroke="#1D4ED8" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="18"  y="290" width="148" height="24"  rx="10" fill="#1D4ED8"/>
+  <rect x="18"  y="303" width="148" height="11"  fill="#1D4ED8"/>
+  <text x="92"  y="310" text-anchor="middle" class="f6-xl"  font-size="9"   fill="white">Client 1 — REGION_01</text>
+  <text x="92"  y="333" text-anchor="middle" class="f6-mono" font-size="8"   fill="#12151C">n₁: 2,852 train samples</text>
+  <text x="92"  y="347" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#7C8494">feature windows · 70% split</text>
+  <text x="92"  y="361" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">3 local epochs</text>
+  <text x="92"  y="375" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">AdamW  lr = 0.001</text>
+  <text x="92"  y="394" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ val_macro_f1</text>
+  <text x="92"  y="407" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ rare_fraction</text>
+  <text x="92"  y="420" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ w_k  (12.96 KB)</text>
+  <text x="92"  y="436" text-anchor="middle" class="f6-sm"  font-size="7"   fill="#7C8494">NLLLoss (class-weighted)</text>
+
+  <!-- === CLIENT 2 — REGION_02 === -->
+  <rect x="176" y="290" width="148" height="160" rx="10"
+        fill="white" stroke="#1D4ED8" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="176" y="290" width="148" height="24"  rx="10" fill="#1D4ED8"/>
+  <rect x="176" y="303" width="148" height="11"  fill="#1D4ED8"/>
+  <text x="250" y="310" text-anchor="middle" class="f6-xl"  font-size="9"   fill="white">Client 2 — REGION_02</text>
+  <text x="250" y="333" text-anchor="middle" class="f6-mono" font-size="8"   fill="#12151C">n₂: 2,612 train samples</text>
+  <text x="250" y="347" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#7C8494">feature windows · 70% split</text>
+  <text x="250" y="361" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">3 local epochs</text>
+  <text x="250" y="375" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">AdamW  lr = 0.001</text>
+  <text x="250" y="394" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ val_macro_f1</text>
+  <text x="250" y="407" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ rare_fraction</text>
+  <text x="250" y="420" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ w_k  (12.96 KB)</text>
+  <text x="250" y="436" text-anchor="middle" class="f6-sm"  font-size="7"   fill="#7C8494">NLLLoss (class-weighted)</text>
+
+  <!-- === CLIENT 3 — REGION_03 === -->
+  <rect x="334" y="290" width="148" height="160" rx="10"
+        fill="white" stroke="#1D4ED8" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="334" y="290" width="148" height="24"  rx="10" fill="#1D4ED8"/>
+  <rect x="334" y="303" width="148" height="11"  fill="#1D4ED8"/>
+  <text x="408" y="310" text-anchor="middle" class="f6-xl"  font-size="9"   fill="white">Client 3 — REGION_03</text>
+  <text x="408" y="333" text-anchor="middle" class="f6-mono" font-size="8"   fill="#12151C">n₃: 3,483 train samples</text>
+  <text x="408" y="347" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#7C8494">feature windows · 70% split</text>
+  <text x="408" y="361" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">3 local epochs</text>
+  <text x="408" y="375" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">AdamW  lr = 0.001</text>
+  <text x="408" y="394" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ val_macro_f1</text>
+  <text x="408" y="407" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ rare_fraction</text>
+  <text x="408" y="420" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ w_k  (12.96 KB)</text>
+  <text x="408" y="436" text-anchor="middle" class="f6-sm"  font-size="7"   fill="#7C8494">NLLLoss (class-weighted)</text>
+
+  <!-- === CLIENT 4 — REGION_04 === -->
+  <rect x="492" y="290" width="148" height="160" rx="10"
+        fill="white" stroke="#1D4ED8" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="492" y="290" width="148" height="24"  rx="10" fill="#1D4ED8"/>
+  <rect x="492" y="303" width="148" height="11"  fill="#1D4ED8"/>
+  <text x="566" y="310" text-anchor="middle" class="f6-xl"  font-size="9"   fill="white">Client 4 — REGION_04</text>
+  <text x="566" y="333" text-anchor="middle" class="f6-mono" font-size="8"   fill="#12151C">n₄: 2,443 train samples</text>
+  <text x="566" y="347" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#7C8494">feature windows · 70% split</text>
+  <text x="566" y="361" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">3 local epochs</text>
+  <text x="566" y="375" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">AdamW  lr = 0.001</text>
+  <text x="566" y="394" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ val_macro_f1</text>
+  <text x="566" y="407" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ rare_fraction</text>
+  <text x="566" y="420" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ w_k  (12.96 KB)</text>
+  <text x="566" y="436" text-anchor="middle" class="f6-sm"  font-size="7"   fill="#7C8494">NLLLoss (class-weighted)</text>
+
+  <!-- === CLIENT 5 — REGION_05 === -->
+  <rect x="650" y="290" width="148" height="160" rx="10"
+        fill="white" stroke="#1D4ED8" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="650" y="290" width="148" height="24"  rx="10" fill="#1D4ED8"/>
+  <rect x="650" y="303" width="148" height="11"  fill="#1D4ED8"/>
+  <text x="724" y="310" text-anchor="middle" class="f6-xl"  font-size="9"   fill="white">Client 5 — REGION_05</text>
+  <text x="724" y="333" text-anchor="middle" class="f6-mono" font-size="8"   fill="#12151C">n₅: 2,464 train samples</text>
+  <text x="724" y="347" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#7C8494">feature windows · 70% split</text>
+  <text x="724" y="361" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">3 local epochs</text>
+  <text x="724" y="375" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">AdamW  lr = 0.001</text>
+  <text x="724" y="394" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ val_macro_f1</text>
+  <text x="724" y="407" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ rare_fraction</text>
+  <text x="724" y="420" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ w_k  (12.96 KB)</text>
+  <text x="724" y="436" text-anchor="middle" class="f6-sm"  font-size="7"   fill="#7C8494">NLLLoss (class-weighted)</text>
+
+  <!-- === CLIENT 6 — REGION_06 === -->
+  <rect x="808" y="290" width="148" height="160" rx="10"
+        fill="white" stroke="#1D4ED8" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="808" y="290" width="148" height="24"  rx="10" fill="#1D4ED8"/>
+  <rect x="808" y="303" width="148" height="11"  fill="#1D4ED8"/>
+  <text x="882" y="310" text-anchor="middle" class="f6-xl"  font-size="9"   fill="white">Client 6 — REGION_06</text>
+  <text x="882" y="333" text-anchor="middle" class="f6-mono" font-size="8"   fill="#12151C">n₆: 1,762 train samples</text>
+  <text x="882" y="347" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#7C8494">feature windows · 70% split</text>
+  <text x="882" y="361" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">3 local epochs</text>
+  <text x="882" y="375" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">AdamW  lr = 0.001</text>
+  <text x="882" y="394" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ val_macro_f1</text>
+  <text x="882" y="407" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ rare_fraction</text>
+  <text x="882" y="420" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ w_k  (12.96 KB)</text>
+  <text x="882" y="436" text-anchor="middle" class="f6-sm"  font-size="7"   fill="#7C8494">NLLLoss (class-weighted)</text>
+
+  <!-- === CLIENT 7 — REGION_07 === -->
+  <rect x="966" y="290" width="148" height="160" rx="10"
+        fill="white" stroke="#1D4ED8" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="966" y="290" width="148" height="24"  rx="10" fill="#1D4ED8"/>
+  <rect x="966" y="303" width="148" height="11"  fill="#1D4ED8"/>
+  <text x="1040" y="310" text-anchor="middle" class="f6-xl"  font-size="9"   fill="white">Client 7 — REGION_07</text>
+  <text x="1040" y="333" text-anchor="middle" class="f6-mono" font-size="8"   fill="#12151C">n₇: 3,521 train samples</text>
+  <text x="1040" y="347" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#7C8494">feature windows · 70% split</text>
+  <text x="1040" y="361" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">3 local epochs</text>
+  <text x="1040" y="375" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">AdamW  lr = 0.001</text>
+  <text x="1040" y="394" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ val_macro_f1</text>
+  <text x="1040" y="407" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ rare_fraction</text>
+  <text x="1040" y="420" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ w_k  (12.96 KB)</text>
+  <text x="1040" y="436" text-anchor="middle" class="f6-sm"  font-size="7"   fill="#7C8494">NLLLoss (class-weighted)</text>
+
+  <!-- === CLIENT 8 — REGION_08 === -->
+  <rect x="1124" y="290" width="148" height="160" rx="10"
+        fill="white" stroke="#1D4ED8" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="1124" y="290" width="148" height="24"  rx="10" fill="#1D4ED8"/>
+  <rect x="1124" y="303" width="148" height="11"  fill="#1D4ED8"/>
+  <text x="1198" y="310" text-anchor="middle" class="f6-xl"  font-size="9"   fill="white">Client 8 — REGION_08</text>
+  <text x="1198" y="333" text-anchor="middle" class="f6-mono" font-size="8"   fill="#12151C">n₈: 1,996 train samples</text>
+  <text x="1198" y="347" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#7C8494">feature windows · 70% split</text>
+  <text x="1198" y="361" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">3 local epochs</text>
+  <text x="1198" y="375" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">AdamW  lr = 0.001</text>
+  <text x="1198" y="394" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ val_macro_f1</text>
+  <text x="1198" y="407" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ rare_fraction</text>
+  <text x="1198" y="420" text-anchor="middle" class="f6-mono" font-size="7.5" fill="#1D4ED8">↑ w_k  (12.96 KB)</text>
+  <text x="1198" y="436" text-anchor="middle" class="f6-sm"  font-size="7"   fill="#7C8494">NLLLoss (class-weighted)</text>
+
+    <!-- ================================================================
+       BLUE UPLOAD BUS  y = 472  (now BELOW the 8 client boxes)
+       Client bottoms (y=450) → short blue drop-lines DOWN → upload bus y=472
+       Horizontal collection bus: x 92 → 1328 (solid blue, NO arrowheads)
+       Right-side routing: bus → upward → server right edge, avoiding all content
+  ================================================================ -->
+
+  <!-- Vertical drop-lines: client bottom (y=450) → upload bus (y=472)
+       Arrowheads at BOTTOM of each line, pointing DOWNWARD into the bus. -->
+  <line x1="92"   y1="450" x2="92"   y2="472" stroke="#1D4ED8" stroke-width="1.8" marker-end="url(#arr-blue-up)"/>
+  <line x1="250"  y1="450" x2="250"  y2="472" stroke="#1D4ED8" stroke-width="1.8" marker-end="url(#arr-blue-up)"/>
+  <line x1="408"  y1="450" x2="408"  y2="472" stroke="#1D4ED8" stroke-width="1.8" marker-end="url(#arr-blue-up)"/>
+  <line x1="566"  y1="450" x2="566"  y2="472" stroke="#1D4ED8" stroke-width="1.8" marker-end="url(#arr-blue-up)"/>
+  <line x1="724"  y1="450" x2="724"  y2="472" stroke="#1D4ED8" stroke-width="1.8" marker-end="url(#arr-blue-up)"/>
+  <line x1="882"  y1="450" x2="882"  y2="472" stroke="#1D4ED8" stroke-width="1.8" marker-end="url(#arr-blue-up)"/>
+  <line x1="1040" y1="450" x2="1040" y2="472" stroke="#1D4ED8" stroke-width="1.8" marker-end="url(#arr-blue-up)"/>
+  <line x1="1198" y1="450" x2="1198" y2="472" stroke="#1D4ED8" stroke-width="1.8" marker-end="url(#arr-blue-up)"/>
+
+  <!-- Horizontal collection bus — purely a visual track, NO arrowheads -->
+  <line x1="92"  y1="472" x2="1328" y2="472"
+        stroke="#1D4ED8" stroke-width="2.8"/>
+
+  <!-- Upload bus label (sits cleanly below the collection bus) -->
+  <rect x="572" y="486" width="256" height="36" rx="14"
+        fill="#EFF4FF" stroke="#1D4ED8" stroke-width="1.3"/>
+  <text x="700" y="501" text-anchor="middle" class="f6-lg"  font-size="10.5" fill="#1D4ED8">
+    ② Upload  w_k + Metrics
+  </text>
+  <text x="700" y="516" text-anchor="middle" class="f6-sm"  font-size="8.5"  fill="#4B5361">
+    103.68 KB total upload per round
+  </text>
+
+  <!-- Right-side upload routing path.
+       Blue collection bus → right-side vertical rise → server right edge.
+       This deliberately avoids the central server text, labels, and green broadcast paths. -->
+  <path d="M 1328 472 L 1328 70 L 1100 70"
+        fill="none" stroke="#1D4ED8" stroke-width="2.8"
+        stroke-linecap="round" stroke-linejoin="round"
+        marker-end="url(#arr-blue-up-lg)"/>
+
+<!-- ================================================================
+       COMMUNICATION STATISTICS PANEL   y: 468 → 570
+  ================================================================ -->
+  <rect x="18"  y="534" width="1364" height="104" rx="12"
+        fill="white" stroke="#16A34A" stroke-width="1.6" filter="url(#shadow)"/>
+  <!-- Dark header -->
+  <rect x="18"  y="534" width="1364" height="28" rx="12" fill="#12151C"/>
+  <rect x="18"  y="550"  width="1364" height="12" fill="#12151C"/>
+  <text x="700" y="554" text-anchor="middle" class="f6-xl" font-size="12" fill="white">
+    Communication Efficiency Statistics — Verified from Implementation
+  </text>
+
+  <!-- 6 stat cards (y: 504 → 562) -->
+  <!-- Card 1: 12.96 KB -->
+  <rect x="32"   y="570" width="200" height="56" rx="8" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+  <text x="132"  y="590" text-anchor="middle" class="f6-xl" font-size="13.5" fill="#16A34A">12.96 KB</text>
+  <text x="132"  y="606" text-anchor="middle" class="f6-sm"  font-size="8.5"  fill="#4B5361">per-client payload / round</text>
+  <text x="132"  y="620" text-anchor="middle" class="f6-sm"  font-size="8.5"  fill="#4B5361">upload + download</text>
+
+  <!-- Card 2: 207.36 KB -->
+  <rect x="244"  y="570" width="200" height="56" rx="8" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+  <text x="344"  y="590" text-anchor="middle" class="f6-xl" font-size="13.5" fill="#16A34A">207.36 KB</text>
+  <text x="344"  y="606" text-anchor="middle" class="f6-sm"  font-size="8.5"  fill="#4B5361">total bidirectional / round</text>
+  <text x="344"  y="620" text-anchor="middle" class="f6-sm"  font-size="8.5"  fill="#4B5361">8 × 12.96 × 2</text>
+
+  <!-- Card 3: 30 rounds -->
+  <rect x="456"  y="570" width="200" height="56" rx="8" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+  <text x="556"  y="590" text-anchor="middle" class="f6-xl" font-size="13.5" fill="#16A34A">30 rounds</text>
+  <text x="556"  y="606" text-anchor="middle" class="f6-sm"  font-size="8.5"  fill="#4B5361">communication rounds</text>
+  <text x="556"  y="620" text-anchor="middle" class="f6-sm"  font-size="8.5"  fill="#4B5361">evaluated</text>
+
+  <!-- Card 4: 3,240 params -->
+  <rect x="668"  y="570" width="200" height="56" rx="8" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+  <text x="768"  y="590" text-anchor="middle" class="f6-xl" font-size="13.5" fill="#16A34A">3,240 params</text>
+  <text x="768"  y="606" text-anchor="middle" class="f6-sm"  font-size="8.5"  fill="#4B5361">model size (float32)</text>
+  <text x="768"  y="620" text-anchor="middle" class="f6-sm"  font-size="8.5"  fill="#4B5361">3240 × 4 B = 12.96 KB</text>
+
+  <!-- Card 5: 0 raw data -->
+  <rect x="880"  y="570" width="200" height="56" rx="8" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+  <text x="980"  y="590" text-anchor="middle" class="f6-xl" font-size="13.5" fill="#16A34A">0 raw data</text>
+  <text x="980"  y="606" text-anchor="middle" class="f6-sm"  font-size="8.5"  fill="#4B5361">transmitted to server</text>
+  <text x="980"  y="620" text-anchor="middle" class="f6-sm"  font-size="8.5"  fill="#4B5361">privacy-preserving FL</text>
+
+  <!-- Card 6: 82.21% (green filled) -->
+  <rect x="1092" y="570" width="278" height="56" rx="8" fill="#16A34A"/>
+  <text x="1231" y="590" text-anchor="middle" class="f6-xl" font-size="13.5" fill="white">82.21% Accuracy</text>
+  <text x="1231" y="606" text-anchor="middle" class="f6-sm"  font-size="8.5"  fill="rgba(255,255,255,.9)">AdaptiveFedAvg final result</text>
+  <text x="1231" y="620" text-anchor="middle" class="f6-mono" font-size="8.5" fill="rgba(255,255,255,.9)">Macro F1: 0.6401</text>
+
+  <!-- ================================================================
+       ROUND EXECUTION TIMELINE   y: 588 → 770
+  ================================================================ -->
+  <rect x="18"  y="654" width="1364" height="180" rx="12"
+        fill="#F7F8FA" stroke="#E2E5EA" stroke-width="1"/>
+  <text x="700" y="676" text-anchor="middle" class="f6-xl" font-size="11.5" fill="#12151C">
+    One Round Execution Timeline  (per round  t = 1 to 30)
+  </text>
+
+  <!-- Arrows between steps -->
+  <text x="247" y="776" text-anchor="middle" class="f6-xl" font-size="15" fill="#16A34A">→</text>
+  <text x="473" y="776" text-anchor="middle" class="f6-xl" font-size="15" fill="#2563EB">→</text>
+  <text x="720" y="776" text-anchor="middle" class="f6-xl" font-size="15" fill="#2563EB">→</text>
+  <text x="970" y="776" text-anchor="middle" class="f6-xl" font-size="15" fill="#16A34A">→</text>
+  <text x="1220" y="776" text-anchor="middle" class="f6-xl" font-size="15" fill="#16A34A">→</text>
+
+  <!-- Step 1: Server Broadcasts -->
+  <rect x="28"  y="686" width="208" height="132" rx="8" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+  <text x="132" y="706" text-anchor="middle" class="f6-lg"  font-size="10"  fill="#16A34A">Server Broadcasts</text>
+  <text x="132" y="723" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#12151C">w_t → all 8 clients</text>
+  <text x="132" y="738" text-anchor="middle" class="f6-sm"  font-size="8.5" fill="#4B5361">12.96 KB per client</text>
+  <text x="132" y="752" text-anchor="middle" class="f6-sm"  font-size="8.5" fill="#4B5361">103.68 KB total broadcast</text>
+  <text x="132" y="770" text-anchor="middle" class="f6-mono" font-size="8"  fill="#16A34A">send_parameters()</text>
+  <text x="132" y="786" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">Flower gRPC channel</text>
+  <text x="132" y="801" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">8 parallel clients</text>
+
+  <!-- Step 2: Clients Train -->
+  <rect x="262" y="686" width="200" height="132" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.2"/>
+  <text x="362" y="706" text-anchor="middle" class="f6-lg"  font-size="10"  fill="#2563EB">Clients Train Locally</text>
+  <text x="362" y="723" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#12151C">3 epochs, parallel</text>
+  <text x="362" y="738" text-anchor="middle" class="f6-sm"  font-size="8.5" fill="#4B5361">NLLLoss + AdamW</text>
+  <text x="362" y="752" text-anchor="middle" class="f6-sm"  font-size="8.5" fill="#4B5361">class-weighted loss</text>
+  <text x="362" y="770" text-anchor="middle" class="f6-sm"  font-size="8.5" fill="#4B5361">Compute val_macro_f1</text>
+  <text x="362" y="786" text-anchor="middle" class="f6-mono" font-size="8"  fill="#2563EB">fit() callback</text>
+  <text x="362" y="801" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">regional feature windows</text>
+
+  <!-- Step 3: Clients Upload -->
+  <rect x="490" y="686" width="220" height="132" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.2"/>
+  <text x="600" y="706" text-anchor="middle" class="f6-lg"  font-size="10"  fill="#2563EB">Clients Upload</text>
+  <text x="600" y="723" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#12151C">w_k, F1_k, n_k, f_rare,k</text>
+  <text x="600" y="738" text-anchor="middle" class="f6-sm"  font-size="8.5" fill="#4B5361">12.96 KB weights + scalars</text>
+  <text x="600" y="752" text-anchor="middle" class="f6-sm"  font-size="8.5" fill="#4B5361">103.68 KB total upload</text>
+  <text x="600" y="770" text-anchor="middle" class="f6-mono" font-size="8"  fill="#2563EB">FitRes + metrics dict</text>
+  <text x="600" y="786" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">dataset_size = n_samples</text>
+  <text x="600" y="801" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">rare_class_fraction</text>
+
+  <!-- Step 4: AdaptiveFedAvg Runs -->
+  <rect x="738" y="686" width="224" height="132" rx="8" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+  <text x="850" y="706" text-anchor="middle" class="f6-lg"  font-size="10"  fill="#16A34A">AdaptiveFedAvg Runs</text>
+  <text x="850" y="723" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#12151C">ω_k = n_k · q_k · ρ_k · g_k</text>
+  <text x="850" y="738" text-anchor="middle" class="f6-sm"  font-size="8.5" fill="#4B5361">n_k: dataset size</text>
+  <text x="850" y="752" text-anchor="middle" class="f6-sm"  font-size="8.5" fill="#4B5361">q_k: validation quality</text>
+  <text x="850" y="766" text-anchor="middle" class="f6-sm"  font-size="8.5" fill="#4B5361">ρ_k: rarity bonus</text>
+  <text x="850" y="780" text-anchor="middle" class="f6-sm"  font-size="8.5" fill="#4B5361">g_k: reliability gate</text>
+  <text x="850" y="796" text-anchor="middle" class="f6-mono" font-size="8"  fill="#16A34A">aggregate_fit()</text>
+  <text x="850" y="811" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">Σ ω̂_k = 1.0</text>
+
+  <!-- Step 5: Global Model Updated -->
+  <rect x="980" y="686" width="228" height="132" rx="8" fill="#EEFBF2" stroke="#16A34A" stroke-width="1.2"/>
+  <text x="1094" y="706" text-anchor="middle" class="f6-lg"  font-size="10"  fill="#16A34A">Global Model Updated</text>
+  <text x="1094" y="723" text-anchor="middle" class="f6-mono" font-size="8.5" fill="#12151C">Σ ω̂_k · w_k^{t+1}</text>
+  <text x="1094" y="738" text-anchor="middle" class="f6-sm"  font-size="8.5" fill="#4B5361">Layer-wise weighted sum</text>
+  <text x="1094" y="752" text-anchor="middle" class="f6-sm"  font-size="8.5" fill="#4B5361">Logged → weight_log.csv</text>
+  <text x="1094" y="770" text-anchor="middle" class="f6-mono" font-size="8"  fill="#16A34A">ndarrays_to_parameters</text>
+  <text x="1094" y="786" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">centralized eval at server</text>
+  <text x="1094" y="801" text-anchor="middle" class="f6-sm"  font-size="8"   fill="#4B5361">acc + macro_f1 recorded</text>
+
+  <!-- Step 6: Next Round -->
+  <rect x="1232" y="686" width="130" height="132" rx="8" fill="#16A34A"/>
+  <text x="1297" y="714" text-anchor="middle" class="f6-xl"  font-size="12"  fill="white">t = t+1</text>
+  <text x="1297" y="736" text-anchor="middle" class="f6-sm"  font-size="9"   fill="rgba(255,255,255,.9)">Repeat</text>
+  <text x="1297" y="754" text-anchor="middle" class="f6-sm"  font-size="9"   fill="rgba(255,255,255,.9)">until</text>
+  <text x="1297" y="772" text-anchor="middle" class="f6-sm"  font-size="9"   fill="rgba(255,255,255,.9)">t = 30</text>
+  <text x="1297" y="796" text-anchor="middle" class="f6-mono" font-size="8"  fill="rgba(255,255,255,.8)">30 rounds</text>
+  <text x="1297" y="812" text-anchor="middle" class="f6-mono" font-size="8"  fill="rgba(255,255,255,.8)">evaluated</text>
+
+</svg>

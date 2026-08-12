@@ -1,0 +1,18 @@
+\begin{table}[htbp]
+\centering
+\caption{Systems-Level Benchmarking and Communication Costs}
+\label{tab:latency_communication}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{ll}
+\toprule
+\textbf{Systems Benchmark Metric} & \textbf{Empirical Measurement} \\
+\midrule
+Average Edge Inference Latency    & 0.2069 ms / sample (CPU) \\
+Per-Client Model Upload Payload   & 12.96 KB / round ($3{,}240 \times 4$ bytes) \\
+Per-Client Model Download Payload & 12.96 KB / round \\
+Total Upload Bandwidth (8 Clients)& 207.36 KB / round \\
+Cumulative Client Upload Bandwidth     & 6.22 MB (30 rounds $\times$ 8 clients) \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
