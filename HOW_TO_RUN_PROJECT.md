@@ -37,6 +37,7 @@ python run_project.py
 Open:
 
 - Dashboard: http://127.0.0.1:5173
+- Live traffic map: http://127.0.0.1:5173/map
 - Backend: http://127.0.0.1:8000
 - Swagger API documentation: http://127.0.0.1:8000/docs
 
@@ -75,6 +76,14 @@ python run_project.py --backend-only --with-ingestion --simulator-ticks 10
 `gps_pings`, while the latest per-segment projection is upserted into
 `segment_current_state`. Batch retries are idempotent by
 `(source_id, run_id, batch_id)` and require `X-Live-Ingest-Key`.
+
+The live traffic map reads canonical road geometry once from
+`GET /api/v1/segments`, then polls the normalized
+`GET /api/v1/live-map/snapshot` endpoint at the backend-provided interval.
+The snapshot contains the latest accepted run's vehicle positions, segment
+states, event-labelled telemetry, freshness metadata, and summary counters.
+Use optional `source_id` and `run_id` query parameters to inspect a specific
+ingestion run.
 
 Use `--ingest-api-key <value>` instead of the environment variable when useful.
 The backend readiness check waits up to 30 seconds before the simulator starts.
@@ -117,8 +126,14 @@ Custom server ports:
 python run_project.py --backend-port 8010 --frontend-port 5180
 ```
 
-The current frontend API URLs are configured for backend port `8000`. Use the
-default backend port for normal frontend operation.
+The frontend uses `VITE_API_BASE_URL`, defaulting to
+`http://localhost:8000`. Set it before starting Vite when the backend uses a
+different host or port:
+
+```powershell
+$env:VITE_API_BASE_URL = "http://127.0.0.1:8010"
+python run_project.py --frontend-only --frontend-port 5180
+```
 
 ## Manual Startup
 
@@ -183,6 +198,23 @@ Run live-ingestion validation:
 Set-Location backend
 $env:PYTHONPATH = "."
 ..\.venv\Scripts\python.exe -m pytest tests\test_live_ingestion.py -v
+```
+
+Run live-map backend validation:
+
+```powershell
+Set-Location backend
+$env:PYTHONPATH = "."
+..\.venv\Scripts\python.exe -m pytest tests\test_live_map.py -v
+```
+
+Run frontend tests, lint, and the production build:
+
+```powershell
+Set-Location frontend
+npm test
+npm run lint
+npm run build
 ```
 
 ## Ingestion Diagnostics

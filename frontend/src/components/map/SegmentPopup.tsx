@@ -1,54 +1,37 @@
 import React from 'react';
-import { ShieldCheck, AlertCircle } from 'lucide-react';
-
-
-export interface SegmentData {
-  segment_id: string;
-  region_id: string;
-  type?: 'Normal' | 'Construction' | 'Flood' | 'Accident' | 'Diversion';
-  base_speed?: number;
-  base_density?: number;
-  start_lat: number;
-  start_lon: number;
-  end_lat: number;
-  end_lon: number;
-  max_speed_kmph?: number;
-}
+import { AlertTriangle, CircleCheck, CircleHelp } from 'lucide-react';
+import type { SegmentData } from '../../services/api/liveMapApi';
+import type { LiveSegmentState } from '../../services/api/liveMapApi';
 
 interface SegmentPopupProps {
   segment: SegmentData;
+  state?: LiveSegmentState;
 }
 
-export const SegmentPopup: React.FC<SegmentPopupProps> = ({ segment }) => {
-  const isEvent = segment.type && segment.type !== 'Normal';
-  
+export const SegmentPopup: React.FC<SegmentPopupProps> = ({ segment, state }) => {
+  const status = state ? state.current_event === 'normal' ? 'Normal' : state.current_event : 'No live data';
+  const StatusIcon = !state ? CircleHelp : status === 'Normal' ? CircleCheck : AlertTriangle;
   return (
-    <div className="w-48 text-textPrimary">
-      <div className="font-semibold mb-2 text-white border-b border-border pb-1">
-        Segment {segment.segment_id}
+    <div className="w-56 text-textPrimary">
+      <div className="mb-2 border-b border-border pb-2">
+        <div className="font-semibold text-white">{segment.segment_id}</div>
+        <div className="text-xs text-textSecondary">{segment.road_name} · {segment.region_id}</div>
       </div>
       <div className="space-y-1 text-sm">
-        <div className="flex justify-between">
-          <span className="text-textSecondary">Region:</span>
-          <span className="font-medium">{segment.region_id}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-textSecondary">Base Speed:</span>
-          <span className="font-medium">{segment.base_speed || 40} km/h</span>
-        </div>
-        <div className="flex justify-between items-center mt-2 pt-2 border-t border-border">
-          <span className="text-textSecondary">Status:</span>
-          {isEvent ? (
-            <span className="flex items-center gap-1 text-danger font-medium text-xs">
-              <AlertCircle className="w-3 h-3" /> {segment.type}
-            </span>
-          ) : (
-            <span className="flex items-center gap-1 text-success font-medium text-xs">
-              <ShieldCheck className="w-3 h-3" /> Normal
-            </span>
-          )}
-        </div>
+        <Row label="Traffic status" value={status} icon={<StatusIcon className="h-3.5 w-3.5" />} />
+        <Row label="Average speed" value={state ? `${state.average_speed_kmph.toFixed(1)} km/h` : 'Unknown'} />
+        <Row label="Density" value={state ? state.density.toFixed(1) : 'Unknown'} />
+        <Row label="Vehicles" value={state ? String(state.vehicle_count) : 'Unknown'} />
+        <Row label="Availability" value={state ? state.available ? 'Available' : 'Blocked' : 'Unknown'} />
+        <Row label="Last updated" value={state ? new Date(state.latest_timestamp).toLocaleTimeString() : 'Unknown'} />
       </div>
     </div>
   );
 };
+
+const Row = ({ label, value, icon }: { label: string; value: string; icon?: React.ReactNode }) => (
+  <div className="flex items-center justify-between gap-3">
+    <span className="text-textSecondary">{label}</span>
+    <span className="flex items-center gap-1 text-right font-medium text-textPrimary">{icon}{value}</span>
+  </div>
+);

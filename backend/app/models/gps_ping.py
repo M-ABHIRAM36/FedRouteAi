@@ -23,6 +23,7 @@ class GPSPing(Base):
         UniqueConstraint("ingestion_batch_id", "observation_id", name="uq_gps_ping_batch_observation"),
         Index("ix_gps_pings_segment_timestamp", "segment_id", "timestamp"),
         Index("ix_gps_pings_region_timestamp", "region_id", "timestamp"),
+        Index("ix_gps_pings_batch_vehicle_timestamp", "ingestion_batch_id", "vehicle_id", "timestamp"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)

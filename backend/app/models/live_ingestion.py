@@ -1,7 +1,7 @@
 """Batch receipts and the latest derived state for each road segment."""
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -11,6 +11,7 @@ class LiveIngestionBatch(Base):
     __tablename__ = "live_ingestion_batches"
     __table_args__ = (
         UniqueConstraint("source_id", "run_id", "batch_id", name="uq_live_batch_identity"),
+        Index("ix_live_batches_source_run_received", "source_id", "run_id", "received_at"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)

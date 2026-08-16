@@ -45,7 +45,7 @@ class LiveIngestionRepository:
             current = self.db.get(SegmentCurrentState, state_data["segment_id"])
             if current is None:
                 self.db.add(SegmentCurrentState(ingestion_batch_id=receipt.id, **state_data))
-            elif state_data["latest_timestamp"] >= current.latest_timestamp:
+            elif state_data["last_updated"] >= current.last_updated:
                 for key, value in state_data.items():
                     setattr(current, key, value)
                 current.ingestion_batch_id = receipt.id
