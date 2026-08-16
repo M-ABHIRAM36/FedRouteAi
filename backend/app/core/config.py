@@ -60,5 +60,11 @@ class Settings(BaseSettings):
     # --- Routing ---
     ROUTE_EVENT_PENALTY_FACTOR: float = 3.0  # multiplies travel_time on an affected edge
 
+    # --- Live traffic simulation ---
+    LIVE_PINGS_PER_TICK: int = 1000
+    LIVE_TICK_INTERVAL_SECONDS: float = 4.0
+    LIVE_SIMULATION_SPEED: float = 1.0
+    LIVE_RANDOM_SEED: int = 42
+
 
 settings = Settings()
