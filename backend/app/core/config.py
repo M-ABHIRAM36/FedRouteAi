@@ -65,6 +65,8 @@ class Settings(BaseSettings):
     LIVE_TICK_INTERVAL_SECONDS: float = 4.0
     LIVE_SIMULATION_SPEED: float = 1.0
     LIVE_RANDOM_SEED: int = 42
+    LIVE_INGEST_MAX_BATCH_SIZE: int = 2000
+    LIVE_INGEST_API_KEY: str = ""
 
 
 settings = Settings()

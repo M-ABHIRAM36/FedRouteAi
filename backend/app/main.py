@@ -10,6 +10,8 @@ from app.core.logging_config import get_logger
 from app.api.v1.router import api_router
 from app.db.session import SessionLocal
 from app.services.road_graph.graph_cache import GRAPH_CACHE
+# Register every mapper before requests can trigger SQLAlchemy flush ordering.
+from app.models import segment, region, gps_ping, event, historical_memory, fl_round_record, live_ingestion  # noqa: F401
 
 logger = get_logger(__name__)
 

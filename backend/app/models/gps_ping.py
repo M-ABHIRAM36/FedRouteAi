@@ -11,7 +11,7 @@ Postgres, a targeted migration to BIGSERIAL there is a one-column
 change; it doesn't ripple anywhere else in the codebase."""
 from datetime import datetime
 
-from sqlalchemy import String, Float, Boolean, DateTime, ForeignKey, Integer
+from sqlalchemy import String, Float, Boolean, DateTime, ForeignKey, Integer, Index, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -19,6 +19,11 @@ from app.db.base import Base
 
 class GPSPing(Base):
     __tablename__ = "gps_pings"
+    __table_args__ = (
+        UniqueConstraint("ingestion_batch_id", "observation_id", name="uq_gps_ping_batch_observation"),
+        Index("ix_gps_pings_segment_timestamp", "segment_id", "timestamp"),
+        Index("ix_gps_pings_region_timestamp", "region_id", "timestamp"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     segment_id: Mapped[str] = mapped_column(ForeignKey("segments.segment_id"), index=True)
@@ -38,3 +43,9 @@ class GPSPing(Base):
     # real ingested traffic won't have this, that's what the model predicts
     label: Mapped[str | None] = mapped_column(String(40), nullable=True)
     event_id: Mapped[str | None] = mapped_column(String(20), nullable=True)
+
+    # Null for V1/mobile observations; populated by trusted live batch ingestion.
+    ingestion_batch_id: Mapped[int | None] = mapped_column(
+        ForeignKey("live_ingestion_batches.id"), nullable=True, index=True
+    )
+    observation_id: Mapped[str | None] = mapped_column(String(100), nullable=True)

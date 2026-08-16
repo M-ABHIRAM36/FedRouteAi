@@ -8,7 +8,7 @@ from app.db.session import engine
 from app.core.logging_config import get_logger
 
 # import every model so Base.metadata knows about all tables
-from app.models import segment, region, gps_ping, event, historical_memory, fl_round_record  # noqa: F401
+from app.models import segment, region, gps_ping, event, historical_memory, fl_round_record, live_ingestion  # noqa: F401
 
 logger = get_logger(__name__)
 
