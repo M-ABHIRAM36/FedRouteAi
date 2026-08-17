@@ -1,0 +1,12 @@
+{
+  "hours": 5.0,
+  "seed": 5,
+  "start": "2026-07-07 06:00:00",
+  "tick_seconds": 600.0,
+  "vehicle_count": 1000,
+  "telemetry_rows": 30000,
+  "scenario_rows": 3,
+  "feature_windows": 16338,
+  "network_version": "beeramguda-osm-20260506",
+  "ground_truth_is_separate": true
+}

@@ -38,3 +38,23 @@ class HistoricalMemoryRepository(BaseRepository[HistoricalMemory]):
             sample_size=profile.sample_size,
         )
         return self.add(row)
+
+    def upsert_many(self, profiles: list) -> list[HistoricalMemory]:
+        """Upsert a simulator tick's profiles in one transaction."""
+        rows: list[HistoricalMemory] = []
+        for profile in profiles:
+            existing = self.get_baseline(profile.segment_id, profile.hour_of_day)
+            if existing is None:
+                existing = HistoricalMemory(
+                    segment_id=profile.segment_id,
+                    hour_of_day=profile.hour_of_day,
+                )
+                self.db.add(existing)
+            existing.avg_speed_kmph = profile.avg_speed_kmph
+            existing.std_speed_kmph = profile.std_speed_kmph
+            existing.avg_vehicle_count = profile.avg_vehicle_count
+            existing.uturn_rate = profile.uturn_rate
+            existing.sample_size = profile.sample_size
+            rows.append(existing)
+        self.db.commit()
+        return rows

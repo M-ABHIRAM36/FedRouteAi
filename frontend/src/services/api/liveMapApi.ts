@@ -17,6 +17,13 @@ export interface SegmentData {
   road_direction: string;
   flood_prone: boolean;
   neighbor_segments: string[];
+  geometry?: {
+    type: 'LineString';
+    coordinates: [number, number][];
+  } | null;
+  network_source?: string | null;
+  network_version?: string | null;
+  osm_way_id?: number | null;
 }
 
 export interface LiveVehicle {
@@ -41,6 +48,12 @@ export interface LiveSegmentState {
   current_event: string;
   available: boolean;
   last_updated: string;
+  predicted_event?: string | null;
+  prediction_confidence?: number | null;
+  prediction_model_version?: string | null;
+  historical_baseline?: Record<string, unknown> | null;
+  current_deviation?: Record<string, unknown> | null;
+  occupancy?: number | null;
 }
 
 export interface LiveEvent {
@@ -49,6 +62,9 @@ export interface LiveEvent {
   region_id: string;
   event_type: string;
   timestamp: string;
+  severity?: number | null;
+  affected_segment_ids?: string[];
+  source?: string;
 }
 
 export interface LiveMapSnapshot {
@@ -61,6 +77,8 @@ export interface LiveMapSnapshot {
   server_time: string;
   poll_interval_seconds: number;
   stale_after_seconds: number;
+  network_source?: string | null;
+  network_version?: string | null;
   segments: LiveSegmentState[];
   vehicles: LiveVehicle[];
   events: LiveEvent[];
@@ -73,8 +91,10 @@ export interface LiveMapSnapshot {
   };
 }
 
-export const fetchSegments = async (): Promise<SegmentData[]> =>
-  (await apiClient.get<SegmentData[]>('/api/v1/segments')).data;
+export const fetchSegments = async (networkSource?: string | null): Promise<SegmentData[]> =>
+  (await apiClient.get<SegmentData[]>('/api/v1/segments', {
+    params: networkSource ? { network_source: networkSource } : undefined,
+  })).data;
 
 export const fetchLiveSnapshot = async (): Promise<LiveMapSnapshot> =>
   (await apiClient.get<LiveMapSnapshot>('/api/v1/live-map/snapshot')).data;

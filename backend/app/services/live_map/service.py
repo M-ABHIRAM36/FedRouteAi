@@ -32,6 +32,13 @@ def build_live_map_snapshot(repository, source_id: str | None = None, run_id: st
         fresh_after,
     )
     states = repository.segment_states(receipt.source_id, receipt.run_id)
+    predictions = {
+        row.segment_id: row
+        for row in repository.latest_predictions(receipt.source_id, receipt.run_id)
+    } if hasattr(repository, "latest_predictions") else {}
+    scenarios = repository.active_scenarios(
+        receipt.source_id, receipt.run_id, receipt.observed_at
+    ) if hasattr(repository, "active_scenarios") else []
 
     vehicles = [LiveMapVehicleOut(
         vehicle_id=row.vehicle_id,
@@ -54,6 +61,11 @@ def build_live_map_snapshot(repository, source_id: str | None = None, run_id: st
         "current_event": state.current_event,
         "available": state.available,
         "last_updated": state.last_updated,
+        "predicted_event": predictions[state.segment_id].predicted_label if state.segment_id in predictions else None,
+        "prediction_confidence": predictions[state.segment_id].confidence if state.segment_id in predictions else None,
+        "prediction_model_version": predictions[state.segment_id].model_version if state.segment_id in predictions else None,
+        "historical_baseline": predictions[state.segment_id].historical_baseline if state.segment_id in predictions else None,
+        "current_deviation": predictions[state.segment_id].current_deviation if state.segment_id in predictions else None,
     }) for state in states]
 
     events_by_id = {}
@@ -67,6 +79,18 @@ def build_live_map_snapshot(repository, source_id: str | None = None, run_id: st
                 timestamp=row.timestamp,
             )
     events = sorted(events_by_id.values(), key=lambda event: event.event_id)
+    telemetry_event_ids = {event.event_id for event in events}
+    events.extend(LiveMapEventOut(
+        event_id=row.event_id,
+        segment_id=row.primary_segment_id,
+        region_id=row.region_id,
+        event_type=row.event_type,
+        timestamp=row.start_time,
+        severity=row.severity,
+        affected_segment_ids=row.affected_segment_ids,
+        source="scenario_ground_truth",
+    ) for row in scenarios if row.event_id not in telemetry_event_ids)
+    events.sort(key=lambda event: event.event_id)
     average_speed = sum(row.speed_kmph for row in positions) / len(positions) if positions else 0.0
 
     return LiveMapSnapshotOut(
@@ -79,6 +103,8 @@ def build_live_map_snapshot(repository, source_id: str | None = None, run_id: st
         server_time=utcnow(),
         poll_interval_seconds=settings.LIVE_TICK_INTERVAL_SECONDS,
         stale_after_seconds=stale_after,
+        network_source=getattr(receipt, "network_source", None),
+        network_version=getattr(receipt, "network_version", None),
         segments=segment_states,
         vehicles=vehicles,
         events=events,

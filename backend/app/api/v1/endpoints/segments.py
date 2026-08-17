@@ -3,13 +3,27 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.repositories.segment_repository import SegmentRepository
+from app.repositories.geo_v2_repository import GeoV2Repository
 from app.schemas.segment import SegmentOut
 
 router = APIRouter(prefix="/segments", tags=["segments"])
 
 
 @router.get("", response_model=list[SegmentOut])
-def list_segments(region_id: str | None = None, db: Session = Depends(get_db)):
+def list_segments(
+    region_id: str | None = None,
+    network_source: str | None = None,
+    db: Session = Depends(get_db),
+):
+    if network_source:
+        repository = GeoV2Repository(db)
+        rows = repository.list_segments(network_source)
+        if region_id:
+            rows = [row for row in rows if row[0].region_id == region_id]
+        return [
+            SegmentOut.from_orm_row(segment, metadata, repository.geometry_coordinates(metadata))
+            for segment, metadata in rows
+        ]
     repo = SegmentRepository(db)
     rows = repo.get_by_region(region_id) if region_id else repo.list_all(limit=500)
     return [SegmentOut.from_orm_row(r) for r in rows]

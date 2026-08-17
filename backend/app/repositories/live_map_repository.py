@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session, aliased
 
 from app.models.gps_ping import GPSPing
 from app.models.live_ingestion import LiveIngestionBatch, SegmentCurrentState
+from app.models.geo_v2 import LiveScenario, SegmentPrediction
 
 
 class LiveMapRepository:
@@ -64,3 +65,28 @@ class LiveMapRepository:
             .order_by(SegmentCurrentState.segment_id.asc())
             .all()
         )
+
+    def latest_predictions(self, source_id: str, run_id: str) -> list[SegmentPrediction]:
+        latest = self.db.query(
+            SegmentPrediction.segment_id,
+            func.max(SegmentPrediction.timestamp).label("timestamp"),
+        ).filter(
+            SegmentPrediction.source_id == source_id,
+            SegmentPrediction.run_id == run_id,
+        ).group_by(SegmentPrediction.segment_id).subquery()
+        return self.db.query(SegmentPrediction).join(
+            latest,
+            (latest.c.segment_id == SegmentPrediction.segment_id)
+            & (latest.c.timestamp == SegmentPrediction.timestamp),
+        ).filter(
+            SegmentPrediction.source_id == source_id,
+            SegmentPrediction.run_id == run_id,
+        ).all()
+
+    def active_scenarios(self, source_id: str, run_id: str, at: datetime) -> list[LiveScenario]:
+        return self.db.query(LiveScenario).filter(
+            LiveScenario.source_id == source_id,
+            LiveScenario.run_id == run_id,
+            LiveScenario.start_time <= at,
+            LiveScenario.end_time > at,
+        ).order_by(LiveScenario.event_id).all()

@@ -174,6 +174,83 @@ This script requires a Bash environment such as Git Bash or WSL. Do not rerun it
 merely to start the application because dataset generation is separate from
 normal application startup.
 
+## Geo V2 Beeramguda Network
+
+Geo V2 is additive. It preserves the V1 130-segment network and imports the
+cached OpenStreetMap geometry as `osm_geo_v2` version
+`beeramguda-osm-20260506`. Telemetry generated from this network is
+geographically grounded synthetic telemetry, not measured GPS data.
+
+Apply the Geo V2 migration and import the cached network once:
+
+```powershell
+Set-Location backend
+$env:PYTHONPATH = "."
+..\.venv\Scripts\python.exe -m alembic upgrade head
+..\.venv\Scripts\python.exe ..\scripts\geo_v2\import_network.py
+Set-Location ..
+```
+
+The import is idempotent for the same network version. It creates PostGIS
+LineStrings, a GiST geometry index, and legal directed transitions while
+leaving V1 rows unchanged.
+
+Start the backend, then run a 1,000-vehicle accelerated live demonstration in
+another terminal:
+
+```powershell
+Set-Location backend
+$env:PYTHONPATH = "."
+..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload
+```
+
+```powershell
+.\.venv\Scripts\python.exe scripts\geo_v2\live_demo.py `
+  --api-key replace-with-a-local-secret `
+  --ticks 30 --tick-seconds 600 --vehicle-count 1000
+```
+
+Thirty ten-minute simulated ticks cover five hours. The runner loads the
+persisted canonical network, polls `GET /api/v1/live-scenarios`, sends
+unlabelled telemetry to live ingestion, updates normal historical baselines,
+and persists model predictions separately. An untrained global model produces
+explicit null predictions rather than fabricated event labels.
+
+Create a persistent scenario through `POST /api/v1/live-scenarios`. Example:
+
+```json
+{
+  "source_id": "geo-v2-demo",
+  "run_id": "geo-v2-demo-5h",
+  "scenarios": [
+    {
+      "type": "congestion",
+      "segment_id": "<Geo V2 segment ID>",
+      "severity": 0.7,
+      "duration_seconds": 1800
+    }
+  ]
+}
+```
+
+Scenario labels are ground-truth metadata only and are never passed to the
+10-dimensional inference contract. Flood scenarios require an explicitly
+configured flood-prone segment; cached OSM road tags do not establish flood
+risk.
+
+Generate an isolated five-hour research dataset and spatial validation report:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\geo_v2\generate_dataset.py `
+  --hours 5 --seed 42 --tick-seconds 600 --vehicle-count 1000
+.\.venv\Scripts\python.exe scripts\geo_v2\spatial_validation.py `
+  --telemetry data\geo_v2\fedrouteai_dataset_geo_v2\raw_telemetry.csv
+```
+
+Use `--hours 1` or `--hours 24` for the other supported durations. Outputs are
+written below `data/geo_v2/fedrouteai_dataset_geo_v2` and never overwrite V1
+datasets or model artifacts.
+
 ## Tests
 
 Run the complete backend suite:

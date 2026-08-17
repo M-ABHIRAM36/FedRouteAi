@@ -1,28 +1,43 @@
 import React from 'react';
 import { AlertTriangle, CircleCheck, CircleHelp } from 'lucide-react';
-import type { SegmentData } from '../../services/api/liveMapApi';
-import type { LiveSegmentState } from '../../services/api/liveMapApi';
+import type { LiveEvent, LiveSegmentState, SegmentData } from '../../services/api/liveMapApi';
 
 interface SegmentPopupProps {
   segment: SegmentData;
   state?: LiveSegmentState;
+  event?: LiveEvent;
 }
 
-export const SegmentPopup: React.FC<SegmentPopupProps> = ({ segment, state }) => {
-  const status = state ? state.current_event === 'normal' ? 'Normal' : state.current_event : 'No live data';
-  const StatusIcon = !state ? CircleHelp : status === 'Normal' ? CircleCheck : AlertTriangle;
+const displayName = (value: string) => value.replaceAll('_', ' ');
+const percentage = (value: number) => `${(value * 100).toFixed(1)}%`;
+const objectValue = (value: Record<string, unknown>) => Object.entries(value).map(([key, item]) => `${displayName(key)}: ${typeof item === 'number' ? item.toFixed(2) : String(item)}`).join(', ');
+
+export const SegmentPopup: React.FC<SegmentPopupProps> = ({ segment, state, event }) => {
+  const prediction = state?.predicted_event ? displayName(state.predicted_event) : undefined;
+  const StatusIcon = !state ? CircleHelp : prediction === 'normal' ? CircleCheck : prediction ? AlertTriangle : CircleHelp;
   return (
-    <div className="w-56 text-textPrimary">
+    <div className="w-64 text-textPrimary">
       <div className="mb-2 border-b border-border pb-2">
-        <div className="font-semibold text-white">{segment.segment_id}</div>
-        <div className="text-xs text-textSecondary">{segment.road_name} · {segment.region_id}</div>
+        <div className="font-semibold text-white">{segment.road_name}</div>
+        <div className="text-xs text-textSecondary">{segment.segment_id} · {segment.region_id}</div>
       </div>
       <div className="space-y-1 text-sm">
-        <Row label="Traffic status" value={status} icon={<StatusIcon className="h-3.5 w-3.5" />} />
+        <Row label="Model prediction" value={prediction ?? 'No prediction'} icon={<StatusIcon className="h-3.5 w-3.5" />} />
+        {state?.prediction_confidence != null && <Row label="Confidence" value={percentage(state.prediction_confidence)} />}
+        {state?.prediction_model_version && <Row label="Model" value={state.prediction_model_version} />}
         <Row label="Average speed" value={state ? `${state.average_speed_kmph.toFixed(1)} km/h` : 'Unknown'} />
         <Row label="Density" value={state ? state.density.toFixed(1) : 'Unknown'} />
+        {state?.occupancy != null && <Row label="Occupancy" value={percentage(state.occupancy)} />}
         <Row label="Vehicles" value={state ? String(state.vehicle_count) : 'Unknown'} />
         <Row label="Availability" value={state ? state.available ? 'Available' : 'Blocked' : 'Unknown'} />
+        {segment.network_source && <Row label="Network source" value={segment.network_source} />}
+        {segment.network_version && <Row label="Network version" value={segment.network_version} />}
+        {segment.osm_way_id != null && <Row label="OSM way" value={String(segment.osm_way_id)} />}
+        {state?.historical_baseline && <Row label="Baseline" value={objectValue(state.historical_baseline)} />}
+        {state?.current_deviation && <Row label="Deviation" value={objectValue(state.current_deviation)} />}
+        {event && <Row label="Scenario event" value={displayName(event.event_type)} />}
+        {event?.source && <Row label="Event source" value={displayName(event.source)} />}
+        {event?.severity != null && <Row label="Severity" value={percentage(event.severity)} />}
         <Row label="Last updated" value={state ? new Date(state.latest_timestamp).toLocaleTimeString() : 'Unknown'} />
       </div>
     </div>

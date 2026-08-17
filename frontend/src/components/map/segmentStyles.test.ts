@@ -14,10 +14,20 @@ describe('getSegmentStyle', () => {
   });
 
   it.each(['congestion', 'construction', 'accident', 'flood', 'diversion', 'road_damage'])('maps %s telemetry to its semantic style', (event) => {
-    expect(getSegmentStyle(state(event)).status).toBe(event);
+    expect(getSegmentStyle({ ...state('normal'), predicted_event: event }).status).toBe(event);
   });
 
   it('gives unavailable roads blocked precedence', () => {
-    expect(getSegmentStyle(state('normal', false)).status).toBe('blocked');
+    expect(getSegmentStyle({ ...state('normal', false), predicted_event: 'accident' }).status).toBe('blocked');
+  });
+
+  it('prefers a model prediction over the scenario telemetry label', () => {
+    expect(getSegmentStyle({ ...state('accident'), predicted_event: 'construction' }).status).toBe('construction');
+  });
+
+  it('styles unclassified physical telemetry without using the scenario label', () => {
+    expect(getSegmentStyle(state('accident'), 60).status).toBe('telemetry_slow');
+    expect(getSegmentStyle({ ...state('flood'), density: 25 }, 60).status).toBe('telemetry_dense');
+    expect(getSegmentStyle({ ...state('construction'), average_speed_kmph: 50 }, 60).status).toBe('telemetry_clear');
   });
 });

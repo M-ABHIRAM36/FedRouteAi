@@ -61,6 +61,8 @@ class LiveGPSBatchIn(BaseModel):
     run_id: str = Field(min_length=1, max_length=80)
     batch_id: str = Field(min_length=1, max_length=80)
     tick_number: int = Field(ge=1)
+    network_source: str | None = Field(default=None, max_length=40)
+    network_version: str | None = Field(default=None, max_length=80)
     observations: list[LiveGPSObservationIn] = Field(min_length=1)
 
 

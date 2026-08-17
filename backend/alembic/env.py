@@ -8,7 +8,7 @@ from alembic import context
 
 from app.core.config import settings
 from app.db.base import Base
-from app.models import segment, region, gps_ping, event, historical_memory, fl_round_record, live_ingestion  # noqa: F401
+from app.models import segment, region, gps_ping, event, historical_memory, fl_round_record, live_ingestion, geo_v2  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)

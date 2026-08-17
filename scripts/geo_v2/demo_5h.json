@@ -1,0 +1,9 @@
+{
+  "hours": 5,
+  "seed": 5,
+  "tick_seconds": 600,
+  "vehicle_count": 1000,
+  "network_source": "osm_geo_v2",
+  "network_version": "beeramguda-osm-20260506",
+  "command": "python scripts/geo_v2/generate_dataset.py --hours 5 --seed 5 --tick-seconds 600 --vehicle-count 1000"
+}

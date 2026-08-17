@@ -26,6 +26,8 @@ class LiveIngestionBatch(Base):
     segment_count: Mapped[int] = mapped_column(Integer)
     region_count: Mapped[int] = mapped_column(Integer)
     average_speed_kmph: Mapped[float] = mapped_column(Float)
+    network_source: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    network_version: Mapped[str | None] = mapped_column(String(80), nullable=True)
 
 
 class SegmentCurrentState(Base):

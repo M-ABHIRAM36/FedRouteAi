@@ -15,6 +15,8 @@ class LiveIngestionClient:
         source_id: str,
         run_id: str,
         *,
+        network_source: str | None = None,
+        network_version: str | None = None,
         max_attempts: int = 3,
         timeout_seconds: float = 30.0,
     ):
@@ -22,6 +24,8 @@ class LiveIngestionClient:
         self.api_key = api_key
         self.source_id = source_id
         self.run_id = run_id
+        self.network_source = network_source
+        self.network_version = network_version
         self.max_attempts = max_attempts
         self.timeout_seconds = timeout_seconds
 
@@ -31,6 +35,8 @@ class LiveIngestionClient:
             "run_id": self.run_id,
             "batch_id": f"tick-{tick_number:08d}",
             "tick_number": tick_number,
+            "network_source": self.network_source,
+            "network_version": self.network_version,
             "observations": [
                 {
                     "observation_id": f"{tick_number}:{row['vehicle_id']}",
@@ -40,6 +46,10 @@ class LiveIngestionClient:
                 for row in observations
             ],
         }
+        if self.network_source is None:
+            payload.pop("network_source")
+        if self.network_version is None:
+            payload.pop("network_version")
         last_error: Exception | None = None
         for attempt in range(1, self.max_attempts + 1):
             try:

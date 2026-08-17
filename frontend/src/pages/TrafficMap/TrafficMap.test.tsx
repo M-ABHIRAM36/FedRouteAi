@@ -13,8 +13,8 @@ vi.mock('../../services/api/liveMapApi', async (importOriginal) => {
 vi.mock('react-leaflet', () => ({
   MapContainer: ({ children }: { children: ReactNode }) => <div data-testid="map">{children}</div>,
   TileLayer: () => <div data-testid="tiles" />,
-  Polyline: ({ children, eventHandlers }: { children: ReactNode; eventHandlers?: { click?: () => void } }) => <button data-testid="road" onClick={eventHandlers?.click}>{children}</button>,
-  CircleMarker: ({ children, eventHandlers }: { children?: ReactNode; eventHandlers?: { click?: () => void } }) => <button data-testid="vehicle" onClick={eventHandlers?.click}>{children}</button>,
+  Polyline: ({ children, eventHandlers, positions }: { children: ReactNode; eventHandlers?: { click?: () => void }; positions: unknown }) => <button data-testid="road" data-positions={JSON.stringify(positions)} onClick={eventHandlers?.click}>{children}</button>,
+  CircleMarker: ({ children, eventHandlers, center }: { children?: ReactNode; eventHandlers?: { click?: () => void }; center: unknown }) => <button data-testid="marker" data-center={JSON.stringify(center)} onClick={eventHandlers?.click}>{children}</button>,
   Popup: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   useMap: () => ({ fitBounds: vi.fn() }),
   useMapEvents: () => undefined,
@@ -118,7 +118,44 @@ describe('TrafficMap', () => {
   it('shows selected segment backend details', async () => {
     renderMap();
     fireEvent.click((await screen.findAllByTestId('road'))[0]);
-    expect(screen.getAllByText('SEG_1').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('No live data').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/SEG_1/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('No prediction').length).toBeGreaterThan(0);
+  });
+
+  it('renders full curved GeoJSON geometry in Leaflet latitude/longitude order', async () => {
+    vi.mocked(fetchSegments).mockResolvedValue([{ ...segments[0], geometry: { type: 'LineString', coordinates: [[78.48, 17.38], [78.482, 17.386], [78.481, 17.381]] } }]);
+    renderMap();
+    expect(await screen.findByTestId('road')).toHaveAttribute('data-positions', '[[17.38,78.48],[17.386,78.482],[17.381,78.481]]');
+  });
+
+  it('fetches and displays the segment set matching the live snapshot network', async () => {
+    const geoSegment = { ...segments[0], segment_id: 'OSM_100', road_name: 'OSM Main Road', network_source: 'osm_geo_v2', network_version: '2026-08', osm_way_id: 100 };
+    vi.mocked(fetchSegments).mockImplementation(async (source) => source ? [geoSegment] : segments);
+    vi.mocked(fetchLiveSnapshot).mockResolvedValue({ ...snapshot(), network_source: 'osm_geo_v2', network_version: '2026-08' });
+    renderMap();
+    fireEvent.click(await screen.findByRole('button', { name: /start live/i }));
+    await waitFor(() => expect(fetchSegments).toHaveBeenCalledWith('osm_geo_v2'));
+    expect(await screen.findByText(/osm_geo_v2 · 1 segments/i)).toBeInTheDocument();
+  });
+
+  it('shows prediction metadata and scenario provenance only when supplied', async () => {
+    vi.mocked(fetchLiveSnapshot).mockResolvedValue({
+      ...snapshot(),
+      segments: [{
+        ...snapshot().segments[0], predicted_event: 'construction', prediction_confidence: 0.91,
+        prediction_model_version: 'federated-round-7', historical_baseline: { speed: 42 },
+        current_deviation: { speed_ratio: 0.52 },
+      }],
+      events: [{ ...snapshot().events[0], source: 'scenario_ground_truth', severity: 0.8 }],
+    });
+    renderMap();
+    fireEvent.click(await screen.findByRole('button', { name: /start live/i }));
+    await screen.findByText('LIVE');
+    fireEvent.click((await screen.findAllByTestId('road'))[0]);
+    expect(screen.getAllByText('construction').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('91.0%').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('federated-round-7').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('scenario ground truth').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('80.0%').length).toBeGreaterThan(0);
   });
 });

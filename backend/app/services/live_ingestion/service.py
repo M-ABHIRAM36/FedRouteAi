@@ -155,6 +155,8 @@ def ingest_live_batch(batch: LiveGPSBatchIn, repository: LiveIngestionRepository
             "segment_count": len(grouped),
             "region_count": len({item.region_id for item in batch.observations}),
             "average_speed_kmph": average_speed,
+            "network_source": batch.network_source,
+            "network_version": batch.network_version,
         }, observations, states)
     except Exception:
         repository.rollback()

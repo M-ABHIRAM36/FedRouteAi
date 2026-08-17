@@ -26,6 +26,11 @@ class LiveMapSegmentStateOut(BaseModel):
     current_event: str
     available: bool
     last_updated: datetime
+    predicted_event: str | None = None
+    prediction_confidence: float | None = None
+    prediction_model_version: str | None = None
+    historical_baseline: dict | None = None
+    current_deviation: dict | None = None
 
 
 class LiveMapEventOut(BaseModel):
@@ -34,6 +39,9 @@ class LiveMapEventOut(BaseModel):
     region_id: str
     event_type: str
     timestamp: datetime
+    severity: float | None = None
+    affected_segment_ids: list[str] = []
+    source: str = "telemetry_ground_truth"
 
 
 class LiveMapSummaryOut(BaseModel):
@@ -54,6 +62,8 @@ class LiveMapSnapshotOut(BaseModel):
     server_time: datetime
     poll_interval_seconds: float
     stale_after_seconds: float
+    network_source: str | None = None
+    network_version: str | None = None
     segments: list[LiveMapSegmentStateOut]
     vehicles: list[LiveMapVehicleOut]
     events: list[LiveMapEventOut]
