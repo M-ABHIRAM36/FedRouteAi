@@ -31,11 +31,11 @@ const Prediction: React.FC = () => {
         description="Run live inference against the global Federated Learning model" 
       />
 
-      <div className="space-y-6 max-w-4xl">
+      <div className="max-w-5xl space-y-4">
         <PredictionForm onSubmit={handlePredict} isLoading={predictMutation.isPending} />
         
         {predictMutation.isError && (
-          <div className="bg-danger/10 border border-danger/20 text-danger p-4 rounded-lg text-sm font-medium">
+          <div role="alert" className="border border-danger/30 bg-danger/10 p-4 text-sm font-medium text-danger">
             {predictMutation.error instanceof Error ? predictMutation.error.message : "Failed to run prediction. Backend may be offline."}
           </div>
         )}

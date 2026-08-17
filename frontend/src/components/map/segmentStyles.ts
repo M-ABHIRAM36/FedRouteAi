@@ -8,7 +8,7 @@ export interface SegmentStyle extends PathOptions {
   status: SegmentTrafficStatus;
 }
 
-const styles: Record<SegmentTrafficStatus, SegmentStyle> = {
+export const segmentStyles: Record<SegmentTrafficStatus, SegmentStyle> = {
   normal: { color: '#4ade80', weight: 4, opacity: 0.82, label: 'Normal', status: 'normal' },
   congestion: { color: '#f59e0b', weight: 6, opacity: 0.9, dashArray: '8 6', label: 'Congestion', status: 'congestion' },
   construction: { color: '#f97316', weight: 7, opacity: 0.92, dashArray: '10 5', label: 'Construction', status: 'construction' },
@@ -24,13 +24,25 @@ const styles: Record<SegmentTrafficStatus, SegmentStyle> = {
   unknown: { color: '#94a3b8', weight: 3, opacity: 0.42, dashArray: '2 7', label: 'No live data', status: 'unknown' },
 };
 
-export const getSegmentStyle = (state?: LiveSegmentState, maxSpeedKmph?: number): SegmentStyle => {
-  if (!state) return styles.unknown;
-  if (!state.available) return styles.blocked;
-  if (state.predicted_event) return styles[state.predicted_event as SegmentTrafficStatus] ?? styles.unknown;
-  if (state.occupancy != null && state.occupancy >= 0.75 || state.density >= 20) return styles.telemetry_dense;
-  if (maxSpeedKmph && state.average_speed_kmph / maxSpeedKmph <= 0.45) return styles.telemetry_slow;
-  return styles.telemetry_clear;
+export const getPredictionStyle = (state?: LiveSegmentState): SegmentStyle => {
+  if (!state?.predicted_event) return segmentStyles.unknown;
+  return segmentStyles[state.predicted_event as SegmentTrafficStatus] ?? segmentStyles.unknown;
 };
 
-export const segmentLegend = Object.values(styles);
+export const getTelemetryStyle = (state?: LiveSegmentState, maxSpeedKmph?: number): SegmentStyle => {
+  if (!state) return segmentStyles.unknown;
+  if (!state.available) return segmentStyles.blocked;
+  if ((state.occupancy != null && state.occupancy >= 0.75) || state.density >= 20) return segmentStyles.telemetry_dense;
+  if (maxSpeedKmph && state.average_speed_kmph / maxSpeedKmph <= 0.45) return segmentStyles.telemetry_slow;
+  return segmentStyles.telemetry_clear;
+};
+
+export const getSegmentStyle = (state?: LiveSegmentState, maxSpeedKmph?: number): SegmentStyle =>
+  state?.predicted_event ? getPredictionStyle(state) : getTelemetryStyle(state, maxSpeedKmph);
+
+export const predictionLegend = ['normal', 'congestion', 'construction', 'accident', 'flood', 'diversion', 'road_damage', 'road_block'].map(
+  (status) => segmentStyles[status as SegmentTrafficStatus],
+);
+export const telemetryLegend = ['telemetry_clear', 'telemetry_slow', 'telemetry_dense'].map(
+  (status) => segmentStyles[status as SegmentTrafficStatus],
+);

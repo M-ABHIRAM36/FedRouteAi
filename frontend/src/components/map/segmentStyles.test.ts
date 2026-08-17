@@ -17,8 +17,8 @@ describe('getSegmentStyle', () => {
     expect(getSegmentStyle({ ...state('normal'), predicted_event: event }).status).toBe(event);
   });
 
-  it('gives unavailable roads blocked precedence', () => {
-    expect(getSegmentStyle({ ...state('normal', false), predicted_event: 'accident' }).status).toBe('blocked');
+  it('keeps model prediction precedence over separate availability telemetry', () => {
+    expect(getSegmentStyle({ ...state('normal', false), predicted_event: 'accident' }).status).toBe('accident');
   });
 
   it('prefers a model prediction over the scenario telemetry label', () => {

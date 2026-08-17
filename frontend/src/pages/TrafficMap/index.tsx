@@ -1,98 +1,42 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import type { LatLngBoundsExpression, Map as LeafletMap } from 'leaflet';
-import { Activity, Car, ChevronDown, Clock3, EyeOff, Layers3, LocateFixed, Pause, Play, Radio, RotateCcw, TriangleAlert, Wifi, WifiOff, X } from 'lucide-react';
+import { Activity, Car, ChevronDown, Clock3, Eye, EyeOff, Layers3, LocateFixed, Pause, Play, Radio, RotateCcw, TriangleAlert, Wifi, WifiOff, X } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import { useQuery } from '@tanstack/react-query';
 import { PageContainer } from '../../components/common/PageContainer';
-import { fetchLiveSnapshot, fetchSegments, type LiveMapSnapshot, type LiveVehicle } from '../../services/api/liveMapApi';
+import { fetchLiveSnapshot, fetchSegments, type LiveEvent, type LiveMapSnapshot, type LiveVehicle } from '../../services/api/liveMapApi';
 import { MapLegend } from '../../components/map/MapLegend';
 import { SegmentPopup } from '../../components/map/SegmentPopup';
-import { getSegmentStyle } from '../../components/map/segmentStyles';
+import { getPredictionStyle, getTelemetryStyle, segmentStyles } from '../../components/map/segmentStyles';
 import { getSegmentMidpoint, getSegmentPositions } from '../../components/map/segmentGeometry';
+import { AnimatedVehicleLayer } from '../../components/map/AnimatedVehicleLayer';
+import { vehicleTone } from '../../components/map/vehicleAnimation';
+import { connectionStatus, snapshotAgeSeconds, type ConnectionStatus } from './trafficMapState';
 
-type ConnectionStatus = 'CONNECTING' | 'LIVE' | 'STALE' | 'DISCONNECTED' | 'ERROR';
+type LayerState = { predictions: boolean; telemetry: boolean; vehicles: boolean; events: boolean; network: boolean };
+type TimelineEntry = { tick: number; observedAt: string; prediction?: string; speed?: number };
 
 const statusColors: Record<ConnectionStatus, string> = {
-  CONNECTING: 'text-warning bg-warning/10 border-warning/25',
-  LIVE: 'text-success bg-success/10 border-success/25',
-  STALE: 'text-warning bg-warning/10 border-warning/25',
-  DISCONNECTED: 'text-textSecondary bg-surfaceHover border-border',
-  ERROR: 'text-danger bg-danger/10 border-danger/25',
+  CONNECTING: 'text-primary border-primary/30 bg-primary/10', LIVE: 'text-success border-success/30 bg-success/10',
+  DELAYED: 'text-warning border-warning/30 bg-warning/10', STALE: 'text-warning border-warning/30 bg-warning/10',
+  PAUSED: 'text-textSecondary border-border bg-surfaceHover', OFFLINE: 'text-danger border-danger/30 bg-danger/10',
 };
 
-const eventLabels: Record<string, string> = {
-  road_block: 'Road block', construction: 'Construction', accident: 'Accident', flood: 'Flood',
-  diversion: 'Diversion', road_damage: 'Road damage', congestion: 'Congestion', normal: 'Normal',
-};
-
-const ageSeconds = (snapshot: LiveMapSnapshot | undefined, now: number) => {
-  if (!snapshot) return Infinity;
-  return Math.max(0, (now - Date.parse(snapshot.received_at)) / 1000);
-};
-
-const FitNetwork = ({ bounds, resetKey }: { bounds: LatLngBoundsExpression; resetKey: number }) => {
-  const map = useMap();
-  useEffect(() => { map.fitBounds(bounds, { padding: [24, 24], maxZoom: 14 }); }, [bounds, map, resetKey]);
-  return null;
-};
-
-const ViewportTracker = ({ onChange }: { onChange: (map: LeafletMap) => void }) => {
-  useMapEvents({ moveend: (event) => onChange(event.target), zoomend: (event) => onChange(event.target) });
-  return null;
-};
-
-const MapToolbar = ({ onFit, showRoads, setShowRoads, showVehicles, setShowVehicles, showEvents, setShowEvents, regions, region, setRegion }: {
-  onFit: () => void; showRoads: boolean; setShowRoads: (value: boolean) => void; showVehicles: boolean;
-  setShowVehicles: (value: boolean) => void; showEvents: boolean; setShowEvents: (value: boolean) => void;
-  regions: string[]; region: string; setRegion: (value: string) => void;
-}) => (
-  <div className="absolute left-3 right-3 top-3 z-[500] flex flex-wrap items-center gap-2 pointer-events-none">
-    <div className="pointer-events-auto flex items-center gap-1 border border-border bg-surface/95 p-1 shadow-lg backdrop-blur-sm">
-      <MapToolButton label="Fit network" onClick={onFit}><LocateFixed className="h-4 w-4" /></MapToolButton>
-      <MapToolButton label="Reset view" onClick={onFit}><RotateCcw className="h-4 w-4" /></MapToolButton>
-      <MapToolButton label={showRoads ? 'Hide road states' : 'Show road states'} onClick={() => setShowRoads(!showRoads)}>{showRoads ? <Layers3 className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}</MapToolButton>
-      <MapToolButton label={showVehicles ? 'Hide vehicles' : 'Show vehicles'} onClick={() => setShowVehicles(!showVehicles)}>{showVehicles ? <Car className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}</MapToolButton>
-      <MapToolButton label={showEvents ? 'Hide events' : 'Show events'} onClick={() => setShowEvents(!showEvents)}>{showEvents ? <TriangleAlert className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}</MapToolButton>
-    </div>
-    <label className="pointer-events-auto flex h-9 items-center gap-2 border border-border bg-surface/95 px-3 text-xs text-textSecondary shadow-lg backdrop-blur-sm">
-      <span>Region</span><select value={region} onChange={(event) => setRegion(event.target.value)} className="bg-transparent text-textPrimary outline-none"><option value="all">All regions</option>{regions.map((item) => <option key={item} value={item}>{item}</option>)}</select><ChevronDown className="h-3.5 w-3.5" />
-    </label>
-  </div>
-);
-
-const MapToolButton = ({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) => (
-  <button type="button" title={label} aria-label={label} onClick={onClick} className="flex h-8 w-8 items-center justify-center text-textSecondary transition-colors hover:bg-surfaceHover hover:text-textPrimary">{children}</button>
-);
-
-const StatusPill = ({ status }: { status: ConnectionStatus }) => (
-  <div className={`flex items-center gap-2 border px-2.5 py-1.5 text-[11px] font-semibold tracking-wide ${statusColors[status]}`} aria-live="polite">
-    <span className={`h-2 w-2 rounded-full ${status === 'LIVE' ? 'animate-pulse bg-success' : status === 'ERROR' ? 'bg-danger' : 'bg-current'}`} />{status}
-  </div>
-);
-
-const Metric = ({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) => (
-  <div className="flex min-w-[108px] items-center gap-2 border-l border-border pl-3 first:border-l-0 first:pl-0"><span className="text-textSecondary">{icon}</span><div><div className="text-[10px] uppercase tracking-wider text-textSecondary">{label}</div><div className="text-sm font-semibold text-textPrimary">{value}</div></div></div>
-);
-
-const VehiclePopup = ({ vehicle }: { vehicle: LiveVehicle }) => (
-  <div className="w-48 text-xs text-textPrimary"><div className="mb-2 border-b border-border pb-2 font-semibold text-white">{vehicle.vehicle_id}</div><div className="space-y-1"><Row label="Type" value={vehicle.vehicle_type} /><Row label="Segment" value={vehicle.segment_id} /><Row label="Region" value={vehicle.region_id} /><Row label="Speed" value={`${vehicle.speed_kmph.toFixed(1)} km/h`} /><Row label="Heading" value={`${vehicle.heading_deg.toFixed(0)}°`} /><Row label="Timestamp" value={new Date(vehicle.timestamp).toLocaleTimeString()} /></div></div>
-);
-
-const Row = ({ label, value }: { label: string; value: string }) => <div className="flex justify-between gap-3"><span className="text-textSecondary">{label}</span><span className="text-right font-medium">{value}</span></div>;
+const FitNetwork = ({ bounds, resetKey }: { bounds: LatLngBoundsExpression; resetKey: number }) => { const map = useMap(); useEffect(() => { map.fitBounds(bounds, { padding: [24, 24], maxZoom: 14 }); }, [bounds, map, resetKey]); return null; };
+const ViewportTracker = ({ onChange }: { onChange: (map: LeafletMap) => void }) => { useMapEvents({ moveend: (event) => onChange(event.target), zoomend: (event) => onChange(event.target) }); return null; };
 
 const TrafficMap = () => {
   const [liveMode, setLiveMode] = useState(false);
-  const [showRoads, setShowRoads] = useState(true);
-  const [showVehicles, setShowVehicles] = useState(true);
-  const [showEvents, setShowEvents] = useState(true);
+  const [layers, setLayers] = useState<LayerState>({ predictions: true, telemetry: false, vehicles: true, events: true, network: false });
   const [region, setRegion] = useState('all');
   const [selectedSegmentId, setSelectedSegmentId] = useState<string>();
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>();
   const [fitKey, setFitKey] = useState(0);
   const [visibleVehicleCount, setVisibleVehicleCount] = useState(0);
-  const [lastError, setLastError] = useState<string>();
   const [now, setNow] = useState(() => Date.now());
+  const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
+  const viewportRef = useRef<LeafletMap | undefined>(undefined);
 
   const liveQuery = useQuery({
     queryKey: ['live-map', 'snapshot'], queryFn: fetchLiveSnapshot, enabled: liveMode,
@@ -102,79 +46,102 @@ const TrafficMap = () => {
   const snapshot = liveQuery.data;
   const networkSource = snapshot?.network_source;
   const staticQuery = useQuery({
-    queryKey: ['live-map', 'segments', networkSource ?? 'default'],
-    queryFn: () => fetchSegments(networkSource),
-    staleTime: Infinity,
-    retry: 1,
-    placeholderData: (previous) => previous,
+    queryKey: ['live-map', 'segments', networkSource ?? 'default'], queryFn: () => fetchSegments(networkSource),
+    staleTime: Infinity, retry: 1, placeholderData: (previous) => previous,
   });
   const segments = useMemo(() => staticQuery.data ?? [], [staticQuery.data]);
   const states = useMemo(() => new Map((snapshot?.segments ?? []).map((state) => [state.segment_id, state])), [snapshot]);
-  const events = snapshot?.events ?? [];
+  const events = snapshot?.events;
+  const eventBySegment = useMemo(() => indexEvents(events ?? []), [events]);
   const regions = useMemo(() => [...new Set(segments.map((segment) => segment.region_id))].sort(), [segments]);
   const filteredSegments = useMemo(() => segments.filter((segment) => region === 'all' || segment.region_id === region), [segments, region]);
   const filteredVehicles = useMemo(() => (snapshot?.vehicles ?? []).filter((vehicle) => region === 'all' || vehicle.region_id === region), [snapshot, region]);
   const selectedSegment = segments.find((segment) => segment.segment_id === selectedSegmentId);
   const selectedState = selectedSegmentId ? states.get(selectedSegmentId) : undefined;
   const selectedVehicle = filteredVehicles.find((vehicle) => vehicle.vehicle_id === selectedVehicleId);
-  const bounds = useMemo<LatLngBoundsExpression | undefined>(() => {
-    if (!segments.length) return undefined;
-    return segments.flatMap((segment) => getSegmentPositions(segment));
-  }, [segments]);
-  const status: ConnectionStatus = !liveMode ? 'DISCONNECTED' : lastError && !snapshot ? 'ERROR' : liveQuery.isFetching && !snapshot ? 'CONNECTING' : ageSeconds(snapshot, now) > (snapshot?.stale_after_seconds ?? 12) ? 'STALE' : 'LIVE';
+  const selectedEvent = selectedSegmentId ? eventBySegment.get(selectedSegmentId) : undefined;
+  const bounds = useMemo<LatLngBoundsExpression | undefined>(() => segments.length ? segments.flatMap((segment) => getSegmentPositions(segment)) : undefined, [segments]);
+  const status = connectionStatus(liveMode, snapshot, liveQuery.isFetching, liveQuery.isError, now);
+  const age = snapshotAgeSeconds(snapshot, now);
+  const predictedEvents = useMemo(() => (snapshot?.segments ?? []).filter((state) => state.predicted_event && state.predicted_event !== 'normal').length, [snapshot]);
+  const predictionCounts = useMemo(() => countPredictions(snapshot), [snapshot]);
 
-  useEffect(() => { if (liveQuery.error) setLastError(liveQuery.error instanceof Error ? liveQuery.error.message : 'Live snapshot unavailable'); }, [liveQuery.error]);
-  useEffect(() => { if (snapshot) setLastError(undefined); }, [snapshot]);
-  useEffect(() => { if (!showVehicles || !snapshot) { setVisibleVehicleCount(0); } }, [showVehicles, snapshot]);
   useEffect(() => {
     if (!liveMode) return;
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, [liveMode]);
+  useEffect(() => {
+    if (!snapshot || !selectedSegmentId) return;
+    const state = states.get(selectedSegmentId);
+    setTimeline((entries) => {
+      if (entries.at(-1)?.tick === snapshot.tick_number) return entries;
+      return [...entries, { tick: snapshot.tick_number, observedAt: snapshot.observed_at, prediction: state?.predicted_event ?? undefined, speed: state?.average_speed_kmph }].slice(-6);
+    });
+  }, [selectedSegmentId, snapshot, states]);
+  useEffect(() => { setTimeline([]); }, [selectedSegmentId]);
+  useEffect(() => {
+    if (!layers.vehicles || !snapshot) return setVisibleVehicleCount(0);
+    if (viewportRef.current) setVisibleVehicleCount(filteredVehicles.filter((vehicle) => viewportRef.current!.getBounds().contains([vehicle.lat, vehicle.lon])).length);
+    else setVisibleVehicleCount(filteredVehicles.length);
+  }, [filteredVehicles, layers.vehicles, snapshot]);
 
-  const handleViewport = (map: LeafletMap) => {
-    if (!showVehicles) return setVisibleVehicleCount(0);
-    setVisibleVehicleCount(filteredVehicles.filter((vehicle) => map.getBounds().contains([vehicle.lat, vehicle.lon])).length);
-  };
-  const focusSegment = (segmentId: string) => {
-    setSelectedSegmentId(segmentId);
-    setSelectedVehicleId(undefined);
-  };
+  const handleViewport = (map: LeafletMap) => { viewportRef.current = map; if (layers.vehicles) setVisibleVehicleCount(filteredVehicles.filter((vehicle) => map.getBounds().contains([vehicle.lat, vehicle.lon])).length); };
+  const focusSegment = (segmentId: string) => { setSelectedSegmentId(segmentId); setSelectedVehicleId(undefined); };
+  const focusVehicle = (vehicleId: string) => { setSelectedVehicleId(vehicleId); setSelectedSegmentId(undefined); };
 
-  if (staticQuery.isLoading) return <PageContainer><div className="flex min-h-[70vh] items-center justify-center text-textSecondary">Loading canonical road network...</div></PageContainer>;
-  if (staticQuery.isError) return <PageContainer><div className="flex min-h-[70vh] items-center justify-center border border-danger/30 bg-danger/5 text-danger">Road network unavailable. Start the backend and reload.</div></PageContainer>;
-  if (!bounds) return <PageContainer><div className="flex min-h-[70vh] items-center justify-center text-textSecondary">No road geometry available.</div></PageContainer>;
+  if (staticQuery.isLoading) return <MapLoading label="Loading Geo V2 network..." />;
+  if (staticQuery.isError) return <MapLoading label="Road network unavailable. Start the backend and reload." error />;
+  if (!bounds) return <MapLoading label="Network loaded. Waiting for road geometry..." />;
 
-  return (
-    <PageContainer className="flex min-h-full flex-col gap-4">
-      <header className="flex flex-col gap-3 border-b border-border pb-4 lg:flex-row lg:items-end lg:justify-between">
-        <div><div className="mb-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary"><Activity className="h-3.5 w-3.5" />Traffic intelligence</div><h1 className="text-2xl font-semibold text-white">Live traffic map</h1><p className="mt-1 text-sm text-textSecondary">{networkSource ?? 'Canonical Hyderabad network'} · {segments.length} segments · backend state only</p></div>
-        <div className="flex flex-wrap items-center gap-2"><StatusPill status={status} /><button type="button" onClick={() => setLiveMode(!liveMode)} className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold ${liveMode ? 'border border-danger/40 bg-danger/10 text-danger' : 'bg-primary text-white hover:bg-primaryHover'}`}>{liveMode ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}{liveMode ? 'Stop live' : 'Start live'}</button></div>
-      </header>
-      <section className="flex flex-wrap items-center gap-x-5 gap-y-3 border border-border bg-surface px-4 py-3"><Metric label="Vehicles" value={snapshot ? snapshot.summary.vehicle_count.toLocaleString() : '—'} icon={<Car className="h-4 w-4" />} /><Metric label="Active segments" value={snapshot ? snapshot.summary.active_segments.toString() : '—'} icon={<Layers3 className="h-4 w-4" />} /><Metric label="Events" value={snapshot ? snapshot.summary.active_events.toString() : '—'} icon={<TriangleAlert className="h-4 w-4" />} /><Metric label="Average speed" value={snapshot ? `${snapshot.summary.average_speed_kmph.toFixed(1)} km/h` : '—'} icon={<Radio className="h-4 w-4" />} /><Metric label="Last update" value={snapshot ? new Date(snapshot.summary.latest_update).toLocaleTimeString() : '—'} icon={<Clock3 className="h-4 w-4" />} /><div className="ml-auto text-xs text-textSecondary" aria-live="polite">{lastError ?? (snapshot ? `Tick ${snapshot.tick_number} · ${snapshot.source_id}` : 'Live updates paused')}</div></section>
-      <div className="grid min-h-[660px] flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="relative min-h-[560px] overflow-hidden border border-border bg-[#15202b]">
-          <MapContainer bounds={bounds} className="h-full min-h-[560px] w-full" zoomControl={true} preferCanvas>
-            <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" errorTileUrl="" />
-            <FitNetwork bounds={bounds} resetKey={fitKey} />
-            <ViewportTracker onChange={handleViewport} />
-            <MapToolbar onFit={() => setFitKey((key) => key + 1)} showRoads={showRoads} setShowRoads={setShowRoads} showVehicles={showVehicles} setShowVehicles={setShowVehicles} showEvents={showEvents} setShowEvents={setShowEvents} regions={regions} region={region} setRegion={setRegion} />
-            {showRoads && filteredSegments.map((segment) => { const state = states.get(segment.segment_id); const event = events.find((item) => item.segment_id === segment.segment_id || item.affected_segment_ids?.includes(segment.segment_id)); const style = getSegmentStyle(state, segment.max_speed_kmph); return <Polyline key={segment.segment_id} positions={getSegmentPositions(segment)} pathOptions={style} eventHandlers={{ click: () => focusSegment(segment.segment_id) }}><Popup><SegmentPopup segment={segment} state={state} event={event} /></Popup></Polyline>; })}
-            {showVehicles && filteredVehicles.map((vehicle) => <CircleMarker key={vehicle.vehicle_id} center={[vehicle.lat, vehicle.lon]} radius={selectedVehicleId === vehicle.vehicle_id ? 7 : 4} pathOptions={{ color: selectedVehicleId === vehicle.vehicle_id ? '#ffffff' : '#38bdf8', fillColor: '#0ea5e9', fillOpacity: 0.95, weight: 1.5 }} eventHandlers={{ click: () => { setSelectedVehicleId(vehicle.vehicle_id); setSelectedSegmentId(undefined); } }}><Popup><VehiclePopup vehicle={vehicle} /></Popup></CircleMarker>)}
-            {showEvents && events.filter((event) => region === 'all' || event.region_id === region).map((event) => { const segment = segments.find((item) => item.segment_id === event.segment_id); return segment ? <CircleMarker key={`event-${event.event_id}`} center={getSegmentMidpoint(segment)} radius={9} pathOptions={{ color: '#fff', fillColor: '#ef4444', fillOpacity: 0.85, weight: 2 }} eventHandlers={{ click: () => focusSegment(event.segment_id) }} /> : null; })}
-          </MapContainer>
-          <div className="absolute bottom-3 left-3 z-[500]"><MapLegend /></div>
-          {showVehicles && snapshot && <div className="absolute bottom-3 right-3 z-[500] border border-border bg-surface/95 px-3 py-2 text-[11px] text-textSecondary shadow-lg">Visible vehicles <span className="font-semibold text-textPrimary">{visibleVehicleCount}</span> / backend <span className="font-semibold text-textPrimary">{snapshot.summary.vehicle_count}</span></div>}
-        </div>
-        <aside className="flex min-h-[560px] flex-col border border-border bg-surface">
-          <div className="flex items-center justify-between border-b border-border px-4 py-3"><div className="text-xs font-semibold uppercase tracking-wider text-textSecondary">Live inspection</div>{(selectedSegment || selectedVehicle) && <button type="button" aria-label="Clear selection" title="Clear selection" onClick={() => { setSelectedSegmentId(undefined); setSelectedVehicleId(undefined); }} className="text-textSecondary hover:text-textPrimary"><X className="h-4 w-4" /></button>}</div>
-          <div className="border-b border-border p-4">{selectedVehicle ? <VehiclePopup vehicle={selectedVehicle} /> : selectedSegment ? <SegmentPopup segment={selectedSegment} state={selectedState} event={events.find((item) => item.segment_id === selectedSegment.segment_id || item.affected_segment_ids?.includes(selectedSegment.segment_id))} /> : <div className="text-sm text-textSecondary">Select a road segment or vehicle to inspect backend values.</div>}</div>
-          <div className="min-h-0 flex-1 overflow-y-auto p-4"><div className="mb-3 flex items-center justify-between"><h2 className="text-xs font-semibold uppercase tracking-wider text-textSecondary">Active events</h2><span className="text-xs text-textSecondary">{events.length}</span></div>{events.length ? <div className="space-y-2">{events.filter((event) => region === 'all' || event.region_id === region).map((event) => <button type="button" key={event.event_id} onClick={() => focusSegment(event.segment_id)} className="w-full border border-border bg-background p-3 text-left transition-colors hover:border-danger/50 hover:bg-surfaceHover"><div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold uppercase text-danger">{eventLabels[event.event_type] ?? event.event_type}</span><span className="text-[10px] text-textSecondary">{new Date(event.timestamp).toLocaleTimeString()}</span></div><div className="mt-1 text-xs text-textPrimary">{event.segment_id} · {event.region_id}</div>{(event.source || event.severity != null) && <div className="mt-1 text-[10px] text-textSecondary">{event.source?.replaceAll('_', ' ')}{event.source && event.severity != null ? ' · ' : ''}{event.severity != null ? `${(event.severity * 100).toFixed(0)}% severity` : ''}</div>}</button>)}</div> : <div className="text-sm text-textSecondary">No event-labelled telemetry in the latest snapshot.</div>}</div>
-          <div className="border-t border-border p-4 text-xs text-textSecondary"><div className="flex items-center gap-2">{status === 'LIVE' ? <Wifi className="h-3.5 w-3.5 text-success" /> : <WifiOff className="h-3.5 w-3.5" />}<span>{status === 'LIVE' ? 'Receiving backend updates' : status === 'DISCONNECTED' ? 'Live mode is paused' : status === 'STALE' ? 'Backend data is stale' : 'Waiting for backend'}</span></div>{snapshot && <div className="mt-1">Stale after {snapshot.stale_after_seconds.toFixed(0)}s · source {snapshot.source_id}</div>}</div>
-        </aside>
+  return <PageContainer className="max-w-[1800px] space-y-3">
+    <header className="flex flex-col gap-3 border-b border-border pb-3 lg:flex-row lg:items-end lg:justify-between">
+      <div><div className="mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary"><Activity className="h-3.5 w-3.5" />Geo V2 traffic intelligence</div><h1 className="text-2xl font-semibold text-white">Live operations map</h1><p className="mt-1 text-xs text-textSecondary"><span>{networkSource ?? 'Canonical network'} · {segments.length.toLocaleString()} segments</span>{snapshot?.network_version && <span className="ml-2 text-textSecondary/70">{snapshot.network_version}</span>}</p></div>
+      <div className="flex flex-wrap items-center gap-2"><ModelStatus snapshot={snapshot} /><LiveStatus status={status} age={age} /><button type="button" onClick={() => setLiveMode(!liveMode)} className={`flex h-9 items-center gap-2 px-3 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-primary ${liveMode ? 'border border-danger/40 bg-danger/10 text-danger' : 'bg-primary text-white hover:bg-primaryHover'}`}>{liveMode ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}{liveMode ? 'Pause live' : 'Start live'}</button></div>
+    </header>
+
+    <MetricBar snapshot={snapshot} predictedEvents={predictedEvents} status={status} age={age} />
+    {liveQuery.isError && <div role="alert" className="border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger">{liveQuery.error instanceof Error ? liveQuery.error.message : 'Live telemetry is unavailable.'}</div>}
+
+    <div className="grid min-h-[620px] gap-3 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="relative min-h-[520px] overflow-hidden border border-border bg-[#101820] xl:min-h-[620px]">
+        <MapContainer bounds={bounds} className="h-full min-h-[520px] w-full xl:min-h-[620px]" zoomControl preferCanvas>
+          <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" errorTileUrl="" />
+          <FitNetwork bounds={bounds} resetKey={fitKey} /><ViewportTracker onChange={handleViewport} />
+          <MapControls layers={layers} setLayers={setLayers} regions={regions} region={region} setRegion={setRegion} onFit={() => setFitKey((key) => key + 1)} />
+          {layers.network && filteredSegments.map((segment) => <Polyline key={`network-${segment.segment_id}`} positions={getSegmentPositions(segment)} pathOptions={{ color: '#64748b', weight: 1.5, opacity: 0.3 }} />)}
+          {layers.telemetry && filteredSegments.map((segment) => { const state = states.get(segment.segment_id); return <Polyline key={`telemetry-${segment.segment_id}`} positions={getSegmentPositions(segment)} pathOptions={{ ...getTelemetryStyle(state, segment.max_speed_kmph), weight: 8, opacity: 0.22 }} eventHandlers={{ click: () => focusSegment(segment.segment_id), mouseover: (event) => event.target.setStyle({ opacity: 0.45 }), mouseout: (event) => event.target.setStyle({ opacity: 0.22 }) }} />; })}
+          {layers.predictions && filteredSegments.map((segment) => { const state = states.get(segment.segment_id); const selected = selectedSegmentId === segment.segment_id; const style = getPredictionStyle(state); return <Polyline key={`prediction-${segment.segment_id}`} positions={getSegmentPositions(segment)} pathOptions={{ ...style, weight: selected ? Number(style.weight ?? 4) + 3 : style.weight, opacity: selected ? 1 : style.opacity }} eventHandlers={{ click: () => focusSegment(segment.segment_id), mouseover: (event) => event.target.setStyle({ weight: Number(style.weight ?? 4) + 2, opacity: 1 }), mouseout: (event) => event.target.setStyle({ weight: selected ? Number(style.weight ?? 4) + 3 : style.weight, opacity: selected ? 1 : style.opacity }) }}><Popup><SegmentPopup compact segment={segment} state={state} event={eventBySegment.get(segment.segment_id)} /></Popup></Polyline>; })}
+          {layers.vehicles && <AnimatedVehicleLayer vehicles={filteredVehicles} selectedVehicleId={selectedVehicleId} paused={status === 'STALE' || status === 'PAUSED' || status === 'OFFLINE'} onSelect={focusVehicle} />}
+          {layers.events && (events ?? []).filter((event) => region === 'all' || event.region_id === region).map((event) => { const segment = segments.find((item) => item.segment_id === event.segment_id); return segment ? <CircleMarker key={`event-${event.event_id}`} center={getSegmentMidpoint(segment)} radius={8} pathOptions={{ color: '#fff', fillColor: '#f59e0b', fillOpacity: 0.8, weight: 2 }} eventHandlers={{ click: () => focusSegment(event.segment_id) }} /> : null; })}
+        </MapContainer>
+        <div className="absolute bottom-3 left-3 z-[500]"><MapLegend /></div>
+        {layers.vehicles && snapshot && <div className="absolute bottom-3 right-3 z-[500] border border-border bg-surface/95 px-3 py-2 text-[10px] text-textSecondary shadow-lg">Vehicles in view <span className="font-semibold text-white">{visibleVehicleCount}</span> / {filteredVehicles.length}</div>}
+        {!snapshot && <div className="pointer-events-none absolute inset-x-0 top-16 z-[450] mx-auto w-fit border border-border bg-surface/95 px-4 py-2 text-xs text-textSecondary">Network loaded · waiting for live telemetry</div>}
       </div>
-    </PageContainer>
-  );
+
+      <InspectionPanel selectedSegment={selectedSegment} selectedState={selectedState} selectedEvent={selectedEvent} selectedVehicle={selectedVehicle} timeline={timeline} predictionCounts={predictionCounts} snapshot={snapshot} onClose={() => { setSelectedSegmentId(undefined); setSelectedVehicleId(undefined); }} />
+    </div>
+  </PageContainer>;
 };
+
+const indexEvents = (events: LiveEvent[]) => { const result = new Map<string, LiveEvent>(); for (const event of events) { result.set(event.segment_id, event); for (const segmentId of event.affected_segment_ids ?? []) result.set(segmentId, event); } return result; };
+const countPredictions = (snapshot?: LiveMapSnapshot) => Object.entries((snapshot?.segments ?? []).reduce<Record<string, number>>((counts, state) => { const key = state.predicted_event ?? 'no_prediction'; counts[key] = (counts[key] ?? 0) + 1; return counts; }, {})).sort((a, b) => b[1] - a[1]);
+
+const ModelStatus = ({ snapshot }: { snapshot?: LiveMapSnapshot }) => { const modelVersion = snapshot?.segments.find((state) => state.prediction_model_version)?.prediction_model_version; return <div className="border border-border bg-surface px-3 py-1.5"><div className="text-[9px] font-semibold uppercase text-textSecondary">Model</div><div className="text-xs font-medium text-textPrimary">{modelVersion ? 'Geo V2 · round 45' : 'Awaiting predictions'}</div></div>; };
+const LiveStatus = ({ status, age }: { status: ConnectionStatus; age: number }) => <div className={`flex h-9 items-center gap-2 border px-3 ${statusColors[status]}`}><span className={`h-2 w-2 rounded-full ${status === 'LIVE' ? 'animate-pulse bg-success' : 'bg-current'}`} /><div><div className="text-[10px] font-semibold">{status}</div><div className="text-[9px] opacity-80">{status === 'STALE' ? 'Backend data is stale' : Number.isFinite(age) ? `${Math.floor(age)}s since receipt` : 'No snapshot'}</div></div></div>;
+
+const MetricBar = ({ snapshot, predictedEvents, status, age }: { snapshot?: LiveMapSnapshot; predictedEvents: number; status: ConnectionStatus; age: number }) => <section className="grid grid-cols-2 border border-border bg-surface sm:grid-cols-3 xl:grid-cols-6"><Metric icon={<Car />} label="Vehicles" value={snapshot ? snapshot.summary.vehicle_count.toLocaleString() : '—'} detail="authoritative GPS" /><Metric icon={<Layers3 />} label="Active segments" value={snapshot ? snapshot.summary.active_segments.toLocaleString() : '—'} detail="observed now" /><Metric icon={<TriangleAlert />} label="Predicted events" value={snapshot ? predictedEvents.toLocaleString() : '—'} detail="non-normal model output" /><Metric icon={<Radio />} label="Average speed" value={snapshot ? `${snapshot.summary.average_speed_kmph.toFixed(1)}` : '—'} detail="km/h" /><Metric icon={<Clock3 />} label="Last telemetry" value={snapshot ? new Date(snapshot.summary.latest_update).toLocaleTimeString() : '—'} detail={snapshot ? `tick ${snapshot.tick_number}` : 'waiting'} /><Metric icon={status === 'LIVE' ? <Wifi /> : <WifiOff />} label="Data freshness" value={status === 'LIVE' ? 'Connected' : status} detail={Number.isFinite(age) ? `${Math.floor(age)}s transport age` : 'not connected'} /></section>;
+const Metric = ({ icon, label, value, detail }: { icon: React.ReactNode; label: string; value: string; detail: string }) => <div className="flex min-h-20 items-center gap-3 border-b border-r border-border px-3 py-3 last:border-r-0 sm:border-b-0"><span className="text-primary [&>svg]:h-4 [&>svg]:w-4">{icon}</span><div className="min-w-0"><div className="text-[9px] font-semibold uppercase tracking-wider text-textSecondary">{label}</div><div className="truncate text-lg font-semibold text-white">{value}</div><div className="truncate text-[9px] text-textSecondary">{detail}</div></div></div>;
+
+const MapControls = ({ layers, setLayers, regions, region, setRegion, onFit }: { layers: LayerState; setLayers: React.Dispatch<React.SetStateAction<LayerState>>; regions: string[]; region: string; setRegion: (value: string) => void; onFit: () => void }) => <div className="pointer-events-none absolute left-3 right-3 top-3 z-[500] flex flex-wrap items-start justify-between gap-2"><div className="pointer-events-auto flex border border-border bg-surface/95 p-1 shadow-lg"><ControlButton label="Fit network" onClick={onFit}><LocateFixed /></ControlButton><ControlButton label="Reset view" onClick={onFit}><RotateCcw /></ControlButton></div><div className="pointer-events-auto flex flex-wrap justify-end gap-2"><div className="border border-border bg-surface/95 p-1 shadow-lg"><div className="px-2 py-1 text-[9px] font-semibold uppercase text-textSecondary">Map layers</div><div className="flex flex-wrap">{([['predictions', 'Predictions'], ['telemetry', 'Telemetry'], ['vehicles', 'Vehicles'], ['events', 'Events'], ['network', 'Network']] as const).map(([key, label]) => <button type="button" key={key} aria-pressed={layers[key]} onClick={() => setLayers((current) => ({ ...current, [key]: !current[key] }))} className={`flex h-7 items-center gap-1.5 px-2 text-[10px] focus-visible:outline-2 focus-visible:outline-primary ${layers[key] ? 'bg-primary/15 text-primary' : 'text-textSecondary hover:bg-surfaceHover'}`}>{layers[key] ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}{label}</button>)}</div></div><label className="flex h-9 items-center gap-2 border border-border bg-surface/95 px-3 text-[10px] text-textSecondary shadow-lg"><span>Region</span><select aria-label="Region" value={region} onChange={(event) => setRegion(event.target.value)} className="bg-transparent text-textPrimary outline-none"><option value="all">All regions</option>{regions.map((item) => <option key={item} value={item}>{item}</option>)}</select><ChevronDown className="h-3 w-3" /></label></div></div>;
+const ControlButton = ({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) => <button type="button" title={label} aria-label={label} onClick={onClick} className="flex h-8 w-8 items-center justify-center text-textSecondary hover:bg-surfaceHover hover:text-white focus-visible:outline-2 focus-visible:outline-primary [&>svg]:h-4 [&>svg]:w-4">{children}</button>;
+
+const InspectionPanel = ({ selectedSegment, selectedState, selectedEvent, selectedVehicle, timeline, predictionCounts, snapshot, onClose }: any) => <aside className="flex min-h-0 flex-col border border-border bg-surface xl:max-h-[620px]"><div className="flex items-center justify-between border-b border-border px-4 py-3"><div><div className="text-[10px] font-semibold uppercase tracking-wider text-textSecondary">Live inspection</div><div className="mt-0.5 text-xs text-textPrimary">Authoritative backend state</div></div>{(selectedSegment || selectedVehicle) && <button type="button" aria-label="Clear selection" onClick={onClose} className="text-textSecondary hover:text-white focus-visible:outline-2 focus-visible:outline-primary"><X className="h-4 w-4" /></button>}</div><div className="min-h-0 flex-1 overflow-y-auto p-4">{selectedVehicle ? <VehiclePanel vehicle={selectedVehicle} /> : selectedSegment ? <SegmentPopup segment={selectedSegment} state={selectedState} event={selectedEvent} /> : <Overview predictionCounts={predictionCounts} snapshot={snapshot} />}{selectedSegment && timeline.length > 0 && <Timeline entries={timeline} />}</div></aside>;
+const Overview = ({ predictionCounts, snapshot }: { predictionCounts: [string, number][]; snapshot?: LiveMapSnapshot }) => <div><div className="text-sm text-textSecondary">Select a road or vehicle to inspect live backend values. Prediction and scenario layers remain independent.</div><div className="mt-5 text-[10px] font-semibold uppercase text-textSecondary">Prediction activity</div><div className="mt-2 space-y-2">{predictionCounts.length ? predictionCounts.map(([label, count]) => { const color = segmentStyles[label as keyof typeof segmentStyles]?.color ?? segmentStyles.unknown.color; return <div key={label} className="flex items-center gap-2"><span className="h-2 w-2" style={{ backgroundColor: color }} /><span className="flex-1 text-xs capitalize text-textPrimary">{label.replaceAll('_', ' ')}</span><span className="text-xs font-semibold text-white">{count}</span></div>; }) : <div className="text-xs text-textSecondary">No model predictions in the current snapshot.</div>}</div>{snapshot && <div className="mt-5 border-t border-border pt-4 text-[10px] leading-5 text-textSecondary"><div>Geo V2 federated model</div><div>23 causal features · 3 prior ticks</div><div>{snapshot.network_source} · {snapshot.network_version}</div><div>Backend tick interval represented by snapshot metadata</div></div>}</div>;
+const VehiclePanel = ({ vehicle }: { vehicle: LiveVehicle }) => <div><div className="text-[10px] font-semibold uppercase text-textSecondary">{vehicle.vehicle_id}</div><div className="mt-1 text-lg font-semibold text-white">Vehicle telemetry</div><div className="mt-4 grid grid-cols-2 gap-3"><PanelValue label="State" value={vehicleTone(vehicle)} /><PanelValue label="Speed" value={`${vehicle.speed_kmph.toFixed(1)} km/h`} /><PanelValue label="Segment" value={vehicle.segment_id} /><PanelValue label="Region" value={vehicle.region_id} /><PanelValue label="Heading" value={`${vehicle.heading_deg.toFixed(0)}°`} /><PanelValue label="Updated" value={new Date(vehicle.timestamp).toLocaleTimeString()} /></div><div className="mt-4 text-[10px] text-textSecondary">Marker motion is interpolated visually between authoritative backend coordinates. No intermediate GPS points are invented.</div></div>;
+const PanelValue = ({ label, value }: { label: string; value: string }) => <div className="border-l-2 border-border pl-2"><div className="text-[9px] uppercase text-textSecondary">{label}</div><div className="mt-0.5 truncate text-xs font-medium capitalize text-textPrimary" title={value}>{value}</div></div>;
+const Timeline = ({ entries }: { entries: TimelineEntry[] }) => <section className="mt-5 border-t border-border pt-4"><div className="text-[10px] font-semibold uppercase text-textSecondary">Live history</div><div className="mt-2 space-y-2">{entries.map((entry) => <div key={entry.tick} className="grid grid-cols-[48px_1fr_auto] items-center gap-2 text-[10px]"><span className="text-textSecondary">{new Date(entry.observedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span><span className="capitalize text-textPrimary">{entry.prediction?.replaceAll('_', ' ') ?? 'No prediction'}</span><span className="text-textSecondary">{entry.speed?.toFixed(1) ?? '—'} km/h</span></div>)}</div></section>;
+const MapLoading = ({ label, error = false }: { label: string; error?: boolean }) => <PageContainer className="max-w-[1800px]"><div className={`flex min-h-[70vh] items-center justify-center border border-border bg-surface text-sm ${error ? 'text-danger' : 'text-textSecondary'}`}>{label}</div></PageContainer>;
 
 export default TrafficMap;

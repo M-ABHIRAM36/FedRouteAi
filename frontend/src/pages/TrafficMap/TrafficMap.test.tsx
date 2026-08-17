@@ -58,7 +58,7 @@ describe('TrafficMap', () => {
     renderMap();
     expect(await screen.findByTestId('map')).toBeInTheDocument();
     expect(screen.getAllByTestId('road')).toHaveLength(3);
-    expect(screen.getByText('DISCONNECTED')).toBeInTheDocument();
+    expect(screen.getAllByText('PAUSED').length).toBeGreaterThan(0);
     expect(fetchLiveSnapshot).not.toHaveBeenCalled();
   });
 
@@ -68,7 +68,7 @@ describe('TrafficMap', () => {
     expect(await screen.findByText('LIVE')).toBeInTheDocument();
     expect(await screen.findAllByText('VEH_1')).not.toHaveLength(0);
     expect(screen.getAllByText('Accident').length).toBeGreaterThan(0);
-    expect(screen.getByText('Receiving backend updates')).toBeInTheDocument();
+    expect(screen.getByText('Connected')).toBeInTheDocument();
   });
 
   it('updates vehicle positions on subsequent backend snapshots', async () => {
@@ -85,19 +85,18 @@ describe('TrafficMap', () => {
     renderMap();
     fireEvent.click(await screen.findByRole('button', { name: /start live/i }));
     await screen.findByText('LIVE');
-    fireEvent.click(screen.getByRole('button', { name: /stop live/i }));
+    fireEvent.click(screen.getByRole('button', { name: /pause live/i }));
     const calls = vi.mocked(fetchLiveSnapshot).mock.calls.length;
     await new Promise((resolve) => setTimeout(resolve, 60));
     expect(fetchLiveSnapshot).toHaveBeenCalledTimes(calls);
-    expect(screen.getByText('DISCONNECTED')).toBeInTheDocument();
-    expect(screen.getByText('Live mode is paused')).toBeInTheDocument();
+    expect(screen.getAllByText('PAUSED').length).toBeGreaterThan(0);
   });
 
   it('shows error when the backend has no initial snapshot', async () => {
     vi.mocked(fetchLiveSnapshot).mockRejectedValue(new Error('Backend unavailable'));
     renderMap();
     fireEvent.click(await screen.findByRole('button', { name: /start live/i }));
-    expect(await screen.findByText('ERROR')).toBeInTheDocument();
+    expect((await screen.findAllByText('OFFLINE')).length).toBeGreaterThan(0);
     expect(screen.getByText('Backend unavailable')).toBeInTheDocument();
   });
 
@@ -105,7 +104,7 @@ describe('TrafficMap', () => {
     vi.mocked(fetchLiveSnapshot).mockResolvedValue(snapshot(new Date(Date.now() - 60_000).toISOString()));
     renderMap();
     fireEvent.click(await screen.findByRole('button', { name: /start live/i }));
-    expect(await screen.findByText('STALE')).toBeInTheDocument();
+    expect((await screen.findAllByText('STALE')).length).toBeGreaterThan(0);
     expect(screen.getByText('Backend data is stale')).toBeInTheDocument();
   });
 
@@ -115,11 +114,21 @@ describe('TrafficMap', () => {
     expect(screen.getAllByTestId('road')).toHaveLength(1);
   });
 
+  it('toggles prediction and telemetry road layers independently', async () => {
+    renderMap();
+    expect(await screen.findAllByTestId('road')).toHaveLength(3);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Telemetry' }));
+    expect(screen.getAllByTestId('road')).toHaveLength(6);
+    fireEvent.click(screen.getByRole('button', { name: 'Predictions' }));
+    expect(screen.getAllByTestId('road')).toHaveLength(3);
+  });
+
   it('shows selected segment backend details', async () => {
     renderMap();
     fireEvent.click((await screen.findAllByTestId('road'))[0]);
     expect(screen.getAllByText(/SEG_1/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText('No prediction').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('No prediction available').length).toBeGreaterThan(0);
   });
 
   it('renders full curved GeoJSON geometry in Leaflet latitude/longitude order', async () => {
@@ -155,7 +164,6 @@ describe('TrafficMap', () => {
     expect(screen.getAllByText('construction').length).toBeGreaterThan(0);
     expect(screen.getAllByText('91.0%').length).toBeGreaterThan(0);
     expect(screen.getAllByText('federated-round-7').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('scenario ground truth').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('80.0%').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/scenario ground truth/i).length).toBeGreaterThan(0);
   });
 });
