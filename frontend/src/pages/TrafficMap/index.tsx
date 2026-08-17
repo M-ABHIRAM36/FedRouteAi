@@ -36,14 +36,19 @@ const TrafficMap = () => {
   const [visibleVehicleCount, setVisibleVehicleCount] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
+  const [liveSession, setLiveSession] = useState(0);
+  const [lastSnapshot, setLastSnapshot] = useState<LiveMapSnapshot>();
   const viewportRef = useRef<LeafletMap | undefined>(undefined);
 
   const liveQuery = useQuery({
-    queryKey: ['live-map', 'snapshot'], queryFn: fetchLiveSnapshot, enabled: liveMode,
-    refetchInterval: liveMode ? (query) => (query.state.data?.poll_interval_seconds ?? 4) * 1000 : false,
+    queryKey: ['live-map', 'snapshot', liveSession],
+    queryFn: async () => ({ snapshot: await fetchLiveSnapshot(), clientReceivedAt: Date.now() }),
+    enabled: liveMode,
+    refetchInterval: liveMode ? (query) => (query.state.data?.snapshot.poll_interval_seconds ?? 4) * 1000 : false,
     retry: false, refetchOnWindowFocus: false,
   });
-  const snapshot = liveQuery.data;
+  const currentReceipt = liveQuery.data?.clientReceivedAt;
+  const snapshot = liveQuery.data?.snapshot ?? lastSnapshot;
   const networkSource = snapshot?.network_source;
   const staticQuery = useQuery({
     queryKey: ['live-map', 'segments', networkSource ?? 'default'], queryFn: () => fetchSegments(networkSource),
@@ -61,8 +66,8 @@ const TrafficMap = () => {
   const selectedVehicle = filteredVehicles.find((vehicle) => vehicle.vehicle_id === selectedVehicleId);
   const selectedEvent = selectedSegmentId ? eventBySegment.get(selectedSegmentId) : undefined;
   const bounds = useMemo<LatLngBoundsExpression | undefined>(() => segments.length ? segments.flatMap((segment) => getSegmentPositions(segment)) : undefined, [segments]);
-  const status = connectionStatus(liveMode, snapshot, liveQuery.isFetching, liveQuery.isError, now);
-  const age = snapshotAgeSeconds(snapshot, now);
+  const status = connectionStatus(liveMode, currentReceipt, liveQuery.isError, now);
+  const age = snapshotAgeSeconds(currentReceipt, now);
   const predictedEvents = useMemo(() => (snapshot?.segments ?? []).filter((state) => state.predicted_event && state.predicted_event !== 'normal').length, [snapshot]);
   const predictionCounts = useMemo(() => countPredictions(snapshot), [snapshot]);
 
@@ -71,6 +76,9 @@ const TrafficMap = () => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, [liveMode]);
+  useEffect(() => {
+    if (liveQuery.data?.snapshot) setLastSnapshot(liveQuery.data.snapshot);
+  }, [liveQuery.data]);
   useEffect(() => {
     if (!snapshot || !selectedSegmentId) return;
     const state = states.get(selectedSegmentId);
@@ -89,6 +97,10 @@ const TrafficMap = () => {
   const handleViewport = (map: LeafletMap) => { viewportRef.current = map; if (layers.vehicles) setVisibleVehicleCount(filteredVehicles.filter((vehicle) => map.getBounds().contains([vehicle.lat, vehicle.lon])).length); };
   const focusSegment = (segmentId: string) => { setSelectedSegmentId(segmentId); setSelectedVehicleId(undefined); };
   const focusVehicle = (vehicleId: string) => { setSelectedVehicleId(vehicleId); setSelectedSegmentId(undefined); };
+  const toggleLive = () => {
+    if (liveMode) setLiveMode(false);
+    else { setNow(Date.now()); setLiveSession((session) => session + 1); setLiveMode(true); }
+  };
 
   if (staticQuery.isLoading) return <MapLoading label="Loading Geo V2 network..." />;
   if (staticQuery.isError) return <MapLoading label="Road network unavailable. Start the backend and reload." error />;
@@ -97,7 +109,7 @@ const TrafficMap = () => {
   return <PageContainer className="max-w-[1800px] space-y-3">
     <header className="flex flex-col gap-3 border-b border-border pb-3 lg:flex-row lg:items-end lg:justify-between">
       <div><div className="mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary"><Activity className="h-3.5 w-3.5" />Geo V2 traffic intelligence</div><h1 className="text-2xl font-semibold text-white">Live operations map</h1><p className="mt-1 text-xs text-textSecondary"><span>{networkSource ?? 'Canonical network'} · {segments.length.toLocaleString()} segments</span>{snapshot?.network_version && <span className="ml-2 text-textSecondary/70">{snapshot.network_version}</span>}</p></div>
-      <div className="flex flex-wrap items-center gap-2"><ModelStatus snapshot={snapshot} /><LiveStatus status={status} age={age} /><button type="button" onClick={() => setLiveMode(!liveMode)} className={`flex h-9 items-center gap-2 px-3 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-primary ${liveMode ? 'border border-danger/40 bg-danger/10 text-danger' : 'bg-primary text-white hover:bg-primaryHover'}`}>{liveMode ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}{liveMode ? 'Pause live' : 'Start live'}</button></div>
+      <div className="flex flex-wrap items-center gap-2"><ModelStatus snapshot={snapshot} /><LiveStatus status={status} age={age} hasError={liveQuery.isError} /><button type="button" onClick={toggleLive} className={`flex h-9 items-center gap-2 px-3 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-primary ${liveMode ? 'border border-danger/40 bg-danger/10 text-danger' : 'bg-primary text-white hover:bg-primaryHover'}`}>{liveMode ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}{liveMode ? 'Pause live' : 'Start live'}</button></div>
     </header>
 
     <MetricBar snapshot={snapshot} predictedEvents={predictedEvents} status={status} age={age} />
@@ -129,9 +141,10 @@ const indexEvents = (events: LiveEvent[]) => { const result = new Map<string, Li
 const countPredictions = (snapshot?: LiveMapSnapshot) => Object.entries((snapshot?.segments ?? []).reduce<Record<string, number>>((counts, state) => { const key = state.predicted_event ?? 'no_prediction'; counts[key] = (counts[key] ?? 0) + 1; return counts; }, {})).sort((a, b) => b[1] - a[1]);
 
 const ModelStatus = ({ snapshot }: { snapshot?: LiveMapSnapshot }) => { const modelVersion = snapshot?.segments.find((state) => state.prediction_model_version)?.prediction_model_version; return <div className="border border-border bg-surface px-3 py-1.5"><div className="text-[9px] font-semibold uppercase text-textSecondary">Model</div><div className="text-xs font-medium text-textPrimary">{modelVersion ? 'Geo V2 · round 45' : 'Awaiting predictions'}</div></div>; };
-const LiveStatus = ({ status, age }: { status: ConnectionStatus; age: number }) => <div className={`flex h-9 items-center gap-2 border px-3 ${statusColors[status]}`}><span className={`h-2 w-2 rounded-full ${status === 'LIVE' ? 'animate-pulse bg-success' : 'bg-current'}`} /><div><div className="text-[10px] font-semibold">{status}</div><div className="text-[9px] opacity-80">{status === 'STALE' ? 'Backend data is stale' : Number.isFinite(age) ? `${Math.floor(age)}s since receipt` : 'No snapshot'}</div></div></div>;
+const receiptLabel = (age: number) => age < 2 ? 'Received just now' : `Received ${Math.floor(age)}s ago`;
+const LiveStatus = ({ status, age, hasError }: { status: ConnectionStatus; age: number; hasError: boolean }) => <div className={`flex h-9 items-center gap-2 border px-3 ${statusColors[status]}`}><span className={`h-2 w-2 rounded-full ${status === 'LIVE' ? 'animate-pulse bg-success' : 'bg-current'}`} /><div><div className="text-[10px] font-semibold">{status}</div><div className="text-[9px] opacity-80">{status === 'STALE' && hasError ? 'Backend connection unavailable' : Number.isFinite(age) ? receiptLabel(age) : 'No snapshot this session'}</div></div></div>;
 
-const MetricBar = ({ snapshot, predictedEvents, status, age }: { snapshot?: LiveMapSnapshot; predictedEvents: number; status: ConnectionStatus; age: number }) => <section className="grid grid-cols-2 border border-border bg-surface sm:grid-cols-3 xl:grid-cols-6"><Metric icon={<Car />} label="Vehicles" value={snapshot ? snapshot.summary.vehicle_count.toLocaleString() : '—'} detail="authoritative GPS" /><Metric icon={<Layers3 />} label="Active segments" value={snapshot ? snapshot.summary.active_segments.toLocaleString() : '—'} detail="observed now" /><Metric icon={<TriangleAlert />} label="Predicted events" value={snapshot ? predictedEvents.toLocaleString() : '—'} detail="non-normal model output" /><Metric icon={<Radio />} label="Average speed" value={snapshot ? `${snapshot.summary.average_speed_kmph.toFixed(1)}` : '—'} detail="km/h" /><Metric icon={<Clock3 />} label="Last telemetry" value={snapshot ? new Date(snapshot.summary.latest_update).toLocaleTimeString() : '—'} detail={snapshot ? `tick ${snapshot.tick_number}` : 'waiting'} /><Metric icon={status === 'LIVE' ? <Wifi /> : <WifiOff />} label="Data freshness" value={status === 'LIVE' ? 'Connected' : status} detail={Number.isFinite(age) ? `${Math.floor(age)}s transport age` : 'not connected'} /></section>;
+const MetricBar = ({ snapshot, predictedEvents, status, age }: { snapshot?: LiveMapSnapshot; predictedEvents: number; status: ConnectionStatus; age: number }) => <section className="grid grid-cols-2 border border-border bg-surface sm:grid-cols-3 xl:grid-cols-6"><Metric icon={<Car />} label="Vehicles" value={snapshot ? snapshot.summary.vehicle_count.toLocaleString() : '—'} detail="authoritative GPS" /><Metric icon={<Layers3 />} label="Active segments" value={snapshot ? snapshot.summary.active_segments.toLocaleString() : '—'} detail="observed now" /><Metric icon={<TriangleAlert />} label="Predicted events" value={snapshot ? predictedEvents.toLocaleString() : '—'} detail="non-normal model output" /><Metric icon={<Radio />} label="Average speed" value={snapshot ? `${snapshot.summary.average_speed_kmph.toFixed(1)}` : '—'} detail="km/h" /><Metric icon={<Clock3 />} label="Last telemetry" value={snapshot ? new Date(snapshot.observed_at).toLocaleTimeString() : '—'} detail={snapshot ? `tick ${snapshot.tick_number}` : 'waiting'} /><Metric icon={status === 'LIVE' ? <Wifi /> : <WifiOff />} label="Data freshness" value={status} detail={Number.isFinite(age) ? receiptLabel(age) : 'not connected'} /></section>;
 const Metric = ({ icon, label, value, detail }: { icon: React.ReactNode; label: string; value: string; detail: string }) => <div className="flex min-h-20 items-center gap-3 border-b border-r border-border px-3 py-3 last:border-r-0 sm:border-b-0"><span className="text-primary [&>svg]:h-4 [&>svg]:w-4">{icon}</span><div className="min-w-0"><div className="text-[9px] font-semibold uppercase tracking-wider text-textSecondary">{label}</div><div className="truncate text-lg font-semibold text-white">{value}</div><div className="truncate text-[9px] text-textSecondary">{detail}</div></div></div>;
 
 const MapControls = ({ layers, setLayers, regions, region, setRegion, onFit }: { layers: LayerState; setLayers: React.Dispatch<React.SetStateAction<LayerState>>; regions: string[]; region: string; setRegion: (value: string) => void; onFit: () => void }) => <div className="pointer-events-none absolute left-3 right-3 top-3 z-[500] flex flex-wrap items-start justify-between gap-2"><div className="pointer-events-auto flex border border-border bg-surface/95 p-1 shadow-lg"><ControlButton label="Fit network" onClick={onFit}><LocateFixed /></ControlButton><ControlButton label="Reset view" onClick={onFit}><RotateCcw /></ControlButton></div><div className="pointer-events-auto flex flex-wrap justify-end gap-2"><div className="border border-border bg-surface/95 p-1 shadow-lg"><div className="px-2 py-1 text-[9px] font-semibold uppercase text-textSecondary">Map layers</div><div className="flex flex-wrap">{([['predictions', 'Predictions'], ['telemetry', 'Telemetry'], ['vehicles', 'Vehicles'], ['events', 'Events'], ['network', 'Network']] as const).map(([key, label]) => <button type="button" key={key} aria-pressed={layers[key]} onClick={() => setLayers((current) => ({ ...current, [key]: !current[key] }))} className={`flex h-7 items-center gap-1.5 px-2 text-[10px] focus-visible:outline-2 focus-visible:outline-primary ${layers[key] ? 'bg-primary/15 text-primary' : 'text-textSecondary hover:bg-surfaceHover'}`}>{layers[key] ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}{label}</button>)}</div></div><label className="flex h-9 items-center gap-2 border border-border bg-surface/95 px-3 text-[10px] text-textSecondary shadow-lg"><span>Region</span><select aria-label="Region" value={region} onChange={(event) => setRegion(event.target.value)} className="bg-transparent text-textPrimary outline-none"><option value="all">All regions</option>{regions.map((item) => <option key={item} value={item}>{item}</option>)}</select><ChevronDown className="h-3 w-3" /></label></div></div>;

@@ -28,9 +28,9 @@ const segments: SegmentData[] = Array.from({ length: 3 }, (_, index) => ({
   max_speed_kmph: 50, road_direction: 'bidirectional', flood_prone: false, neighbor_segments: [],
 }));
 
-const snapshot = (receivedAt = new Date().toISOString()): LiveMapSnapshot => ({
+const snapshot = (receivedAt = new Date().toISOString(), observedAt = receivedAt): LiveMapSnapshot => ({
   source_id: 'test-source', run_id: 'test-run', batch_id: 'tick-1', tick_number: 1,
-  observed_at: receivedAt, received_at: receivedAt, server_time: receivedAt,
+  observed_at: observedAt, received_at: receivedAt, server_time: receivedAt,
   poll_interval_seconds: 0.02, stale_after_seconds: 12,
   segments: segments.map((segment, index) => ({
     segment_id: segment.segment_id, region_id: segment.region_id, latest_timestamp: receivedAt,
@@ -65,10 +65,10 @@ describe('TrafficMap', () => {
   it('starts live polling and renders backend vehicles, events, and counters', async () => {
     renderMap();
     fireEvent.click(await screen.findByRole('button', { name: /start live/i }));
-    expect(await screen.findByText('LIVE')).toBeInTheDocument();
+    expect((await screen.findAllByText('LIVE')).length).toBeGreaterThan(0);
     expect(await screen.findAllByText('VEH_1')).not.toHaveLength(0);
     expect(screen.getAllByText('Accident').length).toBeGreaterThan(0);
-    expect(screen.getByText('Connected')).toBeInTheDocument();
+    expect(screen.getAllByText('Received just now').length).toBeGreaterThan(0);
   });
 
   it('updates vehicle positions on subsequent backend snapshots', async () => {
@@ -84,12 +84,29 @@ describe('TrafficMap', () => {
   it('stops polling and reports disconnected without discarding the last snapshot', async () => {
     renderMap();
     fireEvent.click(await screen.findByRole('button', { name: /start live/i }));
-    await screen.findByText('LIVE');
+    expect((await screen.findAllByText('LIVE')).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: /pause live/i }));
     const calls = vi.mocked(fetchLiveSnapshot).mock.calls.length;
     await new Promise((resolve) => setTimeout(resolve, 60));
     expect(fetchLiveSnapshot).toHaveBeenCalledTimes(calls);
     expect(screen.getAllByText('PAUSED').length).toBeGreaterThan(0);
+  });
+
+  it('restarts through connecting before a new successful receipt becomes live', async () => {
+    let resolveRestart: ((value: LiveMapSnapshot) => void) | undefined;
+    vi.mocked(fetchLiveSnapshot)
+      .mockResolvedValueOnce(snapshot())
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveRestart = resolve; }));
+    renderMap();
+    fireEvent.click(await screen.findByRole('button', { name: /start live/i }));
+    expect((await screen.findAllByText('LIVE')).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: /pause live/i }));
+    expect(screen.getAllByText('PAUSED').length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole('button', { name: /start live/i }));
+    expect(screen.getAllByText('CONNECTING').length).toBeGreaterThan(0);
+    resolveRestart?.(snapshot());
+    expect((await screen.findAllByText('LIVE')).length).toBeGreaterThan(0);
   });
 
   it('shows error when the backend has no initial snapshot', async () => {
@@ -100,12 +117,13 @@ describe('TrafficMap', () => {
     expect(screen.getByText('Backend unavailable')).toBeInTheDocument();
   });
 
-  it('marks old backend data stale', async () => {
-    vi.mocked(fetchLiveSnapshot).mockResolvedValue(snapshot(new Date(Date.now() - 60_000).toISOString()));
+  it('keeps historical simulation telemetry live when the browser receives it now', async () => {
+    vi.mocked(fetchLiveSnapshot).mockResolvedValue(snapshot(new Date().toISOString(), '2026-08-17T08:02:00.000Z'));
     renderMap();
     fireEvent.click(await screen.findByRole('button', { name: /start live/i }));
-    expect((await screen.findAllByText('STALE')).length).toBeGreaterThan(0);
-    expect(screen.getByText('Backend data is stale')).toBeInTheDocument();
+    expect((await screen.findAllByText('LIVE')).length).toBeGreaterThan(0);
+    expect(screen.getByText(new Date('2026-08-17T08:02:00.000Z').toLocaleTimeString())).toBeInTheDocument();
+    expect(screen.getAllByText('Received just now').length).toBeGreaterThan(0);
   });
 
   it('filters roads and vehicles by backend region IDs', async () => {
@@ -159,7 +177,7 @@ describe('TrafficMap', () => {
     });
     renderMap();
     fireEvent.click(await screen.findByRole('button', { name: /start live/i }));
-    await screen.findByText('LIVE');
+    expect((await screen.findAllByText('LIVE')).length).toBeGreaterThan(0);
     fireEvent.click((await screen.findAllByTestId('road'))[0]);
     expect(screen.getAllByText('construction').length).toBeGreaterThan(0);
     expect(screen.getAllByText('91.0%').length).toBeGreaterThan(0);
