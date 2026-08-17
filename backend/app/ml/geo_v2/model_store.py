@@ -42,12 +42,29 @@ class GeoV2ModelStore:
         self._scale: np.ndarray | None = None
         self._labels: tuple[str, ...] = ()
         self._version: str | None = None
+        self._network_version: str | None = None
+        self._feature_version: str | None = None
         self._stamp: tuple[int, int] | None = None
         self._error: str | None = None
 
     @property
     def model_version(self) -> str | None:
         return self._version
+
+    @property
+    def feature_order(self) -> tuple[str, ...]:
+        self.maybe_reload()
+        return self._feature_order
+
+    @property
+    def network_version(self) -> str | None:
+        self.maybe_reload()
+        return self._network_version
+
+    @property
+    def feature_version(self) -> str | None:
+        self.maybe_reload()
+        return self._feature_version
 
     def maybe_reload(self) -> bool:
         with self._lock:
@@ -86,9 +103,9 @@ class GeoV2ModelStore:
         if not isinstance(payload, dict):
             raise ValueError("checkpoint must be a metadata dictionary")
         order = tuple(payload.get("ordered_feature_names", payload.get("feature_order", ())))
-        expected = tuple(FEATURE_VARIANTS["history_spatial"])
-        if order != expected:
-            raise ValueError("feature_order must exactly match history_spatial")
+        allowed = {tuple(FEATURE_VARIANTS["history_spatial"]), tuple(FEATURE_VARIANTS["history_current"]), tuple([*FEATURE_VARIANTS["history_current"], "neighbor_speed_delta"])}
+        if order not in allowed:
+            raise ValueError("feature_order must match an approved Geo V2 variant")
         reject_forbidden_columns(order, context="artifact feature_order")
         scaler = payload.get("scaler") or {
             "mean": payload.get("scaler_mean", payload.get("mean")),
@@ -127,6 +144,8 @@ class GeoV2ModelStore:
         self._model, self._feature_order = model, order
         self._mean, self._scale, self._labels = mean_array, scale_array, labels
         self._version = str(payload.get("model_version") or payload.get("version") or f"mtime-{stamp[0]}")
+        self._network_version = payload.get("network_version")
+        self._feature_version = payload.get("feature_version")
         self._stamp, self._error = stamp, None
 
     def _clear(self, error: str) -> None:
@@ -135,6 +154,8 @@ class GeoV2ModelStore:
         self._mean = self._scale = None
         self._labels = ()
         self._version = None
+        self._network_version = None
+        self._feature_version = None
         self._stamp = None
         self._error = error
 

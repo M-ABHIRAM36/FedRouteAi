@@ -13,7 +13,7 @@ describe('getSegmentStyle', () => {
     expect(getSegmentStyle().status).toBe('unknown');
   });
 
-  it.each(['congestion', 'construction', 'accident', 'flood', 'diversion', 'road_damage'])('maps %s telemetry to its semantic style', (event) => {
+  it.each(['congestion', 'construction', 'accident', 'flood', 'diversion', 'road_damage', 'road_block'])('maps %s model output to its semantic style', (event) => {
     expect(getSegmentStyle({ ...state('normal'), predicted_event: event }).status).toBe(event);
   });
 

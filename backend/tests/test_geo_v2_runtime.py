@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -158,15 +158,16 @@ def test_service_bulk_history_is_causal_and_uses_three_prior_ticks(db_session):
         store=_CountingStore(), cache=CausalFeatureContextCache(),
     )
     segment_id = network.segments[0].segment_id
-    for minute, speed in enumerate((24, 21, 18, 15)):
+    start = datetime(2026, 8, 17, 8, 0)
+    for index, speed in enumerate((24, 21, 18, 15)):
         item = _item(segment_id).model_copy(update={
-            "as_of": datetime(2026, 8, 17, 8, minute),
+            "as_of": start + timedelta(seconds=120 * index),
             "telemetry": _item(segment_id).telemetry.model_copy(update={"avg_speed_kmph": speed}),
         })
         service.infer_batch([item])
 
     final = _item(segment_id).model_copy(update={
-        "as_of": datetime(2026, 8, 17, 8, 4),
+        "as_of": start + timedelta(seconds=120 * 4),
         "telemetry": _item(segment_id).telemetry.model_copy(update={"avg_speed_kmph": 12}),
     })
     result = service.infer_batch([final])[0][2]

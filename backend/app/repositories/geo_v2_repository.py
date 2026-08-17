@@ -180,6 +180,18 @@ class GeoV2Repository:
             ).all()
         ]
 
+    def outgoing_neighbors(self, segment_ids: set[str], network_version: str) -> dict[str, set[str]]:
+        rows = self.db.query(
+            GeoSegmentTransition.from_segment_id, GeoSegmentTransition.to_segment_id,
+        ).filter(
+            GeoSegmentTransition.network_version == network_version,
+            GeoSegmentTransition.from_segment_id.in_(segment_ids),
+        ).all()
+        result = {segment_id: set() for segment_id in segment_ids}
+        for source, target in rows:
+            result[source].add(target)
+        return result
+
     def save_prediction(self, values: dict) -> SegmentPrediction:
         existing = self.db.query(SegmentPrediction).filter_by(
             source_id=values["source_id"], run_id=values["run_id"],

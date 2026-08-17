@@ -17,10 +17,18 @@ dist/
 # Data
 data/raw/*
 data/processed/*
+data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1/*
+data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1_fixed_contract_v2/*
+data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1_fixed_contract_v2
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 backend/data/calibration/high/features/*
 backend/data/calibration/*
+backend/data/geo_v2*
+backend/data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1/
+backend/data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1/features/*
+backend/data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1_fixed
+backend/data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1_fixed_contract_v2
 backend/app/ml/artifacts/
 
 # OS / editor

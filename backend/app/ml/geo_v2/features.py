@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 
 from app.services.geo_v2.network import CanonicalNetwork
+from app.ml.geo_v2.feature_contract import HISTORY_CADENCE_SECONDS
 
 
 FORBIDDEN_TOKENS = (
@@ -127,6 +128,9 @@ class CausalFeatureBuilder:
         frame = states.copy()
         frame["timestamp"] = pd.to_datetime(frame["timestamp"])
         frame = frame.sort_values(["segment_id", "timestamp"], kind="stable").reset_index(drop=True)
+        deltas = frame.groupby("segment_id", sort=False)["timestamp"].diff().dropna().dt.total_seconds()
+        if not deltas.eq(HISTORY_CADENCE_SECONDS).all():
+            raise ValueError(f"Geo V2 feature history requires exact {HISTORY_CADENCE_SECONDS}-second cadence")
         hour = frame["timestamp"].dt.hour + frame["timestamp"].dt.minute / 60.0
         frame["hour_sin"] = np.sin(2.0 * math.pi * hour / 24.0)
         frame["hour_cos"] = np.cos(2.0 * math.pi * hour / 24.0)

@@ -1,7 +1,7 @@
 import type { PathOptions } from 'leaflet';
 import type { LiveSegmentState } from '../../services/api/liveMapApi';
 
-export type SegmentTrafficStatus = 'normal' | 'congestion' | 'construction' | 'accident' | 'flood' | 'diversion' | 'road_damage' | 'blocked' | 'telemetry_clear' | 'telemetry_slow' | 'telemetry_dense' | 'unknown';
+export type SegmentTrafficStatus = 'normal' | 'congestion' | 'construction' | 'accident' | 'flood' | 'diversion' | 'road_damage' | 'road_block' | 'blocked' | 'telemetry_clear' | 'telemetry_slow' | 'telemetry_dense' | 'unknown';
 
 export interface SegmentStyle extends PathOptions {
   label: string;
@@ -16,6 +16,7 @@ const styles: Record<SegmentTrafficStatus, SegmentStyle> = {
   flood: { color: '#38bdf8', weight: 7, opacity: 0.92, dashArray: '4 5', label: 'Flood', status: 'flood' },
   diversion: { color: '#c084fc', weight: 6, opacity: 0.9, dashArray: '12 6', label: 'Diversion', status: 'diversion' },
   road_damage: { color: '#eab308', weight: 7, opacity: 0.92, dashArray: '2 5', label: 'Road damage', status: 'road_damage' },
+  road_block: { color: '#f43f5e', weight: 8, opacity: 0.95, dashArray: '3 10', label: 'Road block', status: 'road_block' },
   blocked: { color: '#f43f5e', weight: 8, opacity: 0.95, dashArray: '3 10', label: 'Road blocked', status: 'blocked' },
   telemetry_clear: { color: '#84cc16', weight: 4, opacity: 0.78, label: 'Telemetry: flowing', status: 'telemetry_clear' },
   telemetry_slow: { color: '#fbbf24', weight: 5, opacity: 0.86, label: 'Telemetry: slow', status: 'telemetry_slow' },

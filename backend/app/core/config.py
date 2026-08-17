@@ -56,7 +56,8 @@ class Settings(BaseSettings):
     # --- ML artifact directories (relative to backend/) ---
     ML_ARTIFACTS_DIR: str = "app/ml/artifacts"
     # Explicit V2 artifact; this never replaces a V1 model artifact.
-    GEO_V2_MODEL_PATH: str = "app/ml/artifacts/geo_v2/federated/practical-8r-2e-seed42/best_model.pt"
+    GEO_V2_MODEL_PATH: str = "app/ml/artifacts/geo_v2/federated/robust-v2-hs1-prior2-unweighted-bw3-22-50r2e-seed42/best_model.pt"
+    GEO_V2_BASELINE_PATH: str = "../data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1/normal_prehistory_baselines/train.csv"
     REPLAY_BUFFER_MAX_SIZE: int = 500  # per-region replay buffer capacity
 
     # --- Routing ---

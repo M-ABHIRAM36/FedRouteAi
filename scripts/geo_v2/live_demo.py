@@ -70,9 +70,9 @@ def main() -> int:
     parser.add_argument("--api-key", required=True)
     parser.add_argument("--source-id", default="geo-v2-demo")
     parser.add_argument("--run-id", default="geo-v2-demo-5h")
-    parser.add_argument("--ticks", type=int, default=30)
+    parser.add_argument("--ticks", type=int, default=150)
     parser.add_argument("--vehicle-count", type=int, default=1000)
-    parser.add_argument("--tick-seconds", type=float, default=600)
+    parser.add_argument("--tick-seconds", type=float, default=120)
     parser.add_argument("--start", type=datetime.fromisoformat, help="simulation start; defaults to current UTC")
     parser.add_argument("--wall-delay", type=float, default=0)
     parser.add_argument("--local-demo-schedule", action="store_true")
@@ -106,6 +106,24 @@ def main() -> int:
     prediction_service = GeoV2PredictionService(
         SegmentRepository(db), HistoricalMemoryRepository(db), GeoV2Repository(db), cache=context_cache,
     )
+    timing = {"inference_ms": 0.0, "persistence_ms": 0.0}
+    predict = prediction_service.store.predict
+    persist = prediction_service.predictions.save_predictions
+
+    def timed_predict(rows):
+        started = time.perf_counter()
+        result = predict(rows)
+        timing["inference_ms"] = (time.perf_counter() - started) * 1000
+        return result
+
+    def timed_persist(rows):
+        started = time.perf_counter()
+        result = persist(rows)
+        timing["persistence_ms"] = (time.perf_counter() - started) * 1000
+        return result
+
+    prediction_service.store.predict = timed_predict
+    prediction_service.predictions.save_predictions = timed_persist
     outgoing: dict[str, set[str]] = defaultdict(set)
     for transition in network.transitions:
         outgoing[transition.from_segment_id].add(transition.to_segment_id)
@@ -115,7 +133,9 @@ def main() -> int:
                 scenarios = _poll_scenarios(http, args.base_url, args.source_id, args.run_id, simulation.state.current_time)
                 _sync_scenarios(simulation, scenarios)
                 clean = scrub_observations(simulation.tick())
+                ingestion_started = time.perf_counter()
                 receipt = ingestion.ingest(tick, clean)
+                ingestion_ms = (time.perf_counter() - ingestion_started) * 1000
                 # Predict from state at T using only history strictly before T.
                 # Scenario labels are absent from clean telemetry and never form a feature.
                 prediction_items = []
@@ -153,12 +173,19 @@ def main() -> int:
                             "stopped_fraction": 1.0 if neighbor.average_speed_kmph < 1.0 else 0.0,
                         } for neighbor in neighbors],
                     }))
+                prediction_started = time.perf_counter()
                 results = prediction_service.infer_batch(prediction_items, baseline_overrides=prior_baselines)
+                prediction_ms = (time.perf_counter() - prediction_started) * 1000
 
                 # infer_batch records and persists this tick only after inference,
                 # making it eligible as temporal context for the next tick.
                 available = sum(result.status == "ok" for _, _, result in results)
-                print(f"tick={tick} accepted={receipt['accepted']} active_scenarios={len(scenarios)} predictions={available}/{len(results)}")
+                print(
+                    f"tick={tick} timestamp={simulation.state.current_time.isoformat()} accepted={receipt['accepted']} "
+                    f"observed_segments={len(results)} active_scenarios={len(scenarios)} predictions={available}/{len(results)} "
+                    f"ingestion_ms={ingestion_ms:.3f} inference_ms={timing['inference_ms']:.3f} "
+                    f"persistence_ms={timing['persistence_ms']:.3f} prediction_persistence_ms={prediction_ms:.3f}"
+                )
                 if args.wall_delay:
                     time.sleep(args.wall_delay)
     finally:
