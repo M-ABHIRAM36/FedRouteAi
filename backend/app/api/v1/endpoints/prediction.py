@@ -9,7 +9,12 @@ from app.db.session import get_db
 from app.repositories.historical_memory_repository import HistoricalMemoryRepository
 from app.repositories.geo_v2_repository import GeoV2Repository
 from app.repositories.segment_repository import SegmentRepository
-from app.schemas.geo_v2_inference import TelemetryInferenceRequest, TelemetryInferenceResponse
+from app.schemas.geo_v2_inference import (
+    GeoV2BatchInferenceRequest, GeoV2BatchInferenceResponse, GeoV2InferenceRequest,
+    GeoV2InferenceResponse, TelemetryInferenceRequest, TelemetryInferenceResponse,
+)
+from app.services.geo_v2.prediction_service import GeoV2PredictionService
+from app.services.geo_v2.runtime_inference import CausalFeatureContextCache, FEATURE_VERSION
 from app.services.federated_learning.global_model import GLOBAL_MODEL_STORE
 from app.services.geo_v2.inference import (
     HistoricalBaseline,
@@ -20,6 +25,13 @@ from app.services.geo_v2.inference import (
 )
 
 router = APIRouter(prefix="/prediction", tags=["prediction"])
+_GEO_V2_CONTEXT_CACHE = CausalFeatureContextCache()
+
+
+def _geo_v2_service(db: Session) -> GeoV2PredictionService:
+    return GeoV2PredictionService(
+        SegmentRepository(db), HistoricalMemoryRepository(db), GeoV2Repository(db), cache=_GEO_V2_CONTEXT_CACHE,
+    )
 
 
 @router.post("/infer", response_model=TelemetryInferenceResponse)
@@ -70,3 +82,32 @@ def infer_prediction(
         "current_deviation": result.deviations,
     })
     return TelemetryInferenceResponse(segment_id=request.segment_id, timestamp=request.as_of, **values)
+
+
+@router.post("/infer/geo-v2", response_model=GeoV2InferenceResponse)
+def infer_geo_v2_prediction(request: GeoV2InferenceRequest, db: Session = Depends(get_db)) -> GeoV2InferenceResponse:
+    try:
+        item, region, result = _geo_v2_service(db).infer_batch([request])[0]
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return _geo_v2_response(item, region, result)
+
+
+@router.post("/infer/batch", response_model=GeoV2BatchInferenceResponse)
+def infer_geo_v2_prediction_batch(
+    request: GeoV2BatchInferenceRequest, db: Session = Depends(get_db),
+) -> GeoV2BatchInferenceResponse:
+    try:
+        results = _geo_v2_service(db).infer_batch(request.items)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return GeoV2BatchInferenceResponse(results=[_geo_v2_response(item, region, result) for item, region, result in results])
+
+
+def _geo_v2_response(item, region: str, result) -> GeoV2InferenceResponse:
+    return GeoV2InferenceResponse(
+        status=result.status, segment_id=item.segment_id, region=region, timestamp=item.as_of,
+        model_version=result.model_version, feature_version=FEATURE_VERSION, prediction=result.prediction,
+        predicted_label=result.prediction, confidence=result.confidence, probabilities=result.probabilities,
+        baseline=result.baseline, deviations=result.deviations,
+    )

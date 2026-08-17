@@ -21,6 +21,7 @@ data/processed/*
 !data/processed/.gitkeep
 backend/data/calibration/high/features/*
 backend/data/calibration/*
+backend/app/ml/artifacts/
 
 # OS / editor
 .DS_Store
@@ -30,6 +31,8 @@ Thumbs.db
 
 # Generated datasets
 data/calibration/
+# Geo V2 causal telemetry, feature tables, partitions, and audit outputs
+data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1/
 
 # Feature tables
 *.parquet
@@ -37,6 +40,8 @@ data/calibration/
 # Trained models
 *.pth
 *.ubj
+# Geo V2 federated checkpoints, metrics, and training-run outputs
+backend/app/ml/artifacts/geo_v2/
 # Ignore intermediate checkpoints
 round_*.pt
 checkpoints/

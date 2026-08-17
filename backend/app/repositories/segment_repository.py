@@ -12,6 +12,12 @@ class SegmentRepository(BaseRepository[Segment]):
     def get_by_region(self, region_id: str) -> list[Segment]:
         return self.db.query(Segment).filter(Segment.region_id == region_id).all()
 
+    def get_many(self, segment_ids: set[str]) -> dict[str, Segment]:
+        if not segment_ids:
+            return {}
+        rows = self.db.query(Segment).filter(Segment.segment_id.in_(segment_ids)).all()
+        return {row.segment_id: row for row in rows}
+
     def get_neighbors(self, segment: Segment) -> list[Segment]:
         ids = [s for s in (segment.neighbor_segments or "").split(";") if s]
         if not ids:

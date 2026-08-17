@@ -198,15 +198,33 @@ class GeoV2Repository:
     def save_predictions(self, rows: list[dict]) -> list[SegmentPrediction]:
         """Persist a tick's predictions idempotently in one transaction."""
         predictions: list[SegmentPrediction] = []
+        grouped: dict[tuple[str, str, datetime, str], set[str]] = {}
         for values in rows:
-            existing = self.db.query(SegmentPrediction).filter_by(
-                source_id=values["source_id"], run_id=values["run_id"],
-                segment_id=values["segment_id"], timestamp=values["timestamp"],
-                model_version=values["model_version"],
-            ).one_or_none()
+            key = (values["source_id"], values["run_id"], values["timestamp"], values["model_version"])
+            grouped.setdefault(key, set()).add(values["segment_id"])
+        existing_by_key = {}
+        for (source_id, run_id, timestamp, model_version), segment_ids in grouped.items():
+            existing_rows = self.db.query(SegmentPrediction).filter(
+                SegmentPrediction.source_id == source_id,
+                SegmentPrediction.run_id == run_id,
+                SegmentPrediction.timestamp == timestamp,
+                SegmentPrediction.model_version == model_version,
+                SegmentPrediction.segment_id.in_(segment_ids),
+            ).all()
+            existing_by_key.update({
+                (row.source_id, row.run_id, row.segment_id, row.timestamp, row.model_version): row
+                for row in existing_rows
+            })
+        for values in rows:
+            key = (
+                values["source_id"], values["run_id"], values["segment_id"],
+                values["timestamp"], values["model_version"],
+            )
+            existing = existing_by_key.get(key)
             if existing is None:
                 existing = SegmentPrediction(**values)
                 self.db.add(existing)
+                existing_by_key[key] = existing
             else:
                 for key, value in values.items():
                     setattr(existing, key, value)
@@ -224,6 +242,43 @@ class GeoV2Repository:
             (latest.c.segment_id == SegmentPrediction.segment_id)
             & (latest.c.timestamp == SegmentPrediction.timestamp),
         ).filter_by(source_id=source_id, run_id=run_id).all()
+
+    def prediction_history(
+        self, source_id: str, run_id: str, segment_id: str, before: datetime, limit: int = 3,
+    ) -> list[SegmentPrediction]:
+        return self.db.query(SegmentPrediction).filter(
+            SegmentPrediction.source_id == source_id,
+            SegmentPrediction.run_id == run_id,
+            SegmentPrediction.segment_id == segment_id,
+            SegmentPrediction.timestamp < before,
+        ).order_by(SegmentPrediction.timestamp.desc()).limit(limit).all()
+
+    def prediction_histories(
+        self, source_id: str, run_id: str, segment_ids: set[str], before: datetime, limit: int = 3,
+    ) -> dict[str, list[SegmentPrediction]]:
+        if not segment_ids:
+            return {}
+        ranked = self.db.query(
+            SegmentPrediction.id.label("prediction_id"),
+            func.row_number().over(
+                partition_by=SegmentPrediction.segment_id,
+                order_by=SegmentPrediction.timestamp.desc(),
+            ).label("history_rank"),
+        ).filter(
+            SegmentPrediction.source_id == source_id,
+            SegmentPrediction.run_id == run_id,
+            SegmentPrediction.segment_id.in_(segment_ids),
+            SegmentPrediction.timestamp < before,
+        ).subquery()
+        rows = self.db.query(SegmentPrediction).join(
+            ranked, ranked.c.prediction_id == SegmentPrediction.id,
+        ).filter(ranked.c.history_rank <= limit).order_by(
+            SegmentPrediction.segment_id, SegmentPrediction.timestamp.desc(),
+        ).all()
+        histories: dict[str, list[SegmentPrediction]] = {}
+        for row in rows:
+            histories.setdefault(row.segment_id, []).append(row)
+        return histories
 
 
 def _midpoint(segment: CanonicalSegment) -> tuple[float, float]:

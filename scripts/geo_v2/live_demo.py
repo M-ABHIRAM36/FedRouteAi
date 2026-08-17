@@ -5,11 +5,11 @@ import argparse
 from collections import defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
-from types import SimpleNamespace
 import sys
 import time
 
 import httpx
+import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "backend"))
@@ -18,13 +18,14 @@ sys.path.insert(0, str(ROOT))
 from app.db.session import SessionLocal  # noqa: E402
 from app.repositories.geo_v2_repository import GeoV2Repository  # noqa: E402
 from app.repositories.historical_memory_repository import HistoricalMemoryRepository  # noqa: E402
-from app.services.federated_learning.global_model import GLOBAL_MODEL_STORE  # noqa: E402
 from app.services.geo_v2.demo import ScheduledDemo  # noqa: E402
-from app.services.geo_v2.inference import HistoricalBaseline, SegmentContext, infer_telemetry_state  # noqa: E402
 from app.services.geo_v2.simulation import GeoV2Simulation, SimulationConfig  # noqa: E402
-from app.services.historical_memory.aggregator import build_hourly_profile  # noqa: E402
 from app.services.live_ingestion.client import LiveIngestionClient  # noqa: E402
-from scripts.geo_v2.common import NETWORK_SOURCE, NETWORK_VERSION, aggregate_observations, scrub_observations  # noqa: E402
+from app.repositories.segment_repository import SegmentRepository  # noqa: E402
+from app.schemas.geo_v2_inference import GeoV2InferenceItem  # noqa: E402
+from app.services.geo_v2.prediction_service import GeoV2Baseline, GeoV2PredictionService  # noqa: E402
+from app.services.geo_v2.runtime_inference import CausalFeatureContextCache  # noqa: E402
+from scripts.geo_v2.common import NETWORK_SOURCE, NETWORK_VERSION, scrub_observations  # noqa: E402
 
 
 def _poll_scenarios(client: httpx.Client, base_url: str, source_id: str, run_id: str, at: datetime) -> list[dict]:
@@ -50,6 +51,19 @@ def _sync_scenarios(simulation: GeoV2Simulation, scenarios: list[dict]) -> None:
             )
 
 
+def _load_prior_baselines(baseline_path: Path) -> dict[str, GeoV2Baseline]:
+    """Load separate normal-only V2 prehistory without modifying V1 memory."""
+    frame = pd.read_csv(baseline_path)
+    return {
+        str(row.segment_id): GeoV2Baseline(
+            avg_speed_kmph=float(row.baseline_speed_kmph),
+            std_speed_kmph=float(row.baseline_speed_std_kmph),
+            avg_vehicle_count=float(row.baseline_vehicle_count),
+        )
+        for row in frame.itertuples(index=False)
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default="http://127.0.0.1:8000")
@@ -62,6 +76,11 @@ def main() -> int:
     parser.add_argument("--start", type=datetime.fromisoformat, help="simulation start; defaults to current UTC")
     parser.add_argument("--wall-delay", type=float, default=0)
     parser.add_argument("--local-demo-schedule", action="store_true")
+    parser.add_argument(
+        "--baseline",
+        type=Path,
+        default=ROOT / "data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1/normal_prehistory_baselines/train.csv",
+    )
     args = parser.parse_args()
     db = SessionLocal()
     network = GeoV2Repository(db).load_network(NETWORK_VERSION)
@@ -71,6 +90,7 @@ def main() -> int:
             f"Geo V2 network {NETWORK_VERSION!r} is not imported; "
             "run scripts/geo_v2/import_network.py first"
         )
+    prior_baselines = _load_prior_baselines(args.baseline)
     simulation = GeoV2Simulation(network, SimulationConfig(
         vehicle_count=args.vehicle_count, tick_seconds=1, simulation_speed=args.tick_seconds,
         start_time=args.start or datetime.now(UTC).replace(tzinfo=None),
@@ -82,8 +102,13 @@ def main() -> int:
         args.base_url, args.api_key, args.source_id, args.run_id,
         network_source=NETWORK_SOURCE, network_version=NETWORK_VERSION,
     )
-    segments = {segment.segment_id: segment for segment in network.segments}
-    normal_history: dict[tuple[str, int], list[SimpleNamespace]] = defaultdict(list)
+    context_cache = CausalFeatureContextCache()
+    prediction_service = GeoV2PredictionService(
+        SegmentRepository(db), HistoricalMemoryRepository(db), GeoV2Repository(db), cache=context_cache,
+    )
+    outgoing: dict[str, set[str]] = defaultdict(set)
+    for transition in network.transitions:
+        outgoing[transition.from_segment_id].add(transition.to_segment_id)
     try:
         with httpx.Client(timeout=30) as http:
             for tick in range(1, args.ticks + 1):
@@ -91,48 +116,49 @@ def main() -> int:
                 _sync_scenarios(simulation, scenarios)
                 clean = scrub_observations(simulation.tick())
                 receipt = ingestion.ingest(tick, clean)
-                active_segments = {
-                    segment_id
-                    for item in scenarios
-                    for segment_id in item.get("affected_segment_ids", [item["primary_segment_id"]])
+                # Predict from state at T using only history strictly before T.
+                # Scenario labels are absent from clean telemetry and never form a feature.
+                prediction_items = []
+                observed_states = {
+                    segment_id: state
+                    for segment_id, state in simulation.state.flow_states.items()
+                    if state.vehicle_count > 0
                 }
-                for row in clean:
-                    if row["segment_id"] not in active_segments:
-                        normal_history[(str(row["segment_id"]), simulation.state.current_time.hour)].append(SimpleNamespace(
-                            speed_kmph=row["speed_kmph"], vehicle_id=row["vehicle_id"],
-                            is_uturn_flag=row.get("is_uturn_flag", False), timestamp=row["timestamp"],
-                        ))
-                memory_repo = HistoricalMemoryRepository(db)
-                profiles = {}
-                profile_updates = []
-                for key, history in normal_history.items():
-                    profile = build_hourly_profile(key[0], key[1], history)
-                    if profile is not None:
-                        profiles[key] = profile
-                        profile_updates.append(profile)
-                memory_repo.upsert_many(profile_updates)
-                geo_repo = GeoV2Repository(db)
-                predictions = []
-                for segment_id, telemetry in aggregate_observations(clean).items():
-                    profile = profiles.get((segment_id, simulation.state.current_time.hour))
-                    if profile is None:
-                        continue
-                    segment = segments[segment_id]
-                    prediction = infer_telemetry_state(
-                        telemetry,
-                        HistoricalBaseline(profile.avg_speed_kmph, profile.std_speed_kmph, profile.avg_vehicle_count, profile.uturn_rate, profile.sample_size),
-                        SegmentContext(simulation.state.current_time.hour, segment.road_type.value, segment.lanes, False),
-                        (), GLOBAL_MODEL_STORE,
-                    )
-                    predictions.append({
-                        "source_id": args.source_id, "run_id": args.run_id, "segment_id": segment_id,
-                        "timestamp": simulation.state.current_time, "predicted_label": prediction.prediction,
-                        "confidence": prediction.confidence, "class_probabilities": prediction.probabilities,
-                        "model_version": prediction.model_version, "historical_baseline": prediction.baseline,
-                        "current_deviation": prediction.deviations,
-                    })
-                geo_repo.save_predictions(predictions)
-                print(f"tick={tick} accepted={receipt['accepted']} active_scenarios={len(scenarios)} predictions={len(predictions)}")
+                for segment_id, state in observed_states.items():
+                    neighbors = [
+                        observed_states[item]
+                        for item in sorted(outgoing.get(segment_id, ()))
+                        if item in observed_states
+                    ]
+                    prediction_items.append(GeoV2InferenceItem.model_validate({
+                        "source_id": args.source_id,
+                        "run_id": args.run_id,
+                        "segment_id": segment_id,
+                        "as_of": simulation.state.current_time,
+                        "telemetry": {
+                            "avg_speed_kmph": state.average_speed_kmph,
+                            "speed_std_kmph": state.speed_variance ** 0.5,
+                            "vehicle_count": state.vehicle_count,
+                            "occupancy": state.occupancy,
+                            "flow_rate_vph": state.flow_rate_vph,
+                            "stopped_fraction": 1.0 if state.average_speed_kmph < 1.0 else 0.0,
+                        },
+                        "neighbors": [{
+                            "segment_id": neighbor.segment_id,
+                            "avg_speed_kmph": neighbor.average_speed_kmph,
+                            "speed_std_kmph": neighbor.speed_variance ** 0.5,
+                            "vehicle_count": neighbor.vehicle_count,
+                            "occupancy": neighbor.occupancy,
+                            "flow_rate_vph": neighbor.flow_rate_vph,
+                            "stopped_fraction": 1.0 if neighbor.average_speed_kmph < 1.0 else 0.0,
+                        } for neighbor in neighbors],
+                    }))
+                results = prediction_service.infer_batch(prediction_items, baseline_overrides=prior_baselines)
+
+                # infer_batch records and persists this tick only after inference,
+                # making it eligible as temporal context for the next tick.
+                available = sum(result.status == "ok" for _, _, result in results)
+                print(f"tick={tick} accepted={receipt['accepted']} active_scenarios={len(scenarios)} predictions={available}/{len(results)}")
                 if args.wall_delay:
                     time.sleep(args.wall_delay)
     finally:
