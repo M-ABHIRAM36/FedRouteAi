@@ -61,3 +61,8 @@ checkpoints/
 
 # Logs
 *.log
+
+opencode.json/
+docs/docs1.01/extracted_reference/
+docs/docs1.01/fedrouteai_IEEE_updated_v1.zip
+docs/docs1.01/*

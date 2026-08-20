@@ -5,8 +5,7 @@
       "npm": "@ai-sdk/openai-compatible",
       "name": "agentrouter",
       "options": {
-        "baseURL": "https://agentrouter.org/v1",
-        "apiKey": "sk-yB9wGJEKC0i5p1yt2bk568dZjvXz1YmvF9XUtGT4YyOAAZ70"
+        "baseURL": "https://agentrouter.org/v1"
       },
       "models": {
         "gpt-5.6-sol": {
