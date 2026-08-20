@@ -114,14 +114,15 @@ class GeoV2Repository:
         ])
         self.db.commit()
 
-    def load_network(self, network_version: str) -> CanonicalNetwork:
+    def load_network(self, network_version: str, network_source: str | None = None) -> CanonicalNetwork:
         rows = (
             self.db.query(Segment, GeoSegmentMetadata)
             .join(GeoSegmentMetadata, GeoSegmentMetadata.segment_id == Segment.segment_id)
             .filter(GeoSegmentMetadata.network_version == network_version)
-            .order_by(Segment.segment_id)
-            .all()
         )
+        if network_source is not None:
+            rows = rows.filter(GeoSegmentMetadata.network_source == network_source)
+        rows = rows.order_by(Segment.segment_id).all()
         segments = tuple(_canonical_segment(self.db, segment, metadata) for segment, metadata in rows)
         transitions = tuple(
             CanonicalTransition(row.from_segment_id, row.to_segment_id, row.via_node_id)
@@ -254,6 +255,26 @@ class GeoV2Repository:
             (latest.c.segment_id == SegmentPrediction.segment_id)
             & (latest.c.timestamp == SegmentPrediction.timestamp),
         ).filter_by(source_id=source_id, run_id=run_id).all()
+
+    def latest_predictions_for_segments(
+        self, source_id: str, run_id: str, segment_ids: set[str],
+    ) -> list[SegmentPrediction]:
+        if not segment_ids:
+            return []
+        ranked = self.db.query(
+            SegmentPrediction.id.label("prediction_id"),
+            func.row_number().over(
+                partition_by=SegmentPrediction.segment_id,
+                order_by=(SegmentPrediction.timestamp.desc(), SegmentPrediction.id.desc()),
+            ).label("prediction_rank"),
+        ).filter(
+            SegmentPrediction.source_id == source_id,
+            SegmentPrediction.run_id == run_id,
+            SegmentPrediction.segment_id.in_(segment_ids),
+        ).subquery()
+        return self.db.query(SegmentPrediction).join(
+            ranked, ranked.c.prediction_id == SegmentPrediction.id,
+        ).filter(ranked.c.prediction_rank == 1).order_by(SegmentPrediction.segment_id).all()
 
     def prediction_history(
         self, source_id: str, run_id: str, segment_id: str, before: datetime, limit: int = 3,

@@ -14,7 +14,7 @@ vi.mock('react-leaflet', () => ({
   Popup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
-const vehicle = (vehicleId: string, lat = 17.38): LiveVehicle => ({
+const vehicle = (vehicleId: string, lat = 17.38, timestamp = '2026-08-17T10:00:00Z'): LiveVehicle => ({
   vehicle_id: vehicleId,
   vehicle_type: 'car',
   segment_id: 'SEG_1',
@@ -23,7 +23,7 @@ const vehicle = (vehicleId: string, lat = 17.38): LiveVehicle => ({
   lon: 78.48,
   speed_kmph: 30,
   heading_deg: 90,
-  timestamp: '2026-08-17T10:00:00Z',
+  timestamp,
 });
 
 describe('AnimatedVehicleLayer', () => {
@@ -52,13 +52,24 @@ describe('AnimatedVehicleLayer', () => {
 
   it('moves markers in one shared frame loop and cancels it when paused', () => {
     const view = render(<AnimatedVehicleLayer vehicles={[vehicle('VEH_1')]} onSelect={vi.fn()} />);
-    view.rerender(<AnimatedVehicleLayer vehicles={[vehicle('VEH_1', 17.381)]} onSelect={vi.fn()} />);
+    view.rerender(<AnimatedVehicleLayer vehicles={[vehicle('VEH_1', 17.381, '2026-08-17T10:02:00Z')]} onSelect={vi.fn()} />);
 
     act(() => frameCallback?.(performance.now() + 900));
     expect(setLatLng).toHaveBeenCalledTimes(1);
 
-    view.rerender(<AnimatedVehicleLayer vehicles={[vehicle('VEH_1', 17.381)]} paused onSelect={vi.fn()} />);
+    view.rerender(<AnimatedVehicleLayer vehicles={[vehicle('VEH_1', 17.381, '2026-08-17T10:02:00Z')]} paused onSelect={vi.fn()} />);
     expect(cancelAnimationFrame).toHaveBeenCalledWith(17);
+  });
+
+  it('ignores duplicate and out-of-order authoritative observations', () => {
+    const view = render(<AnimatedVehicleLayer vehicles={[vehicle('VEH_1')]} onSelect={vi.fn()} />);
+    view.rerender(<AnimatedVehicleLayer vehicles={[vehicle('VEH_1', 17.381)]} onSelect={vi.fn()} />);
+    act(() => frameCallback?.(performance.now() + 900));
+    expect(setLatLng).not.toHaveBeenCalled();
+
+    view.rerender(<AnimatedVehicleLayer vehicles={[vehicle('VEH_1', 17.382, '2026-08-17T09:58:00Z')]} onSelect={vi.fn()} />);
+    act(() => frameCallback?.(performance.now() + 900));
+    expect(setLatLng).not.toHaveBeenCalled();
   });
 
   it('cancels animation frames on unmount', () => {

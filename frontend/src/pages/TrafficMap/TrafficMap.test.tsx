@@ -1,23 +1,30 @@
 import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TrafficMap from './index';
 import { fetchLiveSnapshot, fetchSegments, type LiveMapSnapshot, type SegmentData } from '../../services/api/liveMapApi';
+import { calculateShortestRoute, type ShortestRouteResponse } from '../../services/api/routeApi';
+
+let mapClick: ((event: { latlng: { lat: number; lng: number } }) => void) | undefined;
 
 vi.mock('../../services/api/liveMapApi', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../services/api/liveMapApi')>();
   return { ...original, fetchSegments: vi.fn(), fetchLiveSnapshot: vi.fn() };
 });
+vi.mock('../../services/api/routeApi', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../../services/api/routeApi')>();
+  return { ...original, calculateShortestRoute: vi.fn() };
+});
 
 vi.mock('react-leaflet', () => ({
   MapContainer: ({ children }: { children: ReactNode }) => <div data-testid="map">{children}</div>,
   TileLayer: () => <div data-testid="tiles" />,
-  Polyline: ({ children, eventHandlers, positions }: { children: ReactNode; eventHandlers?: { click?: () => void }; positions: unknown }) => <button data-testid="road" data-positions={JSON.stringify(positions)} onClick={eventHandlers?.click}>{children}</button>,
+  Polyline: ({ children, eventHandlers, positions, ...props }: { children: ReactNode; eventHandlers?: { click?: () => void }; positions: unknown; 'data-testid'?: string }) => <button data-testid={props['data-testid'] ?? 'road'} data-positions={JSON.stringify(positions)} onClick={eventHandlers?.click}>{children}</button>,
   CircleMarker: ({ children, eventHandlers, center }: { children?: ReactNode; eventHandlers?: { click?: () => void }; center: unknown }) => <button data-testid="marker" data-center={JSON.stringify(center)} onClick={eventHandlers?.click}>{children}</button>,
   Popup: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   useMap: () => ({ fitBounds: vi.fn() }),
-  useMapEvents: () => undefined,
+  useMapEvents: (handlers: { click?: (event: { latlng: { lat: number; lng: number } }) => void }) => { if (handlers.click) mapClick = handlers.click; return undefined; },
 }));
 
 const segments: SegmentData[] = Array.from({ length: 3 }, (_, index) => ({
@@ -31,7 +38,7 @@ const segments: SegmentData[] = Array.from({ length: 3 }, (_, index) => ({
 const snapshot = (receivedAt = new Date().toISOString(), observedAt = receivedAt): LiveMapSnapshot => ({
   source_id: 'test-source', run_id: 'test-run', batch_id: 'tick-1', tick_number: 1,
   observed_at: observedAt, received_at: receivedAt, server_time: receivedAt,
-  poll_interval_seconds: 0.02, stale_after_seconds: 12,
+  poll_interval_seconds: 0.02, stale_after_seconds: 12, network_source: 'osm_geo_v2', network_version: 'beeramguda-test',
   segments: segments.map((segment, index) => ({
     segment_id: segment.segment_id, region_id: segment.region_id, latest_timestamp: receivedAt,
     vehicle_count: index + 1, average_speed_kmph: 25, density: index + 1,
@@ -42,6 +49,17 @@ const snapshot = (receivedAt = new Date().toISOString(), observedAt = receivedAt
   summary: { vehicle_count: 1, active_segments: 3, active_events: 1, average_speed_kmph: 22, latest_update: receivedAt },
 });
 
+const routeResult: ShortestRouteResponse = {
+  network_source: 'osm_geo_v2', network_version: 'beeramguda-test', algorithm: 'Dijkstra', cost_basis: 'distance',
+  origin: { lat: 17.38, lon: 78.48 }, destination: { lat: 17.382, lon: 78.482 },
+  snapped_origin: { lat: 17.38, lon: 78.48, segment_id: 'SEG_1', distance_to_road_m: 2 },
+  snapped_destination: { lat: 17.382, lon: 78.482, segment_id: 'SEG_3', distance_to_road_m: 3 },
+  distance_m: 4820, estimated_duration_s: 600, computation_time_ms: 4.2, segment_count: 3,
+  ordered_segment_ids: ['SEG_1', 'SEG_2', 'SEG_3'],
+  geometry: { type: 'LineString', coordinates: [[78.48, 17.38], [78.481, 17.381], [78.482, 17.382]] },
+  predictions: { available: true, counts: { normal: 2, congestion: 1 }, abnormal_segment_count: 1, warnings: ['This route contains predicted congestion.'] },
+};
+
 const renderMap = () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(<QueryClientProvider client={client}><TrafficMap /></QueryClientProvider>);
@@ -49,8 +67,44 @@ const renderMap = () => {
 
 describe('TrafficMap', () => {
   beforeEach(() => {
+    mapClick = undefined;
     vi.mocked(fetchSegments).mockResolvedValue(segments);
     vi.mocked(fetchLiveSnapshot).mockResolvedValue(snapshot());
+    vi.mocked(calculateShortestRoute).mockResolvedValue(routeResult);
+  });
+
+  it('selects route endpoints on the existing map, renders the route, summary, and clears it', async () => {
+    renderMap();
+    fireEvent.click(await screen.findByRole('button', { name: /start live/i }));
+    expect((await screen.findAllByText('LIVE')).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: /select origin on map/i }));
+    act(() => mapClick?.({ latlng: { lat: 17.38, lng: 78.48 } }));
+    act(() => mapClick?.({ latlng: { lat: 17.382, lng: 78.482 } }));
+    fireEvent.click(screen.getByRole('button', { name: /calculate route/i }));
+
+    expect(await screen.findByTestId('route-line')).toHaveAttribute('data-positions', '[[17.38,78.48],[17.381,78.481],[17.382,78.482]]');
+    expect(screen.getByTestId('route-summary')).toHaveTextContent('4.82 km');
+    expect(screen.getByTestId('route-summary')).toHaveTextContent('This route contains predicted congestion.');
+    expect(calculateShortestRoute).toHaveBeenCalledWith(expect.objectContaining({
+      network_source: 'osm_geo_v2', network_version: 'beeramguda-test', source_id: 'test-source', run_id: 'test-run',
+    }));
+    expect(screen.getAllByTestId('road')).toHaveLength(3);
+
+    fireEvent.click(screen.getByRole('button', { name: /clear route/i }));
+    expect(screen.queryByTestId('route-line')).not.toBeInTheDocument();
+  });
+
+  it('shows route backend errors without crashing the map', async () => {
+    vi.mocked(calculateShortestRoute).mockRejectedValue({ response: { data: { detail: 'No directed route connects these locations.' } } });
+    renderMap();
+    fireEvent.click(await screen.findByRole('button', { name: /start live/i }));
+    expect((await screen.findAllByText('LIVE')).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: /select origin on map/i }));
+    act(() => mapClick?.({ latlng: { lat: 17.38, lng: 78.48 } }));
+    act(() => mapClick?.({ latlng: { lat: 17.382, lng: 78.482 } }));
+    fireEvent.click(screen.getByRole('button', { name: /calculate route/i }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('No directed route connects these locations.');
+    expect(screen.getByTestId('map')).toBeInTheDocument();
   });
   afterEach(() => vi.clearAllMocks());
 

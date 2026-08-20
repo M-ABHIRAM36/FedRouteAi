@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import type { LatLngBoundsExpression, Map as LeafletMap } from 'leaflet';
-import { Activity, Car, ChevronDown, Clock3, Eye, EyeOff, Layers3, LocateFixed, Pause, Play, Radio, RotateCcw, TriangleAlert, Wifi, WifiOff, X } from 'lucide-react';
+import { Activity, Car, ChevronDown, Clock3, Eye, EyeOff, Flag, Layers3, LocateFixed, MapPin, Navigation, Pause, Play, Radio, RotateCcw, Route, TriangleAlert, Wifi, WifiOff, X } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import { useQuery } from '@tanstack/react-query';
 import { PageContainer } from '../../components/common/PageContainer';
@@ -13,6 +13,7 @@ import { getSegmentMidpoint, getSegmentPositions } from '../../components/map/se
 import { AnimatedVehicleLayer } from '../../components/map/AnimatedVehicleLayer';
 import { vehicleTone } from '../../components/map/vehicleAnimation';
 import { connectionStatus, snapshotAgeSeconds, type ConnectionStatus } from './trafficMapState';
+import { calculateShortestRoute, type RouteCoordinate, type ShortestRouteResponse } from '../../services/api/routeApi';
 
 type LayerState = { predictions: boolean; telemetry: boolean; vehicles: boolean; events: boolean; network: boolean };
 type TimelineEntry = { tick: number; observedAt: string; prediction?: string; speed?: number };
@@ -25,6 +26,7 @@ const statusColors: Record<ConnectionStatus, string> = {
 
 const FitNetwork = ({ bounds, resetKey }: { bounds: LatLngBoundsExpression; resetKey: number }) => { const map = useMap(); useEffect(() => { map.fitBounds(bounds, { padding: [24, 24], maxZoom: 14 }); }, [bounds, map, resetKey]); return null; };
 const ViewportTracker = ({ onChange }: { onChange: (map: LeafletMap) => void }) => { useMapEvents({ moveend: (event) => onChange(event.target), zoomend: (event) => onChange(event.target) }); return null; };
+const RouteMapSelector = ({ active, onSelect }: { active: boolean; onSelect: (point: RouteCoordinate) => void }) => { useMapEvents({ click: (event) => { if (active) onSelect({ lat: event.latlng.lat, lon: event.latlng.lng }); } }); return null; };
 
 const TrafficMap = () => {
   const [liveMode, setLiveMode] = useState(false);
@@ -38,7 +40,16 @@ const TrafficMap = () => {
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [liveSession, setLiveSession] = useState(0);
   const [lastSnapshot, setLastSnapshot] = useState<LiveMapSnapshot>();
+  const [lastSnapshotAdvancedAt, setLastSnapshotAdvancedAt] = useState<number>();
+  const [routeOrigin, setRouteOrigin] = useState<RouteCoordinate>();
+  const [routeDestination, setRouteDestination] = useState<RouteCoordinate>();
+  const [routeSelection, setRouteSelection] = useState<'origin' | 'destination'>();
+  const [routeResult, setRouteResult] = useState<ShortestRouteResponse>();
+  const [routeError, setRouteError] = useState<string>();
+  const [routeLoading, setRouteLoading] = useState(false);
   const viewportRef = useRef<LeafletMap | undefined>(undefined);
+  const snapshotIdentityRef = useRef<string | undefined>(undefined);
+  const routeRequestRef = useRef(0);
 
   const liveQuery = useQuery({
     queryKey: ['live-map', 'snapshot', liveSession],
@@ -47,7 +58,6 @@ const TrafficMap = () => {
     refetchInterval: liveMode ? (query) => (query.state.data?.snapshot.poll_interval_seconds ?? 4) * 1000 : false,
     retry: false, refetchOnWindowFocus: false,
   });
-  const currentReceipt = liveQuery.data?.clientReceivedAt;
   const snapshot = liveQuery.data?.snapshot ?? lastSnapshot;
   const networkSource = snapshot?.network_source;
   const staticQuery = useQuery({
@@ -66,8 +76,8 @@ const TrafficMap = () => {
   const selectedVehicle = filteredVehicles.find((vehicle) => vehicle.vehicle_id === selectedVehicleId);
   const selectedEvent = selectedSegmentId ? eventBySegment.get(selectedSegmentId) : undefined;
   const bounds = useMemo<LatLngBoundsExpression | undefined>(() => segments.length ? segments.flatMap((segment) => getSegmentPositions(segment)) : undefined, [segments]);
-  const status = connectionStatus(liveMode, currentReceipt, liveQuery.isError, now);
-  const age = snapshotAgeSeconds(currentReceipt, now);
+  const status = connectionStatus(liveMode, lastSnapshotAdvancedAt, liveQuery.isError, now);
+  const age = snapshotAgeSeconds(lastSnapshotAdvancedAt, now);
   const predictedEvents = useMemo(() => (snapshot?.segments ?? []).filter((state) => state.predicted_event && state.predicted_event !== 'normal').length, [snapshot]);
   const predictionCounts = useMemo(() => countPredictions(snapshot), [snapshot]);
 
@@ -77,7 +87,14 @@ const TrafficMap = () => {
     return () => window.clearInterval(timer);
   }, [liveMode]);
   useEffect(() => {
-    if (liveQuery.data?.snapshot) setLastSnapshot(liveQuery.data.snapshot);
+    if (!liveQuery.data?.snapshot) return;
+    const next = liveQuery.data.snapshot;
+    const identity = `${next.source_id}:${next.run_id}:${next.batch_id}:${next.tick_number}`;
+    setLastSnapshot(next);
+    if (snapshotIdentityRef.current !== identity) {
+      snapshotIdentityRef.current = identity;
+      setLastSnapshotAdvancedAt(liveQuery.data.clientReceivedAt);
+    }
   }, [liveQuery.data]);
   useEffect(() => {
     if (!snapshot || !selectedSegmentId) return;
@@ -99,8 +116,35 @@ const TrafficMap = () => {
   const focusVehicle = (vehicleId: string) => { setSelectedVehicleId(vehicleId); setSelectedSegmentId(undefined); };
   const toggleLive = () => {
     if (liveMode) setLiveMode(false);
-    else { setNow(Date.now()); setLiveSession((session) => session + 1); setLiveMode(true); }
+    else { snapshotIdentityRef.current = undefined; setLastSnapshotAdvancedAt(undefined); setNow(Date.now()); setLiveSession((session) => session + 1); setLiveMode(true); }
   };
+  const selectRoutePoint = (point: RouteCoordinate) => {
+    routeRequestRef.current += 1;
+    if (routeSelection === 'origin') { setRouteOrigin(point); setRouteResult(undefined); setRouteSelection('destination'); }
+    else if (routeSelection === 'destination') { setRouteDestination(point); setRouteResult(undefined); setRouteSelection(undefined); }
+    setRouteError(undefined);
+  };
+  const calculateRoute = async () => {
+    if (!routeOrigin || !routeDestination) return setRouteError('Select both origin and destination on the map.');
+    if (!snapshot?.network_source || !snapshot.network_version) return setRouteError('Start live mode to load the active routing network identity.');
+    const requestId = ++routeRequestRef.current;
+    const requestNetwork = `${snapshot.network_source}:${snapshot.network_version}`;
+    setRouteLoading(true); setRouteError(undefined);
+    try {
+      const result = await calculateShortestRoute({
+        origin: routeOrigin, destination: routeDestination,
+        network_source: snapshot.network_source, network_version: snapshot.network_version,
+        source_id: snapshot.source_id, run_id: snapshot.run_id,
+      });
+      if (routeRequestRef.current === requestId && `${snapshot.network_source}:${snapshot.network_version}` === requestNetwork) setRouteResult(result);
+    } catch (error: any) {
+      if (routeRequestRef.current === requestId) {
+        setRouteResult(undefined);
+        setRouteError(error?.response?.data?.detail ?? error?.message ?? 'Route calculation failed.');
+      }
+    } finally { if (routeRequestRef.current === requestId) setRouteLoading(false); }
+  };
+  const clearRoute = () => { routeRequestRef.current += 1; setRouteOrigin(undefined); setRouteDestination(undefined); setRouteResult(undefined); setRouteError(undefined); setRouteSelection(undefined); };
 
   if (staticQuery.isLoading) return <MapLoading label="Loading Geo V2 network..." />;
   if (staticQuery.isError) return <MapLoading label="Road network unavailable. Start the backend and reload." error />;
@@ -119,20 +163,26 @@ const TrafficMap = () => {
       <div className="relative min-h-[520px] overflow-hidden border border-border bg-[#101820] xl:min-h-[620px]">
         <MapContainer bounds={bounds} className="h-full min-h-[520px] w-full xl:min-h-[620px]" zoomControl preferCanvas>
           <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" errorTileUrl="" />
-          <FitNetwork bounds={bounds} resetKey={fitKey} /><ViewportTracker onChange={handleViewport} />
+          <FitNetwork bounds={bounds} resetKey={fitKey} /><ViewportTracker onChange={handleViewport} /><RouteMapSelector active={Boolean(routeSelection)} onSelect={selectRoutePoint} />
           <MapControls layers={layers} setLayers={setLayers} regions={regions} region={region} setRegion={setRegion} onFit={() => setFitKey((key) => key + 1)} />
           {layers.network && filteredSegments.map((segment) => <Polyline key={`network-${segment.segment_id}`} positions={getSegmentPositions(segment)} pathOptions={{ color: '#64748b', weight: 1.5, opacity: 0.3 }} />)}
           {layers.telemetry && filteredSegments.map((segment) => { const state = states.get(segment.segment_id); return <Polyline key={`telemetry-${segment.segment_id}`} positions={getSegmentPositions(segment)} pathOptions={{ ...getTelemetryStyle(state, segment.max_speed_kmph), weight: 8, opacity: 0.22 }} eventHandlers={{ click: () => focusSegment(segment.segment_id), mouseover: (event) => event.target.setStyle({ opacity: 0.45 }), mouseout: (event) => event.target.setStyle({ opacity: 0.22 }) }} />; })}
           {layers.predictions && filteredSegments.map((segment) => { const state = states.get(segment.segment_id); const selected = selectedSegmentId === segment.segment_id; const style = getPredictionStyle(state); return <Polyline key={`prediction-${segment.segment_id}`} positions={getSegmentPositions(segment)} pathOptions={{ ...style, weight: selected ? Number(style.weight ?? 4) + 3 : style.weight, opacity: selected ? 1 : style.opacity }} eventHandlers={{ click: () => focusSegment(segment.segment_id), mouseover: (event) => event.target.setStyle({ weight: Number(style.weight ?? 4) + 2, opacity: 1 }), mouseout: (event) => event.target.setStyle({ weight: selected ? Number(style.weight ?? 4) + 3 : style.weight, opacity: selected ? 1 : style.opacity }) }}><Popup><SegmentPopup compact segment={segment} state={state} event={eventBySegment.get(segment.segment_id)} /></Popup></Polyline>; })}
-          {layers.vehicles && <AnimatedVehicleLayer vehicles={filteredVehicles} selectedVehicleId={selectedVehicleId} paused={status === 'STALE' || status === 'PAUSED' || status === 'OFFLINE'} onSelect={focusVehicle} />}
+          {layers.vehicles && <AnimatedVehicleLayer vehicles={filteredVehicles} selectedVehicleId={selectedVehicleId} paused={status === 'STALE' || status === 'PAUSED' || status === 'OFFLINE'} pollIntervalSeconds={snapshot?.poll_interval_seconds} onSelect={focusVehicle} />}
           {layers.events && (events ?? []).filter((event) => region === 'all' || event.region_id === region).map((event) => { const segment = segments.find((item) => item.segment_id === event.segment_id); return segment ? <CircleMarker key={`event-${event.event_id}`} center={getSegmentMidpoint(segment)} radius={8} pathOptions={{ color: '#fff', fillColor: '#f59e0b', fillOpacity: 0.8, weight: 2 }} eventHandlers={{ click: () => focusSegment(event.segment_id) }} /> : null; })}
+          {routeResult && <Polyline data-testid="route-line" positions={routeResult.geometry.coordinates.map(([lon, lat]) => [lat, lon] as [number, number])} pathOptions={{ color: '#a78bfa', weight: 8, opacity: 0.95, lineCap: 'round', lineJoin: 'round' }} />}
+          {(routeResult?.snapped_origin ?? routeOrigin) && <CircleMarker center={[(routeResult?.snapped_origin ?? routeOrigin)!.lat, (routeResult?.snapped_origin ?? routeOrigin)!.lon]} radius={9} pathOptions={{ color: '#fff', fillColor: '#22c55e', fillOpacity: 1, weight: 3 }}><Popup>Origin</Popup></CircleMarker>}
+          {(routeResult?.snapped_destination ?? routeDestination) && <CircleMarker center={[(routeResult?.snapped_destination ?? routeDestination)!.lat, (routeResult?.snapped_destination ?? routeDestination)!.lon]} radius={9} pathOptions={{ color: '#fff', fillColor: '#f43f5e', fillOpacity: 1, weight: 3 }}><Popup>Destination</Popup></CircleMarker>}
         </MapContainer>
         <div className="absolute bottom-3 left-3 z-[500]"><MapLegend /></div>
         {layers.vehicles && snapshot && <div className="absolute bottom-3 right-3 z-[500] border border-border bg-surface/95 px-3 py-2 text-[10px] text-textSecondary shadow-lg">Vehicles in view <span className="font-semibold text-white">{visibleVehicleCount}</span> / {filteredVehicles.length}</div>}
         {!snapshot && <div className="pointer-events-none absolute inset-x-0 top-16 z-[450] mx-auto w-fit border border-border bg-surface/95 px-4 py-2 text-xs text-textSecondary">Network loaded · waiting for live telemetry</div>}
       </div>
 
-      <InspectionPanel selectedSegment={selectedSegment} selectedState={selectedState} selectedEvent={selectedEvent} selectedVehicle={selectedVehicle} timeline={timeline} predictionCounts={predictionCounts} snapshot={snapshot} onClose={() => { setSelectedSegmentId(undefined); setSelectedVehicleId(undefined); }} />
+      <div className="flex min-h-0 flex-col gap-3 xl:max-h-[620px]">
+        <RoutePlanner origin={routeOrigin} destination={routeDestination} selection={routeSelection} result={routeResult} error={routeError} loading={routeLoading} onSelect={setRouteSelection} onCalculate={calculateRoute} onClear={clearRoute} />
+        <InspectionPanel selectedSegment={selectedSegment} selectedState={selectedState} selectedEvent={selectedEvent} selectedVehicle={selectedVehicle} timeline={timeline} predictionCounts={predictionCounts} snapshot={snapshot} onClose={() => { setSelectedSegmentId(undefined); setSelectedVehicleId(undefined); }} />
+      </div>
     </div>
   </PageContainer>;
 };
@@ -140,7 +190,7 @@ const TrafficMap = () => {
 const indexEvents = (events: LiveEvent[]) => { const result = new Map<string, LiveEvent>(); for (const event of events) { result.set(event.segment_id, event); for (const segmentId of event.affected_segment_ids ?? []) result.set(segmentId, event); } return result; };
 const countPredictions = (snapshot?: LiveMapSnapshot) => Object.entries((snapshot?.segments ?? []).reduce<Record<string, number>>((counts, state) => { const key = state.predicted_event ?? 'no_prediction'; counts[key] = (counts[key] ?? 0) + 1; return counts; }, {})).sort((a, b) => b[1] - a[1]);
 
-const ModelStatus = ({ snapshot }: { snapshot?: LiveMapSnapshot }) => { const modelVersion = snapshot?.segments.find((state) => state.prediction_model_version)?.prediction_model_version; return <div className="border border-border bg-surface px-3 py-1.5"><div className="text-[9px] font-semibold uppercase text-textSecondary">Model</div><div className="text-xs font-medium text-textPrimary">{modelVersion ? 'Geo V2 · round 45' : 'Awaiting predictions'}</div></div>; };
+const ModelStatus = ({ snapshot }: { snapshot?: LiveMapSnapshot }) => { const modelVersion = snapshot?.segments.find((state) => state.prediction_model_version)?.prediction_model_version; return <div className="border border-border bg-surface px-3 py-1.5"><div className="text-[9px] font-semibold uppercase text-textSecondary">Model</div><div className="max-w-40 truncate text-xs font-medium text-textPrimary" title={modelVersion ?? undefined}>{modelVersion ?? 'Awaiting predictions'}</div></div>; };
 const receiptLabel = (age: number) => age < 2 ? 'Received just now' : `Received ${Math.floor(age)}s ago`;
 const LiveStatus = ({ status, age, hasError }: { status: ConnectionStatus; age: number; hasError: boolean }) => <div className={`flex h-9 items-center gap-2 border px-3 ${statusColors[status]}`}><span className={`h-2 w-2 rounded-full ${status === 'LIVE' ? 'animate-pulse bg-success' : 'bg-current'}`} /><div><div className="text-[10px] font-semibold">{status}</div><div className="text-[9px] opacity-80">{status === 'STALE' && hasError ? 'Backend connection unavailable' : Number.isFinite(age) ? receiptLabel(age) : 'No snapshot this session'}</div></div></div>;
 
@@ -149,6 +199,28 @@ const Metric = ({ icon, label, value, detail }: { icon: React.ReactNode; label: 
 
 const MapControls = ({ layers, setLayers, regions, region, setRegion, onFit }: { layers: LayerState; setLayers: React.Dispatch<React.SetStateAction<LayerState>>; regions: string[]; region: string; setRegion: (value: string) => void; onFit: () => void }) => <div className="pointer-events-none absolute left-3 right-3 top-3 z-[500] flex flex-wrap items-start justify-between gap-2"><div className="pointer-events-auto flex border border-border bg-surface/95 p-1 shadow-lg"><ControlButton label="Fit network" onClick={onFit}><LocateFixed /></ControlButton><ControlButton label="Reset view" onClick={onFit}><RotateCcw /></ControlButton></div><div className="pointer-events-auto flex flex-wrap justify-end gap-2"><div className="border border-border bg-surface/95 p-1 shadow-lg"><div className="px-2 py-1 text-[9px] font-semibold uppercase text-textSecondary">Map layers</div><div className="flex flex-wrap">{([['predictions', 'Predictions'], ['telemetry', 'Telemetry'], ['vehicles', 'Vehicles'], ['events', 'Events'], ['network', 'Network']] as const).map(([key, label]) => <button type="button" key={key} aria-pressed={layers[key]} onClick={() => setLayers((current) => ({ ...current, [key]: !current[key] }))} className={`flex h-7 items-center gap-1.5 px-2 text-[10px] focus-visible:outline-2 focus-visible:outline-primary ${layers[key] ? 'bg-primary/15 text-primary' : 'text-textSecondary hover:bg-surfaceHover'}`}>{layers[key] ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}{label}</button>)}</div></div><label className="flex h-9 items-center gap-2 border border-border bg-surface/95 px-3 text-[10px] text-textSecondary shadow-lg"><span>Region</span><select aria-label="Region" value={region} onChange={(event) => setRegion(event.target.value)} className="bg-transparent text-textPrimary outline-none"><option value="all">All regions</option>{regions.map((item) => <option key={item} value={item}>{item}</option>)}</select><ChevronDown className="h-3 w-3" /></label></div></div>;
 const ControlButton = ({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) => <button type="button" title={label} aria-label={label} onClick={onClick} className="flex h-8 w-8 items-center justify-center text-textSecondary hover:bg-surfaceHover hover:text-white focus-visible:outline-2 focus-visible:outline-primary [&>svg]:h-4 [&>svg]:w-4">{children}</button>;
+
+const RoutePlanner = ({ origin, destination, selection, result, error, loading, onSelect, onCalculate, onClear }: {
+  origin?: RouteCoordinate; destination?: RouteCoordinate; selection?: 'origin' | 'destination'; result?: ShortestRouteResponse;
+  error?: string; loading: boolean; onSelect: (value: 'origin' | 'destination') => void; onCalculate: () => void; onClear: () => void;
+}) => <section className="border border-border bg-surface">
+  <div className="flex items-center gap-2 border-b border-border px-4 py-3"><Route className="h-4 w-4 text-[#a78bfa]" /><div><div className="text-[10px] font-semibold uppercase tracking-wider text-textSecondary">Plan route</div><div className="text-xs text-textPrimary">Directed OSM shortest path</div></div></div>
+  <div className="space-y-3 p-4">
+    <div className="grid grid-cols-2 gap-2">
+      <RoutePointButton label="Origin" selected={selection === 'origin'} point={origin} icon={<MapPin />} onClick={() => onSelect('origin')} />
+      <RoutePointButton label="Destination" selected={selection === 'destination'} point={destination} icon={<Flag />} onClick={() => onSelect('destination')} />
+    </div>
+    {selection && <div className="text-[10px] text-[#c4b5fd]">Click the map to set {selection}.</div>}
+    <div className="flex gap-2"><button type="button" onClick={onCalculate} disabled={loading} className="flex h-9 flex-1 items-center justify-center gap-2 bg-[#7c3aed] px-3 text-xs font-semibold text-white hover:bg-[#6d28d9] disabled:opacity-50"><Navigation className="h-3.5 w-3.5" />{loading ? 'Calculating...' : 'Calculate route'}</button><button type="button" aria-label="Clear route" onClick={onClear} className="h-9 border border-border px-3 text-xs text-textSecondary hover:bg-surfaceHover hover:text-white">Clear</button></div>
+    {error && <div role="alert" className="border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger">{error}</div>}
+    {result && <RouteSummary result={result} />}
+    <div className="text-[9px] leading-4 text-textSecondary">Distance-only routing. Geo V2 predictions are inspected after calculation and do not change route cost.</div>
+  </div>
+</section>;
+
+const RoutePointButton = ({ label, selected, point, icon, onClick }: { label: string; selected: boolean; point?: RouteCoordinate; icon: React.ReactNode; onClick: () => void }) => <button type="button" aria-label={`Select ${label.toLowerCase()} on map`} onClick={onClick} className={`flex min-w-0 items-center gap-2 border px-3 py-2 text-left ${selected ? 'border-[#a78bfa] bg-[#7c3aed]/15 text-[#c4b5fd]' : 'border-border text-textSecondary hover:bg-surfaceHover'}`}><span className="[&>svg]:h-3.5 [&>svg]:w-3.5">{icon}</span><span className="min-w-0"><span className="block text-[9px] uppercase">{label}</span><span className="block truncate text-[10px] text-textPrimary">{point ? `${point.lat.toFixed(5)}, ${point.lon.toFixed(5)}` : 'Select on map'}</span></span></button>;
+
+const RouteSummary = ({ result }: { result: ShortestRouteResponse }) => <div data-testid="route-summary" className="border-l-2 border-[#a78bfa] bg-[#7c3aed]/10 p-3"><div className="text-[10px] font-semibold uppercase text-[#c4b5fd]">Route summary</div><div className="mt-2 grid grid-cols-3 gap-2"><PanelValue label="Distance" value={`${(result.distance_m / 1000).toFixed(2)} km`} /><PanelValue label="Est. time" value={`${Math.ceil(result.estimated_duration_s / 60)} min`} /><PanelValue label="Segments" value={`${result.segment_count}`} /></div><div className="mt-3 text-[9px] font-semibold uppercase text-textSecondary">Prediction status</div><div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">{Object.entries(result.predictions.counts).map(([label, count]) => <span key={label} className="text-[10px] capitalize text-textPrimary">{label.replaceAll('_', ' ')}: <strong>{count}</strong></span>)}{!Object.keys(result.predictions.counts).length && <span className="text-[10px] text-textSecondary">No current predictions</span>}</div>{result.predictions.warnings.map((warning) => <div key={warning} className="mt-2 text-[10px] text-warning">{warning}</div>)}</div>;
 
 const InspectionPanel = ({ selectedSegment, selectedState, selectedEvent, selectedVehicle, timeline, predictionCounts, snapshot, onClose }: any) => <aside className="flex min-h-0 flex-col border border-border bg-surface xl:max-h-[620px]"><div className="flex items-center justify-between border-b border-border px-4 py-3"><div><div className="text-[10px] font-semibold uppercase tracking-wider text-textSecondary">Live inspection</div><div className="mt-0.5 text-xs text-textPrimary">Authoritative backend state</div></div>{(selectedSegment || selectedVehicle) && <button type="button" aria-label="Clear selection" onClick={onClose} className="text-textSecondary hover:text-white focus-visible:outline-2 focus-visible:outline-primary"><X className="h-4 w-4" /></button>}</div><div className="min-h-0 flex-1 overflow-y-auto p-4">{selectedVehicle ? <VehiclePanel vehicle={selectedVehicle} /> : selectedSegment ? <SegmentPopup segment={selectedSegment} state={selectedState} event={selectedEvent} /> : <Overview predictionCounts={predictionCounts} snapshot={snapshot} />}{selectedSegment && timeline.length > 0 && <Timeline entries={timeline} />}</div></aside>;
 const Overview = ({ predictionCounts, snapshot }: { predictionCounts: [string, number][]; snapshot?: LiveMapSnapshot }) => <div><div className="text-sm text-textSecondary">Select a road or vehicle to inspect live backend values. Prediction and scenario layers remain independent.</div><div className="mt-5 text-[10px] font-semibold uppercase text-textSecondary">Prediction activity</div><div className="mt-2 space-y-2">{predictionCounts.length ? predictionCounts.map(([label, count]) => { const color = segmentStyles[label as keyof typeof segmentStyles]?.color ?? segmentStyles.unknown.color; return <div key={label} className="flex items-center gap-2"><span className="h-2 w-2" style={{ backgroundColor: color }} /><span className="flex-1 text-xs capitalize text-textPrimary">{label.replaceAll('_', ' ')}</span><span className="text-xs font-semibold text-white">{count}</span></div>; }) : <div className="text-xs text-textSecondary">No model predictions in the current snapshot.</div>}</div>{snapshot && <div className="mt-5 border-t border-border pt-4 text-[10px] leading-5 text-textSecondary"><div>Geo V2 federated model</div><div>23 causal features · 3 prior ticks</div><div>{snapshot.network_source} · {snapshot.network_version}</div><div>Backend tick interval represented by snapshot metadata</div></div>}</div>;

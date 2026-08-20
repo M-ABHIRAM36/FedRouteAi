@@ -2,23 +2,23 @@ import { memo, useEffect, useMemo, useRef } from 'react';
 import type { CircleMarker as LeafletCircleMarker } from 'leaflet';
 import { CircleMarker, Popup } from 'react-leaflet';
 import type { LiveVehicle } from '../../services/api/liveMapApi';
-import { deduplicateVehicles, interpolateVehiclePosition, vehicleTone, type VehicleTransition } from './vehicleAnimation';
+import { deduplicateVehicles, interpolateVehiclePosition, vehicleTone, type VehicleTarget, type VehicleTransition } from './vehicleAnimation';
 
-const INTERPOLATION_MS = 1800;
-const MAX_INTERPOLATION_DISTANCE_DEGREES = 0.02;
+const MIN_INTERPOLATION_MS = 500;
 
 interface AnimatedVehicleLayerProps {
   vehicles: LiveVehicle[];
   selectedVehicleId?: string;
   paused?: boolean;
+  pollIntervalSeconds?: number;
   onSelect: (vehicleId: string) => void;
 }
 
-export const AnimatedVehicleLayer = ({ vehicles, selectedVehicleId, paused = false, onSelect }: AnimatedVehicleLayerProps) => {
+export const AnimatedVehicleLayer = ({ vehicles, selectedVehicleId, paused = false, pollIntervalSeconds = 4, onSelect }: AnimatedVehicleLayerProps) => {
   const uniqueVehicles = useMemo(() => deduplicateVehicles(vehicles), [vehicles]);
   const markerRefs = useRef(new Map<string, LeafletCircleMarker>());
   const transitions = useRef(new Map<string, VehicleTransition>());
-  const previousTargets = useRef(new Map<string, [number, number]>());
+  const previousTargets = useRef(new Map<string, VehicleTarget>());
   const frame = useRef<number | undefined>(undefined);
 
   useEffect(() => {
@@ -34,18 +34,18 @@ export const AnimatedVehicleLayer = ({ vehicles, selectedVehicleId, paused = fal
     for (const vehicle of uniqueVehicles) {
       const target: [number, number] = [vehicle.lat, vehicle.lon];
       const previous = previousTargets.current.get(vehicle.vehicle_id);
-      if (previous && (previous[0] !== target[0] || previous[1] !== target[1])) {
+      const timestampMs = Date.parse(vehicle.timestamp);
+      if (previous && timestampMs > previous.timestampMs && (previous.lat !== target[0] || previous.lon !== target[1])) {
         const markerPosition = markerRefs.current.get(vehicle.vehicle_id)?.getLatLng();
-        const from: [number, number] = markerPosition ? [markerPosition.lat, markerPosition.lng] : previous;
-        const distance = Math.hypot(target[0] - from[0], target[1] - from[1]);
+        const from: [number, number] = markerPosition ? [markerPosition.lat, markerPosition.lng] : [previous.lat, previous.lon];
         transitions.current.set(vehicle.vehicle_id, {
           fromLat: from[0], fromLon: from[1], toLat: target[0], toLon: target[1], startedAt: now,
-          durationMs: distance > MAX_INTERPOLATION_DISTANCE_DEGREES ? 1 : INTERPOLATION_MS,
+          durationMs: Math.max(MIN_INTERPOLATION_MS, pollIntervalSeconds * 1000 * 0.9),
         });
       }
-      previousTargets.current.set(vehicle.vehicle_id, target);
+      if (!previous || timestampMs > previous.timestampMs) previousTargets.current.set(vehicle.vehicle_id, { lat: target[0], lon: target[1], timestampMs });
     }
-  }, [uniqueVehicles]);
+  }, [pollIntervalSeconds, uniqueVehicles]);
 
   useEffect(() => {
     const animate = (now: number) => {

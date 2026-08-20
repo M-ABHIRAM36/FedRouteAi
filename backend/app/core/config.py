@@ -62,6 +62,7 @@ class Settings(BaseSettings):
 
     # --- Routing ---
     ROUTE_EVENT_PENALTY_FACTOR: float = 3.0  # multiplies travel_time on an affected edge
+    ROUTE_SNAP_MAX_DISTANCE_M: float = 250.0
 
     # --- Live traffic simulation ---
     LIVE_PINGS_PER_TICK: int = 1000
