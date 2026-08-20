@@ -4,10 +4,14 @@ Every other module should read settings from here — never hardcode
 DB URLs, city coordinates, or simulation constants elsewhere.
 """
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pathlib import Path
+
+
+ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=ENV_FILE, extra="ignore")
 
     # --- App ---
     APP_NAME: str = "FedRouteAI"
