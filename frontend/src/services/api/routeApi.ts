@@ -12,6 +12,7 @@ export interface ShortestRouteRequest {
   network_version: string;
   source_id?: string;
   run_id?: string;
+  avoid_segment_ids?: string[];
 }
 
 export interface ShortestRouteResponse {

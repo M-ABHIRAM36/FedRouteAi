@@ -170,3 +170,37 @@ def test_graph_cache_loads_each_network_once(routing_repository, monkeypatch):
     cache.get(routing_repository, NETWORK_SOURCE, NETWORK_VERSION)
     cache.get(routing_repository, NETWORK_SOURCE, NETWORK_VERSION)
     assert calls == 1
+
+
+def test_explicit_segment_exclusions_do_not_change_default_distance_route(db_session):
+    network = CanonicalNetwork(
+        (
+            _segment("A", 1, 2, ((78.290, 17.510), (78.291, 17.510)), 100),
+            _segment("B", 2, 3, ((78.291, 17.510), (78.292, 17.510)), 100),
+            _segment("C", 3, 4, ((78.292, 17.510), (78.293, 17.510)), 100),
+            _segment("D", 2, 5, ((78.291, 17.510), (78.292, 17.511)), 180),
+            _segment("E", 5, 3, ((78.292, 17.511), (78.292, 17.510)), 180),
+        ),
+        (
+            CanonicalTransition("A", "B", 2), CanonicalTransition("B", "C", 3),
+            CanonicalTransition("A", "D", 2), CanonicalTransition("D", "E", 5),
+            CanonicalTransition("E", "C", 3),
+        ),
+        (78.290, 17.510, 78.293, 17.511),
+    )
+    repository = GeoV2Repository(db_session)
+    repository.replace_network(network, network_source=NETWORK_SOURCE, network_version="avoidance-test", imported_at=datetime(2026, 8, 21))
+    service = ShortestRouteService(repository, GeoV2GraphCache())
+    request = dict(
+        origin_lat=17.510, origin_lon=78.290,
+        destination_lat=17.510, destination_lon=78.293,
+        network_source=NETWORK_SOURCE, network_version="avoidance-test",
+    )
+
+    default = service.calculate(**request)
+    alternative = service.calculate(**request, avoid_segment_ids={"B"})
+
+    assert default.ordered_segment_ids == ["A", "B", "C"]
+    assert default.cost_basis == "distance"
+    assert alternative.ordered_segment_ids == ["A", "D", "E", "C"]
+    assert alternative.cost_basis == "distance with explicit segment exclusions"

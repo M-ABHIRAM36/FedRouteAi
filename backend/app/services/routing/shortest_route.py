@@ -58,6 +58,7 @@ class ShortestRouteResult:
     ordered_segment_ids: list[str]
     geometry: list[tuple[float, float]]
     predictions: PredictionSummary
+    cost_basis: str
 
 
 class ShortestRouteService:
@@ -76,6 +77,7 @@ class ShortestRouteService:
         network_version: str,
         source_id: str | None = None,
         run_id: str | None = None,
+        avoid_segment_ids: set[str] | None = None,
     ) -> ShortestRouteResult:
         started = perf_counter()
         if haversine_m(origin_lat, origin_lon, destination_lat, destination_lon) < 1.0:
@@ -88,9 +90,16 @@ class ShortestRouteService:
             ) from exc
         origin = snap_to_route_graph(route_graph, origin_lat, origin_lon)
         destination = snap_to_route_graph(route_graph, destination_lat, destination_lon)
+        excluded = set(avoid_segment_ids or ())
+        excluded.discard(origin.segment_id)
+        excluded.discard(destination.segment_id)
+        graph = route_graph.graph
+        if excluded:
+            graph = graph.copy()
+            graph.remove_nodes_from(excluded)
         try:
             path = nx.dijkstra_path(
-                route_graph.graph, origin.segment_id, destination.segment_id, weight="weight",
+                graph, origin.segment_id, destination.segment_id, weight="weight",
             )
         except (nx.NetworkXNoPath, nx.NodeNotFound) as exc:
             raise NoRouteError("no directed route connects the selected locations") from exc
@@ -126,6 +135,7 @@ class ShortestRouteService:
             ordered_segment_ids=path,
             geometry=geometry,
             predictions=predictions,
+            cost_basis="distance with explicit segment exclusions" if excluded else "distance",
         )
 
 

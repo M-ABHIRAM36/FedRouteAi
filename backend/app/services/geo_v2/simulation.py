@@ -73,12 +73,18 @@ class SimulationConfig:
     simulation_speed: float = 1.0
     random_seed: int = 42
     start_time: datetime = datetime(2026, 7, 7, 6, 0, 0)
+    controlled_route_share: float = 0.0
+    controlled_corridor_count: int = 3
 
     def __post_init__(self) -> None:
         if self.vehicle_count <= 0:
             raise ValueError("vehicle_count must be positive")
         if self.tick_seconds <= 0 or self.simulation_speed <= 0:
             raise ValueError("tick_seconds and simulation_speed must be positive")
+        if not 0.0 <= self.controlled_route_share <= 1.0:
+            raise ValueError("controlled_route_share must be between 0 and 1")
+        if self.controlled_corridor_count <= 0:
+            raise ValueError("controlled_corridor_count must be positive")
 
     @property
     def simulated_tick_seconds(self) -> float:
@@ -96,6 +102,8 @@ class VehicleState:
     destination_segment_id: str
     preferred_road_type: RoadType
     recent_segment_ids: list[str] = field(default_factory=list)
+    route_segment_ids: list[str] = field(default_factory=list)
+    route_index: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -175,7 +183,15 @@ class GeoV2Simulation:
         self._upstream: dict[str, set[str]] = defaultdict(set)
         self._downstream: dict[str, set[str]] = defaultdict(set)
         self._index_transitions()
-        self._destination_preferences = self._build_destination_preferences()
+        self.demo_corridors = self._build_demo_corridors()
+        self._network_diagonal_m = max(
+            haversine_m(network.bbox[1], network.bbox[0], network.bbox[3], network.bbox[2]),
+            1.0,
+        )
+        self._destination_points = {
+            segment_id: segment.geometry[len(segment.geometry) // 2]
+            for segment_id, segment in self._segments.items()
+        }
         self._events: dict[str, ScenarioEvent] = {}
         self._active_events_by_segment: dict[str, tuple[ScenarioEvent, ...]] = {}
         self._propagation_by_segment: dict[str, tuple[float, float]] = {}
@@ -311,9 +327,17 @@ class GeoV2Simulation:
             for segment_id in self._segment_order
         ]
         for index in range(1, self.config.vehicle_count + 1):
-            segment_id = self._rng.choices(self._segment_order, weights=weights, k=1)[0]
+            controlled = index <= round(self.config.vehicle_count * self.config.controlled_route_share)
+            route = self._vehicle_route(index) if controlled else []
+            segment_id = route[0] if route else self._rng.choices(self._segment_order, weights=weights, k=1)[0]
             segment = self._segments[segment_id]
             direction = 1 if segment.one_way or self._rng.random() < 0.5 else -1
+            if len(route) > 1:
+                direction = next(
+                    (candidate_direction for candidate_direction in (-1, 1)
+                     if any(option[0] == route[1] for option in self._outgoing.get((segment_id, candidate_direction), ()))),
+                    direction,
+                )
             vehicle_type = self._rng.choices(_VEHICLE_TYPES, weights=(50, 28, 17, 5), k=1)[0]
             destination = self._rng.choice(self._segment_order)
             speed = self._base_target_speed(segment, vehicle_type)
@@ -326,38 +350,64 @@ class GeoV2Simulation:
                 speed_kmph=speed,
                 destination_segment_id=destination,
                 preferred_road_type=self._segments[destination].road_type,
+                route_segment_ids=route,
             )
 
-    def _build_destination_preferences(self) -> dict[tuple[str, int, str], float]:
-        diagonal_m = max(
-            haversine_m(
-                self.network.bbox[1],
-                self.network.bbox[0],
-                self.network.bbox[3],
-                self.network.bbox[2],
+    def _build_demo_corridors(self) -> tuple[tuple[str, ...], ...]:
+        """Select stable, connected corridors without hardcoded OSM IDs."""
+        corridors: list[tuple[str, ...]] = []
+        used: set[str] = set()
+        candidates = sorted(
+            self._segment_order,
+            key=lambda segment_id: (
+                -self._segments[segment_id].length_m,
+                -self._segments[segment_id].lanes,
+                segment_id,
             ),
-            1.0,
         )
-        destination_points = {
-            segment_id: segment.geometry[len(segment.geometry) // 2]
-            for segment_id, segment in self._segments.items()
-        }
-        preferences = {}
-        for target_id, target in self._segments.items():
-            for direction in (-1, 1):
-                exit_point = target.geometry[-1] if direction > 0 else target.geometry[0]
-                for destination_id, destination_point in destination_points.items():
-                    distance = haversine_m(
-                        exit_point[1],
-                        exit_point[0],
-                        destination_point[1],
-                        destination_point[0],
-                    )
-                    preferences[(target_id, direction, destination_id)] = min(
-                        max(2.0 - distance / diagonal_m, 0.25),
-                        2.0,
-                    )
-        return preferences
+        for start_id in candidates:
+            if start_id in used:
+                continue
+            route = self._deterministic_route(start_id, 12, salt=len(corridors))
+            if len(route) < 5:
+                continue
+            corridor = tuple(route[:8])
+            corridors.append(corridor)
+            used.update(corridor)
+            if len(corridors) == self.config.controlled_corridor_count:
+                break
+        return tuple(corridors)
+
+    def _vehicle_route(self, vehicle_index: int) -> list[str]:
+        if not self.demo_corridors:
+            return []
+        corridor = self.demo_corridors[(vehicle_index - 1) % len(self.demo_corridors)]
+        offset = (vehicle_index - 1) % len(corridor)
+        start_id = corridor[offset]
+        return self._deterministic_route(start_id, 64, salt=vehicle_index)
+
+    def _deterministic_route(self, start_id: str, length: int, *, salt: int) -> list[str]:
+        route = [start_id]
+        direction = 1
+        segment = self._segments[start_id]
+        if not segment.one_way and not self._outgoing.get((start_id, direction)):
+            direction = -1
+        for step in range(length - 1):
+            options = self._outgoing.get((route[-1], direction), ())
+            if not options:
+                break
+            recent = set(route[-4:])
+            preferred = [option for option in options if option[0] not in recent] or list(options)
+            target_id, direction, _ = preferred[(salt + step) % len(preferred)]
+            route.append(target_id)
+        return route
+
+    def _destination_preference(self, target_id: str, direction: int, destination_id: str) -> float:
+        target = self._segments[target_id]
+        exit_point = target.geometry[-1] if direction > 0 else target.geometry[0]
+        destination_point = self._destination_points[destination_id]
+        distance = haversine_m(exit_point[1], exit_point[0], destination_point[1], destination_point[0])
+        return min(max(2.0 - distance / self._network_diagonal_m, 0.25), 2.0)
 
     def _move_vehicle(self, vehicle: VehicleState, crossings: Counter[str]) -> None:
         segment = self._segments[vehicle.segment_id]
@@ -406,12 +456,20 @@ class GeoV2Simulation:
         ]
         if not options:
             return None
+        if vehicle.route_segment_ids:
+            next_index = vehicle.route_index + 1
+            if next_index < len(vehicle.route_segment_ids):
+                next_id = vehicle.route_segment_ids[next_index]
+                planned = next((option for option in options if option[0] == next_id), None)
+                if planned is not None:
+                    vehicle.route_index = next_index
+                    return planned
         weights = []
         for target_id, direction, _ in options:
             target = self._segments[target_id]
-            destination_preference = self._destination_preferences[
-                (target_id, direction, vehicle.destination_segment_id)
-            ]
+            destination_preference = self._destination_preference(
+                target_id, direction, vehicle.destination_segment_id,
+            )
             road_preference = 1.35 if target.road_type is vehicle.preferred_road_type else 1.0
             revisit_penalty = 0.15 if target_id in vehicle.recent_segment_ids else 1.0
             diversion_penalty = 0.08 if any(

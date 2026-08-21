@@ -21,6 +21,14 @@ export const AnimatedVehicleLayer = ({ vehicles, selectedVehicleId, paused = fal
   const previousTargets = useRef(new Map<string, VehicleTarget>());
   const frame = useRef<number | undefined>(undefined);
 
+  const animate = (now: number) => {
+    for (const [vehicleId, transition] of transitions.current) {
+      markerRefs.current.get(vehicleId)?.setLatLng(interpolateVehiclePosition(transition, now));
+      if (now >= transition.startedAt + transition.durationMs) transitions.current.delete(vehicleId);
+    }
+    frame.current = transitions.current.size ? requestAnimationFrame(animate) : undefined;
+  };
+
   useEffect(() => {
     const now = performance.now();
     const active = new Set(uniqueVehicles.map((vehicle) => vehicle.vehicle_id));
@@ -45,20 +53,16 @@ export const AnimatedVehicleLayer = ({ vehicles, selectedVehicleId, paused = fal
       }
       if (!previous || timestampMs > previous.timestampMs) previousTargets.current.set(vehicle.vehicle_id, { lat: target[0], lon: target[1], timestampMs });
     }
+    if (!paused && transitions.current.size && frame.current == null && document.visibilityState !== 'hidden') {
+      frame.current = requestAnimationFrame(animate);
+    }
   }, [pollIntervalSeconds, uniqueVehicles]);
 
   useEffect(() => {
-    const animate = (now: number) => {
-      for (const [vehicleId, transition] of transitions.current) {
-        markerRefs.current.get(vehicleId)?.setLatLng(interpolateVehiclePosition(transition, now));
-        if (now >= transition.startedAt + transition.durationMs) transitions.current.delete(vehicleId);
-      }
-      frame.current = requestAnimationFrame(animate);
-    };
     const updateLoop = () => {
       if (frame.current != null) cancelAnimationFrame(frame.current);
       frame.current = undefined;
-      if (!paused && document.visibilityState !== 'hidden') frame.current = requestAnimationFrame(animate);
+      if (!paused && transitions.current.size && document.visibilityState !== 'hidden') frame.current = requestAnimationFrame(animate);
     };
     document.addEventListener('visibilitychange', updateLoop);
     updateLoop();

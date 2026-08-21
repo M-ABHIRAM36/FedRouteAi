@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TrafficMap from './index';
 import { fetchLiveSnapshot, fetchSegments, type LiveMapSnapshot, type SegmentData } from '../../services/api/liveMapApi';
 import { calculateShortestRoute, type ShortestRouteResponse } from '../../services/api/routeApi';
+import { createDemoRun, stepDemoRun, stopDemoRun, type DemoRun } from '../../services/api/demoApi';
 
 let mapClick: ((event: { latlng: { lat: number; lng: number } }) => void) | undefined;
 
@@ -15,6 +16,10 @@ vi.mock('../../services/api/liveMapApi', async (importOriginal) => {
 vi.mock('../../services/api/routeApi', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../services/api/routeApi')>();
   return { ...original, calculateShortestRoute: vi.fn() };
+});
+vi.mock('../../services/api/demoApi', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../../services/api/demoApi')>();
+  return { ...original, createDemoRun: vi.fn(), stepDemoRun: vi.fn(), stopDemoRun: vi.fn() };
 });
 
 vi.mock('react-leaflet', () => ({
@@ -60,6 +65,16 @@ const routeResult: ShortestRouteResponse = {
   predictions: { available: true, counts: { normal: 2, congestion: 1 }, abnormal_segment_count: 1, warnings: ['This route contains predicted congestion.'] },
 };
 
+const demoRun: DemoRun = {
+  source_id: 'geo-v2-demo', run_id: 'demo-test', scenario: 'congestion', status: 'ready',
+  simulation_time: '2026-08-17T08:02:00', tick_number: 1, vehicle_count: 100,
+  network_source: 'osm_geo_v2', network_version: 'beeramguda-test',
+  corridor_segment_ids: ['SEG_1', 'SEG_2', 'SEG_3'], disturbance_segment_id: 'SEG_2',
+  model_feature_count: 23, history_ticks: 3, cadence_seconds: 120,
+  accepted_observations: 100, observed_segments: 3, predictions_available: 3,
+  ingestion_ms: 10, inference_ms: 5, labels_in_telemetry: 0, event_ids_in_telemetry: 0,
+};
+
 const renderMap = () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(<QueryClientProvider client={client}><TrafficMap /></QueryClientProvider>);
@@ -71,6 +86,9 @@ describe('TrafficMap', () => {
     vi.mocked(fetchSegments).mockResolvedValue(segments);
     vi.mocked(fetchLiveSnapshot).mockResolvedValue(snapshot());
     vi.mocked(calculateShortestRoute).mockResolvedValue(routeResult);
+    vi.mocked(createDemoRun).mockResolvedValue(demoRun);
+    vi.mocked(stepDemoRun).mockResolvedValue(demoRun);
+    vi.mocked(stopDemoRun).mockResolvedValue(undefined);
   });
 
   it('selects route endpoints on the existing map, renders the route, summary, and clears it', async () => {
@@ -114,6 +132,20 @@ describe('TrafficMap', () => {
     expect(screen.getAllByTestId('road')).toHaveLength(3);
     expect(screen.getAllByText('PAUSED').length).toBeGreaterThan(0);
     expect(fetchLiveSnapshot).not.toHaveBeenCalled();
+  });
+
+  it('starts a controlled demo with a scoped snapshot and resets its run', async () => {
+    renderMap();
+    fireEvent.change(await screen.findByLabelText(/demo vehicles/i), { target: { value: '100' } });
+    fireEvent.click(screen.getByRole('button', { name: /start demo/i }));
+
+    await waitFor(() => expect(createDemoRun).toHaveBeenCalledWith('congestion', 100));
+    expect(stepDemoRun).toHaveBeenCalledWith('demo-test');
+    await waitFor(() => expect(fetchLiveSnapshot).toHaveBeenCalledWith('geo-v2-demo', 'demo-test'));
+    expect(screen.getByText(/3\/3/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /^reset$/i }));
+    expect(stopDemoRun).toHaveBeenCalledWith('demo-test');
   });
 
   it('starts live polling and renders backend vehicles, events, and counters', async () => {

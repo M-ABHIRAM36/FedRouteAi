@@ -28,6 +28,7 @@ class ShortestRouteRequest(BaseModel):
     network_version: str
     source_id: str | None = None
     run_id: str | None = None
+    avoid_segment_ids: list[str] = Field(default_factory=list, max_length=200)
 
 
 class SnappedRoutePoint(RoutePoint):

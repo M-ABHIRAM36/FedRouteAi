@@ -72,9 +72,10 @@ describe('AnimatedVehicleLayer', () => {
     expect(setLatLng).not.toHaveBeenCalled();
   });
 
-  it('cancels animation frames on unmount', () => {
+  it('does not schedule an animation frame while vehicles are idle', () => {
     const view = render(<AnimatedVehicleLayer vehicles={[vehicle('VEH_1')]} onSelect={vi.fn()} />);
+    expect(requestAnimationFrame).not.toHaveBeenCalled();
     view.unmount();
-    expect(cancelAnimationFrame).toHaveBeenCalledWith(17);
+    expect(cancelAnimationFrame).not.toHaveBeenCalled();
   });
 });

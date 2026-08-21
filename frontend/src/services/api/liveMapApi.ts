@@ -96,5 +96,7 @@ export const fetchSegments = async (networkSource?: string | null): Promise<Segm
     params: networkSource ? { network_source: networkSource } : undefined,
   })).data;
 
-export const fetchLiveSnapshot = async (): Promise<LiveMapSnapshot> =>
-  (await apiClient.get<LiveMapSnapshot>('/api/v1/live-map/snapshot')).data;
+export const fetchLiveSnapshot = async (sourceId?: string, runId?: string): Promise<LiveMapSnapshot> =>
+  (await apiClient.get<LiveMapSnapshot>('/api/v1/live-map/snapshot', {
+    params: sourceId && runId ? { source_id: sourceId, run_id: runId } : undefined,
+  })).data;

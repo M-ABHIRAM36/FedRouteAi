@@ -63,6 +63,7 @@ def compute_shortest_route(req: ShortestRouteRequest, db: Session = Depends(get_
             network_version=req.network_version,
             source_id=req.source_id,
             run_id=req.run_id,
+            avoid_segment_ids=set(req.avoid_segment_ids),
         )
     except RouteInputError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -74,7 +75,7 @@ def compute_shortest_route(req: ShortestRouteRequest, db: Session = Depends(get_
         network_source=result.network_source,
         network_version=result.network_version,
         algorithm="Dijkstra",
-        cost_basis="distance",
+        cost_basis=result.cost_basis,
         origin=RoutePoint(lat=result.origin[0], lon=result.origin[1]),
         destination=RoutePoint(lat=result.destination[0], lon=result.destination[1]),
         snapped_origin=SnappedRoutePoint(
