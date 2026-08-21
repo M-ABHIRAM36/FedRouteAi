@@ -54,6 +54,7 @@ const TrafficMap = () => {
   const [demoScenario, setDemoScenario] = useState<DemoScenario>('congestion');
   const [demoVehicleCount, setDemoVehicleCount] = useState(250);
   const [demoSpeed, setDemoSpeed] = useState(1);
+  const [demoStarting, setDemoStarting] = useState(false);
   const [demoError, setDemoError] = useState<string>();
   const [recentChanges, setRecentChanges] = useState<RoadChange[]>([]);
   const viewportRef = useRef<LeafletMap | undefined>(undefined);
@@ -95,6 +96,20 @@ const TrafficMap = () => {
     const prediction = states.get(segmentId)?.predicted_event;
     return Boolean(prediction && prediction !== 'normal');
   }) ?? [], [routeResult, states]);
+  const routeImpact = useMemo(() => {
+    const segmentIds = [...new Set(routeResult?.ordered_segment_ids ?? [])];
+    const counts: Record<string, number> = {};
+    let covered = 0;
+    let abnormal = 0;
+    for (const segmentId of segmentIds) {
+      const prediction = states.get(segmentId)?.predicted_event;
+      if (!prediction) continue;
+      covered += 1;
+      counts[prediction] = (counts[prediction] ?? 0) + 1;
+      if (prediction !== 'normal') abnormal += 1;
+    }
+    return { counts, covered, total: segmentIds.length, abnormal };
+  }, [routeResult, states]);
 
   useEffect(() => {
     if (!liveMode) return;
@@ -167,9 +182,18 @@ const TrafficMap = () => {
   };
   const startDemo = async () => {
     setDemoError(undefined);
+    if (!routeResult) {
+      setDemoError('Calculate a route before starting a demonstration.');
+      return;
+    }
+    if (routeResult.distance_m < 1500) {
+      setDemoError('Selected route must be at least 1.5 km. Choose a farther destination and recalculate.');
+      return;
+    }
+    setDemoStarting(true);
     try {
       if (demoRun) await stopDemoRun(demoRun.run_id);
-      const run = await createDemoRun(demoScenario, demoVehicleCount);
+      const run = await createDemoRun(demoScenario, demoVehicleCount, routeResult.ordered_segment_ids, routeResult.distance_m);
       const first = await stepDemoRun(run.run_id);
       setDemoRun(first);
       snapshotIdentityRef.current = undefined;
@@ -178,12 +202,14 @@ const TrafficMap = () => {
       setLiveMode(true);
     } catch (error: any) {
       setDemoError(error?.response?.data?.detail ?? error?.message ?? 'Demo could not start.');
+    } finally {
+      setDemoStarting(false);
     }
   };
   const resetDemo = () => {
     if (demoRun) void stopDemoRun(demoRun.run_id);
     setDemoRun(undefined); setDemoError(undefined); setLiveMode(false); setLastSnapshot(undefined);
-    setRouteAvoided([]); setRouteResult(undefined); setTimeline([]); setRecentChanges([]); previousPredictionsRef.current.clear();
+    setTimeline([]); setRecentChanges([]); previousPredictionsRef.current.clear();
   };
   const selectRoutePoint = (point: RouteCoordinate) => {
     routeRequestRef.current += 1;
@@ -224,7 +250,7 @@ const TrafficMap = () => {
     </header>
 
     <MetricBar snapshot={snapshot} predictedEvents={predictedEvents} status={status} age={age} />
-    <DemoControls scenario={demoScenario} setScenario={setDemoScenario} vehicleCount={demoVehicleCount} setVehicleCount={setDemoVehicleCount} speed={demoSpeed} setSpeed={setDemoSpeed} run={demoRun} error={demoError} onStart={startDemo} onReset={resetDemo} />
+    <DemoControls scenario={demoScenario} setScenario={setDemoScenario} vehicleCount={demoVehicleCount} setVehicleCount={setDemoVehicleCount} speed={demoSpeed} setSpeed={setDemoSpeed} run={demoRun} route={routeResult} impact={routeImpact} starting={demoStarting} error={demoError} onStart={startDemo} onReset={resetDemo} />
     {liveQuery.isError && <div role="alert" className="border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger">{liveQuery.error instanceof Error ? liveQuery.error.message : 'Live telemetry is unavailable.'}</div>}
 
     <div className="grid min-h-[620px] gap-3 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -265,18 +291,19 @@ const LiveStatus = ({ status, age, hasError }: { status: ConnectionStatus; age: 
 const MetricBar = ({ snapshot, predictedEvents, status, age }: { snapshot?: LiveMapSnapshot; predictedEvents: number; status: ConnectionStatus; age: number }) => <section className="grid grid-cols-2 border border-border bg-surface sm:grid-cols-3 xl:grid-cols-6"><Metric icon={<Car />} label="Vehicles" value={snapshot ? snapshot.summary.vehicle_count.toLocaleString() : '—'} detail="authoritative GPS" /><Metric icon={<Layers3 />} label="Active segments" value={snapshot ? snapshot.summary.active_segments.toLocaleString() : '—'} detail="observed now" /><Metric icon={<TriangleAlert />} label="Predicted events" value={snapshot ? predictedEvents.toLocaleString() : '—'} detail="non-normal model output" /><Metric icon={<Radio />} label="Average speed" value={snapshot ? `${snapshot.summary.average_speed_kmph.toFixed(1)}` : '—'} detail="km/h" /><Metric icon={<Clock3 />} label="Last telemetry" value={snapshot ? new Date(snapshot.observed_at).toLocaleTimeString() : '—'} detail={snapshot ? `tick ${snapshot.tick_number}` : 'waiting'} /><Metric icon={status === 'LIVE' ? <Wifi /> : <WifiOff />} label="Data freshness" value={status} detail={Number.isFinite(age) ? receiptLabel(age) : 'not connected'} /></section>;
 const Metric = ({ icon, label, value, detail }: { icon: React.ReactNode; label: string; value: string; detail: string }) => <div className="flex min-h-20 items-center gap-3 border-b border-r border-border px-3 py-3 last:border-r-0 sm:border-b-0"><span className="text-primary [&>svg]:h-4 [&>svg]:w-4">{icon}</span><div className="min-w-0"><div className="text-[9px] font-semibold uppercase tracking-wider text-textSecondary">{label}</div><div className="truncate text-lg font-semibold text-white">{value}</div><div className="truncate text-[9px] text-textSecondary">{detail}</div></div></div>;
 
-const DemoControls = ({ scenario, setScenario, vehicleCount, setVehicleCount, speed, setSpeed, run, error, onStart, onReset }: {
+const DemoControls = ({ scenario, setScenario, vehicleCount, setVehicleCount, speed, setSpeed, run, route, impact, starting, error, onStart, onReset }: {
   scenario: DemoScenario; setScenario: (value: DemoScenario) => void; vehicleCount: number; setVehicleCount: (value: number) => void;
-  speed: number; setSpeed: (value: number) => void; run?: DemoRun; error?: string; onStart: () => void; onReset: () => void;
+  speed: number; setSpeed: (value: number) => void; run?: DemoRun; route?: ShortestRouteResponse; impact: { counts: Record<string, number>; covered: number; total: number; abnormal: number }; starting: boolean; error?: string; onStart: () => void; onReset: () => void;
 }) => <section className="grid gap-3 border border-border bg-surface p-3 lg:grid-cols-[1fr_auto] lg:items-center">
-  <div><div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">Controlled demonstration</div><div className="mt-1 text-xs text-textSecondary">Real OSM trajectories → GPS batches → 23 causal features → frozen federated MLP → road state</div></div>
+  <div><div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">Route event demonstration</div><div className="mt-1 text-xs text-textSecondary">Real OSM trajectories → GPS batches → 23 causal features → frozen federated MLP → road state</div><div className="mt-1 text-[10px] text-textSecondary">Traffic behavior only. Not ground truth.</div></div>
   <div className="flex flex-wrap items-end gap-2">
-    <label className="text-[9px] uppercase text-textSecondary">Scenario<select aria-label="Demo scenario" value={scenario} onChange={(event) => setScenario(event.target.value as DemoScenario)} disabled={Boolean(run)} className="mt-1 block h-8 border border-border bg-background px-2 text-xs normal-case text-textPrimary"><option value="normal">Normal traffic</option><option value="congestion">Normal → congestion</option><option value="accident">Normal → accident-like disturbance</option><option value="route_impact">Incident → route impact</option></select></label>
+    <label className="text-[9px] uppercase text-textSecondary">Scenario<select aria-label="Demo scenario" value={scenario} onChange={(event) => setScenario(event.target.value as DemoScenario)} disabled={Boolean(run) || starting} className="mt-1 block h-8 border border-border bg-background px-2 text-xs normal-case text-textPrimary"><option value="normal">Normal traffic</option><option value="congestion">Normal → congestion</option><option value="accident">Normal → accident-like disturbance</option></select></label>
     <label className="text-[9px] uppercase text-textSecondary">Vehicles<select aria-label="Demo vehicles" value={vehicleCount} onChange={(event) => setVehicleCount(Number(event.target.value))} disabled={Boolean(run)} className="mt-1 block h-8 border border-border bg-background px-2 text-xs normal-case text-textPrimary"><option value={100}>100</option><option value={250}>250</option><option value={1000}>1,000</option></select></label>
     <label className="text-[9px] uppercase text-textSecondary">Clock<select aria-label="Demo speed" value={speed} onChange={(event) => setSpeed(Number(event.target.value))} className="mt-1 block h-8 border border-border bg-background px-2 text-xs normal-case text-textPrimary"><option value={1}>1x</option><option value={2}>2x</option><option value={5}>5x</option></select></label>
-    <button type="button" onClick={onStart} disabled={Boolean(run)} className="h-8 bg-primary px-3 text-xs font-semibold text-white disabled:opacity-40">Start demo</button>
+    <button type="button" onClick={onStart} disabled={Boolean(run) || starting} className="h-8 bg-primary px-3 text-xs font-semibold text-white disabled:opacity-40">{starting ? 'Starting...' : 'Start demo'}</button>
     <button type="button" onClick={onReset} className="h-8 border border-border px-3 text-xs text-textSecondary hover:text-white">Reset</button>
   </div>
+  {route && <div className="lg:col-span-2 flex flex-wrap gap-x-5 gap-y-1 border-t border-border pt-2 text-[10px] text-textSecondary"><span>Controlled route <strong className="text-white">{(route.distance_m / 1000).toFixed(2)} km</strong></span><span>Segments <strong className="text-white">{route.segment_count}</strong></span><span>Prediction coverage <strong className="text-white">{impact.covered}/{impact.total}</strong></span><span>Abnormal predictions <strong className="text-white">{impact.abnormal}</strong></span>{impact.covered > 0 && impact.abnormal === 0 && <span className="text-success">No abnormal model predictions detected on this route</span>}</div>}
   {run && <div className="lg:col-span-2 flex flex-wrap gap-x-5 gap-y-1 border-t border-border pt-2 text-[10px] text-textSecondary"><span>Simulation <strong className="text-white">{new Date(run.simulation_time).toLocaleTimeString()}</strong></span><span>Tick <strong className="text-white">{run.tick_number}</strong></span><span>Accepted <strong className="text-white">{run.accepted_observations ?? '—'}</strong></span><span>Predictions <strong className="text-white">{run.predictions_available ?? 0}/{run.observed_segments ?? 0}</strong></span><span>Inference <strong className="text-white">{run.inference_ms?.toFixed(1) ?? '—'} ms</strong></span><span>Labels in telemetry <strong className="text-success">0</strong></span></div>}
   {error && <div role="alert" className="lg:col-span-2 text-xs text-danger">{error}</div>}
 </section>;
@@ -306,7 +333,7 @@ const RoutePlanner = ({ origin, destination, selection, result, error, loading, 
 
 const RoutePointButton = ({ label, selected, point, icon, onClick }: { label: string; selected: boolean; point?: RouteCoordinate; icon: React.ReactNode; onClick: () => void }) => <button type="button" aria-label={`Select ${label.toLowerCase()} on map`} onClick={onClick} className={`flex min-w-0 items-center gap-2 border px-3 py-2 text-left ${selected ? 'border-[#a78bfa] bg-[#7c3aed]/15 text-[#c4b5fd]' : 'border-border text-textSecondary hover:bg-surfaceHover'}`}><span className="[&>svg]:h-3.5 [&>svg]:w-3.5">{icon}</span><span className="min-w-0"><span className="block text-[9px] uppercase">{label}</span><span className="block truncate text-[10px] text-textPrimary">{point ? `${point.lat.toFixed(5)}, ${point.lon.toFixed(5)}` : 'Select on map'}</span></span></button>;
 
-const RouteSummary = ({ result }: { result: ShortestRouteResponse }) => <div data-testid="route-summary" className="border-l-2 border-[#a78bfa] bg-[#7c3aed]/10 p-3"><div className="text-[10px] font-semibold uppercase text-[#c4b5fd]">Route summary</div><div className="mt-2 grid grid-cols-3 gap-2"><PanelValue label="Distance" value={`${(result.distance_m / 1000).toFixed(2)} km`} /><PanelValue label="Est. time" value={`${Math.ceil(result.estimated_duration_s / 60)} min`} /><PanelValue label="Segments" value={`${result.segment_count}`} /></div><div className="mt-3 text-[9px] font-semibold uppercase text-textSecondary">Prediction status</div><div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">{Object.entries(result.predictions.counts).map(([label, count]) => <span key={label} className="text-[10px] capitalize text-textPrimary">{label.replaceAll('_', ' ')}: <strong>{count}</strong></span>)}{!Object.keys(result.predictions.counts).length && <span className="text-[10px] text-textSecondary">No current predictions</span>}</div>{result.predictions.warnings.map((warning) => <div key={warning} className="mt-2 text-[10px] text-warning">{warning}</div>)}</div>;
+const RouteSummary = ({ result }: { result: ShortestRouteResponse }) => <div data-testid="route-summary" className="border-l-2 border-[#a78bfa] bg-[#7c3aed]/10 p-3"><div className="text-[10px] font-semibold uppercase text-[#c4b5fd]">Route summary</div><div className="mt-2 grid grid-cols-3 gap-2"><PanelValue label="Distance" value={`${(result.distance_m / 1000).toFixed(2)} km`} /><PanelValue label="Est. time" value={`${Math.ceil(result.estimated_duration_s / 60)} min`} /><PanelValue label="Segments" value={`${result.segment_count}`} /></div><div className="mt-3 text-[9px] font-semibold uppercase text-textSecondary">Prediction status</div><div className="mt-1 text-[10px] text-textSecondary">Coverage {result.predictions.covered_segment_count} / {result.segment_count}</div><div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">{Object.entries(result.predictions.counts).map(([label, count]) => <span key={label} className="text-[10px] capitalize text-textPrimary">{label.replaceAll('_', ' ')}: <strong>{count}</strong></span>)}{!Object.keys(result.predictions.counts).length && <span className="text-[10px] text-textSecondary">No current predictions</span>}</div>{result.predictions.warnings.map((warning) => <div key={warning} className="mt-2 text-[10px] text-warning">{warning}</div>)}</div>;
 
 const InspectionPanel = ({ selectedSegment, selectedState, selectedEvent, selectedVehicle, timeline, predictionCounts, snapshot, demoRun, recentChanges, onClose }: any) => <aside className="flex min-h-0 flex-col border border-border bg-surface xl:max-h-[620px]"><div className="flex items-center justify-between border-b border-border px-4 py-3"><div><div className="text-[10px] font-semibold uppercase tracking-wider text-textSecondary">Geo V2 AI detection</div><div className="mt-0.5 text-xs text-textPrimary">Predicted road condition, not confirmed ground truth</div></div>{(selectedSegment || selectedVehicle) && <button type="button" aria-label="Clear selection" onClick={onClose} className="text-textSecondary hover:text-white focus-visible:outline-2 focus-visible:outline-primary"><X className="h-4 w-4" /></button>}</div><div className="min-h-0 flex-1 overflow-y-auto p-4">{demoRun && <SystemFlow run={demoRun} />}{selectedVehicle ? <VehiclePanel vehicle={selectedVehicle} /> : selectedSegment ? <SegmentPopup segment={selectedSegment} state={selectedState} event={selectedEvent} /> : <Overview predictionCounts={predictionCounts} snapshot={snapshot} />}{selectedSegment && timeline.length > 0 && <Timeline entries={timeline} />}{recentChanges.length > 0 && <RecentRoadChanges changes={recentChanges} />}</div></aside>;
 const SystemFlow = ({ run }: { run: DemoRun }) => <section className="mb-4 border-b border-border pb-4"><div className="text-[10px] font-semibold uppercase text-primary">System flow</div><div className="mt-2 grid grid-cols-2 gap-1 text-[9px] text-textSecondary">{['GPS ingestion', 'Traffic aggregation', 'Causal features', 'Federated MLP', 'Road state', 'Routing ready'].map((label) => <div key={label} className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 bg-success" />{label}</div>)}</div><div className="mt-3 grid grid-cols-2 gap-2"><PanelValue label="Window" value={`${Math.min(run.tick_number * 2, 6)} min`} /><PanelValue label="History" value={`${run.history_ticks} prior ticks`} /><PanelValue label="Features" value={`${run.model_feature_count} causal`} /><PanelValue label="Cadence" value={`${run.cadence_seconds}s`} /></div></section>;

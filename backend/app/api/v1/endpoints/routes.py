@@ -102,6 +102,8 @@ def compute_shortest_route(req: ShortestRouteRequest, db: Session = Depends(get_
             run_id=result.predictions.run_id,
             counts=result.predictions.counts,
             abnormal_segment_count=result.predictions.abnormal_segment_count,
+            covered_segment_count=result.predictions.covered_segment_count,
+            coverage_ratio=result.predictions.coverage_ratio,
             warnings=result.predictions.warnings,
         ),
     )

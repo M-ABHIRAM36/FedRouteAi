@@ -56,6 +56,7 @@ _VEHICLE_SPEED = {
 _VEHICLE_TYPES = tuple(VehicleType)
 _EVENT_TYPES = frozenset(EventType) - {EventType.NORMAL}
 _BLOCKING_TYPES = frozenset({EventType.ROAD_BLOCK})
+MIN_CONTROLLED_ROUTE_DISTANCE_M = 1_500.0
 
 
 def time_profile(at: datetime) -> TimeProfile:
@@ -75,6 +76,7 @@ class SimulationConfig:
     start_time: datetime = datetime(2026, 7, 7, 6, 0, 0)
     controlled_route_share: float = 0.0
     controlled_corridor_count: int = 3
+    controlled_route_segment_ids: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if self.vehicle_count <= 0:
@@ -183,7 +185,7 @@ class GeoV2Simulation:
         self._upstream: dict[str, set[str]] = defaultdict(set)
         self._downstream: dict[str, set[str]] = defaultdict(set)
         self._index_transitions()
-        self.demo_corridors = self._build_demo_corridors()
+        self.demo_corridors = self._controlled_corridors()
         self._network_diagonal_m = max(
             haversine_m(network.bbox[1], network.bbox[0], network.bbox[3], network.bbox[2]),
             1.0,
@@ -378,10 +380,35 @@ class GeoV2Simulation:
                 break
         return tuple(corridors)
 
+    def _controlled_corridors(self) -> tuple[tuple[str, ...], ...]:
+        route = self.config.controlled_route_segment_ids
+        if not route:
+            return self._build_demo_corridors()
+        self._validate_controlled_route(route)
+        return (route,)
+
+    def _validate_controlled_route(self, route: tuple[str, ...]) -> None:
+        unknown = sorted(set(route) - self._segments.keys())
+        if unknown:
+            raise ValueError(f"controlled route contains unknown segment IDs: {', '.join(unknown[:3])}")
+        if len(route) < 2:
+            raise ValueError("controlled route requires at least two directed segments")
+        legal = {(source_id, target_id) for source_id, target_id, _ in self._transitions}
+        if any((source_id, target_id) not in legal for source_id, target_id in zip(route, route[1:])):
+            raise ValueError("controlled route must follow persisted directed transitions")
+        if self.controlled_route_distance_m(route) < MIN_CONTROLLED_ROUTE_DISTANCE_M:
+            raise ValueError("selected route must be at least 1.5 km; choose a farther destination")
+
+    def controlled_route_distance_m(self, route: tuple[str, ...]) -> float:
+        return sum(self._segments[segment_id].length_m for segment_id in route)
+
     def _vehicle_route(self, vehicle_index: int) -> list[str]:
         if not self.demo_corridors:
             return []
         corridor = self.demo_corridors[(vehicle_index - 1) % len(self.demo_corridors)]
+        if self.config.controlled_route_segment_ids:
+            offset = (vehicle_index - 1) % len(corridor)
+            return list(corridor[offset:])
         offset = (vehicle_index - 1) % len(corridor)
         start_id = corridor[offset]
         return self._deterministic_route(start_id, 64, salt=vehicle_index)

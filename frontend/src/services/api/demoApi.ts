@@ -1,6 +1,6 @@
 import { apiClient } from './client';
 
-export type DemoScenario = 'normal' | 'congestion' | 'accident' | 'route_impact';
+export type DemoScenario = 'normal' | 'congestion' | 'accident';
 
 export interface DemoRun {
   source_id: string;
@@ -13,6 +13,7 @@ export interface DemoRun {
   network_source: string;
   network_version: string;
   corridor_segment_ids: string[];
+  route_distance_m: number;
   disturbance_segment_id?: string | null;
   model_feature_count: number;
   history_ticks: number;
@@ -26,8 +27,8 @@ export interface DemoRun {
   event_ids_in_telemetry?: number;
 }
 
-export const createDemoRun = async (scenario: DemoScenario, vehicleCount = 250): Promise<DemoRun> =>
-  (await apiClient.post<DemoRun>('/api/v1/demo/geo-v2/runs', { scenario, vehicle_count: vehicleCount, random_seed: 42 })).data;
+export const createDemoRun = async (scenario: DemoScenario, vehicleCount: number, orderedRouteSegmentIds: string[], routeDistanceM: number): Promise<DemoRun> =>
+  (await apiClient.post<DemoRun>('/api/v1/demo/geo-v2/runs', { scenario, vehicle_count: vehicleCount, random_seed: 42, ordered_route_segment_ids: orderedRouteSegmentIds, route_distance_m: routeDistanceM })).data;
 
 export const stepDemoRun = async (runId: string): Promise<DemoRun> =>
   (await apiClient.post<DemoRun>(`/api/v1/demo/geo-v2/runs/${runId}/step`)).data;

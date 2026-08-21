@@ -8,13 +8,14 @@ class DemoScenario(str, Enum):
     NORMAL = "normal"
     CONGESTION = "congestion"
     ACCIDENT = "accident"
-    ROUTE_IMPACT = "route_impact"
 
 
 class GeoV2DemoCreateIn(BaseModel):
     scenario: DemoScenario = DemoScenario.CONGESTION
     vehicle_count: int = Field(default=250, ge=100, le=1_000)
     random_seed: int = 42
+    ordered_route_segment_ids: list[str] = Field(min_length=3, max_length=500)
+    route_distance_m: float = Field(ge=1_500)
 
 
 class GeoV2DemoRunOut(BaseModel):
@@ -28,6 +29,7 @@ class GeoV2DemoRunOut(BaseModel):
     network_source: str
     network_version: str
     corridor_segment_ids: list[str]
+    route_distance_m: float
     disturbance_segment_id: str | None
     model_feature_count: int = 23
     history_ticks: int = 3

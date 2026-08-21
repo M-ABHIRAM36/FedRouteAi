@@ -40,6 +40,7 @@ class DemoRun:
     simulation: GeoV2Simulation
     corridor: tuple[str, ...]
     disturbance_segment_id: str | None
+    route_distance_m: float
     context_cache: CausalFeatureContextCache
     lock: RLock = field(default_factory=RLock)
     last_accessed_at: float = field(default_factory=monotonic)
@@ -57,22 +58,29 @@ class GeoV2DemoRegistry:
             simulation_speed=120,
             random_seed=request.random_seed,
             start_time=datetime(2026, 8, 17, 8, 0),
-            controlled_route_share=0.7,
+            controlled_route_share=0.9,
             controlled_corridor_count=3,
+            controlled_route_segment_ids=tuple(request.ordered_route_segment_ids),
         ))
         if not simulation.demo_corridors:
             raise ValueError("the persisted directed topology has no suitable demonstration corridor")
         corridor = simulation.demo_corridors[0]
-        disturbance = corridor[len(corridor) // 2] if request.scenario is not DemoScenario.NORMAL else None
-        if disturbance:
-            event_type = EventType.ACCIDENT if request.scenario in {DemoScenario.ACCIDENT, DemoScenario.ROUTE_IMPACT} else EventType.CONGESTION
+        affected_segments: tuple[str, ...] = ()
+        if request.scenario is DemoScenario.ACCIDENT:
+            affected_segments = (corridor[len(corridor) // 2],)
+        elif request.scenario is DemoScenario.CONGESTION:
+            midpoint = len(corridor) // 2
+            affected_segments = tuple(corridor[max(1, midpoint - 1):min(len(corridor) - 1, midpoint + 2)])
+        disturbance = affected_segments[len(affected_segments) // 2] if affected_segments else None
+        for index, affected_segment_id in enumerate(affected_segments):
+            event_type = EventType.ACCIDENT if request.scenario is DemoScenario.ACCIDENT else EventType.CONGESTION
             simulation.schedule_event(
                 event_type,
-                disturbance,
+                affected_segment_id,
                 start_time=simulation.config.start_time + timedelta(minutes=4),
                 duration_minutes=20,
                 severity=1.0 if event_type is EventType.ACCIDENT else 0.9,
-                event_id="DEMO_DISTURBANCE",
+                event_id=f"DEMO_DISTURBANCE_{index + 1}",
             )
         simulation.start()
         run = DemoRun(
@@ -81,6 +89,7 @@ class GeoV2DemoRegistry:
             simulation=simulation,
             corridor=corridor,
             disturbance_segment_id=disturbance,
+            route_distance_m=request.route_distance_m,
             context_cache=CausalFeatureContextCache(),
         )
         with self._lock:
@@ -130,6 +139,7 @@ def demo_run_status(run: DemoRun) -> GeoV2DemoRunOut:
         network_source=settings.GEO_V2_NETWORK_SOURCE,
         network_version=settings.GEO_V2_NETWORK_VERSION,
         corridor_segment_ids=list(run.corridor),
+        route_distance_m=run.route_distance_m,
         disturbance_segment_id=run.disturbance_segment_id,
     )
 

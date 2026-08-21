@@ -41,6 +41,8 @@ class PredictionSummary:
     run_id: str | None
     counts: dict[str, int]
     abnormal_segment_count: int
+    covered_segment_count: int
+    coverage_ratio: float
     warnings: list[str]
 
 
@@ -259,7 +261,7 @@ def build_shortest_route_service(db) -> ShortestRouteService:
 
 def prediction_summary(repository, path: list[str], source_id: str | None, run_id: str | None) -> PredictionSummary:
     if not source_id or not run_id:
-        return PredictionSummary(False, source_id, run_id, {}, 0, ["Current prediction data was not requested."])
+        return PredictionSummary(False, source_id, run_id, {}, 0, 0, 0.0, ["Current prediction data was not requested."])
     rows = repository.latest_predictions_for_segments(source_id, run_id, set(path))
     labels = {row.segment_id: row.predicted_label for row in rows if row.predicted_label}
     counts: dict[str, int] = {}
@@ -274,4 +276,7 @@ def prediction_summary(repository, path: list[str], source_id: str | None, run_i
     ]
     if len(labels) < len(path):
         warnings.append(f"Predictions are unavailable for {len(path) - len(labels)} route segments.")
-    return PredictionSummary(bool(labels) and len(labels) == len(path), source_id, run_id, counts, abnormal, warnings)
+    return PredictionSummary(
+        bool(labels) and len(labels) == len(path), source_id, run_id, counts, abnormal,
+        len(labels), len(labels) / len(path) if path else 0.0, warnings,
+    )

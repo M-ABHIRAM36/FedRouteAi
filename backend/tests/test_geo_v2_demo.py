@@ -13,7 +13,7 @@ def _segment(index: int) -> CanonicalSegment:
         segment_id=f"S{index}", osm_way_id=index, start_node_id=index, end_node_id=index + 1,
         geometry=((78.30 + index * 0.001, 17.50), (78.301 + index * 0.001, 17.50)),
         road_name=f"Road {index}", highway="primary", road_type=RoadType.ARTERIAL,
-        region_id="REGION_01", length_m=106.0, max_speed_kmph=40.0, lanes=2,
+        region_id="REGION_01", length_m=306.0, max_speed_kmph=40.0, lanes=2,
         one_way=True, is_reversed=False, road_direction=RoadDirection.ONE_WAY,
         bridge=False, tunnel=False, junction=None,
     )
@@ -61,7 +61,7 @@ def test_demo_corridors_preserve_revisited_segments(monkeypatch):
 
 def test_demo_registry_removes_expired_runs():
     registry = GeoV2DemoRegistry()
-    request = GeoV2DemoCreateIn(scenario=DemoScenario.NORMAL, vehicle_count=100, random_seed=4)
+    request = GeoV2DemoCreateIn(scenario=DemoScenario.NORMAL, vehicle_count=100, random_seed=4, ordered_route_segment_ids=[f"S{i}" for i in range(1, 7)], route_distance_m=1600)
     run = registry.create(request, _network())
     run.last_accessed_at = 0
 
@@ -79,7 +79,7 @@ def test_demo_service_rejects_model_network_mismatch(monkeypatch):
 
     monkeypatch.setattr(type(GEO_V2_MODEL_STORE), "network_version", property(lambda self: "wrong-network"))
     service = GeoV2DemoService(None, None, None, None)
-    request = GeoV2DemoCreateIn(scenario=DemoScenario.NORMAL, vehicle_count=100)
+    request = GeoV2DemoCreateIn(scenario=DemoScenario.NORMAL, vehicle_count=100, ordered_route_segment_ids=["S1", "S2", "S3"], route_distance_m=1600)
 
     try:
         service.create(request)

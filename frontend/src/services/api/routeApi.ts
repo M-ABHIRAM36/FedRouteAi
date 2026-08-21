@@ -36,6 +36,8 @@ export interface ShortestRouteResponse {
     run_id?: string | null;
     counts: Record<string, number>;
     abnormal_segment_count: number;
+    covered_segment_count: number;
+    coverage_ratio: number;
     warnings: string[];
   };
 }

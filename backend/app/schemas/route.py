@@ -42,6 +42,8 @@ class RoutePredictionSummary(BaseModel):
     run_id: str | None = None
     counts: dict[str, int]
     abnormal_segment_count: int
+    covered_segment_count: int
+    coverage_ratio: float
     warnings: list[str]
 
 
