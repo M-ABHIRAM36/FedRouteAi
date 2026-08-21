@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="230" viewBox="0 0 1500 230">
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="4" orient="auto"><path d="M0 0 L9 4 L0 8 Z" fill="#000"/></marker></defs><style>
+.title{font-family:'Times New Roman',serif;font-weight:700;font-size:22px;fill:#000}
+.head{font-family:'Times New Roman',serif;font-weight:700;font-size:15px;fill:#000}
+.body{font-family:'Times New Roman',serif;font-size:13px;fill:#000}
+.small{font-family:'Times New Roman',serif;font-size:11px;fill:#000}
+.box{fill:#fff;stroke:#000;stroke-width:2}
+.dash{fill:#fff;stroke:#000;stroke-width:2;stroke-dasharray:8 6}
+.arrow{stroke:#000;stroke-width:2;fill:none;marker-end:url(#arrow)}
+</style><text x="750" y="32" text-anchor="middle" class="title">Frozen Geo V2 MLP Inference</text><rect x="30" y="85" width="178" height="85" class="box"/><text x="119.0" y="111" text-anchor="middle" class="head">23 ordered
+features</text><line x1="212" y1="127" x2="221" y2="127" class="arrow"/><rect x="226" y="85" width="178" height="85" class="box"/><text x="315.0" y="111" text-anchor="middle" class="head">Artifact +
+scaler check</text><line x1="408" y1="127" x2="417" y2="127" class="arrow"/><rect x="422" y="85" width="178" height="85" class="box"/><text x="511.0" y="111" text-anchor="middle" class="head">GeoV2MLP
+evaluation mode</text><line x1="604" y1="127" x2="613" y2="127" class="arrow"/><rect x="618" y="85" width="178" height="85" class="box"/><text x="707.0" y="111" text-anchor="middle" class="head">8-class
+log-softmax</text><line x1="800" y1="127" x2="809" y2="127" class="arrow"/><rect x="814" y="85" width="178" height="85" class="box"/><text x="903.0" y="111" text-anchor="middle" class="head">Prediction +
+confidence</text></svg>

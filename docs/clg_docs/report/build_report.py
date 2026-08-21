@@ -12,7 +12,7 @@ from docx.shared import Inches, Pt, RGBColor
 
 
 ROOT = Path(__file__).resolve().parent
-OUT = ROOT / "FedRouteAI_Major_Project_Report.docx"
+OUT = ROOT / "FedRouteAI_Major_Project_Report_FINAL.docx"
 
 TITLE = "FedRouteAI: Adaptive Federated Learning for Resilient Edge-Based Traffic Anomaly Detection"
 STUDENTS = [("MOGULOJU ABHIRAM", "23211A6774"), ("RAJULAPUDI ROHITH", "23211A67A0")]
@@ -20,6 +20,37 @@ GUIDE = "Mrs. S. Jyothsna"
 DEPARTMENT = "Computer Science and Engineering (Data Science)"
 COLLEGE = "B V RAJU INSTITUTE OF TECHNOLOGY"
 ADDRESS = "Vishnupur, Narsapur, Medak, Telangana, India 502313"
+MAIN_PAGE_STARTS: dict[int, int] = {
+    1: 1,
+    2: 4,
+    3: 8,
+    4: 12,
+    5: 18,
+    6: 26,
+    7: 31,
+    8: 35,
+    9: 37,
+    10: 55,
+}
+FIGURE_IMAGES = {
+    "4.1": "fig_4_1_overall_architecture.png",
+    "4.2": "fig_4_2_federated_learning.png",
+    "4.3": "fig_4_3_regional_client_server.png",
+    "4.4": "fig_4_4_end_to_end_pipeline.png",
+    "4.5": "fig_4_5_geo_v2_features.png",
+    "4.6": "fig_4_6_historical_causal_windows.png",
+    "4.7": "fig_4_7_osm_postgis_import.png",
+    "4.8": "fig_4_8_directed_network.png",
+    "4.9": "fig_4_9_backend_layers.png",
+    "4.10": "fig_4_10_frontend_api_interaction.png",
+    "4.11": "fig_4_11_directed_shortest_path.png",
+    "5.1": "fig_5_1_live_ingestion.png",
+    "5.2": "fig_5_2_frozen_mlp.png",
+    "6.1": "fig_6_1_model_validation.png",
+    "6.2": "fig_6_2_confusion_matrix.png",
+    "6.3": "fig_6_3_test_evidence.png",
+    "7.1": "fig_7_1_local_deployment.png",
+}
 
 
 def set_cell_shading(cell, fill: str) -> None:
@@ -41,7 +72,7 @@ def set_cell_text(cell, text: str, bold: bool = False, size: float = 10) -> None
     cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
 
 
-def add_page_number(paragraph) -> None:
+def add_page_number(paragraph, initial: str = "1") -> None:
     paragraph.clear()
     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run = paragraph.add_run()
@@ -51,12 +82,42 @@ def add_page_number(paragraph) -> None:
     instr.set(qn("xml:space"), "preserve")
     instr.text = " PAGE "
     fld_char2 = OxmlElement("w:fldChar")
-    fld_char2.set(qn("w:fldCharType"), "end")
-    run._r.append(fld_char1)
-    run._r.append(instr)
-    run._r.append(fld_char2)
+    fld_char2.set(qn("w:fldCharType"), "separate")
+    result = OxmlElement("w:t")
+    result.text = initial
+    fld_char3 = OxmlElement("w:fldChar")
+    fld_char3.set(qn("w:fldCharType"), "end")
+    run._r.extend([fld_char1, instr, fld_char2, result, fld_char3])
     run.font.name = "Times New Roman"
     run.font.size = Pt(10)
+
+
+def configure_section(section, *, fmt: str, start: int | None, show_number: bool) -> None:
+    section.page_width = Inches(8.27)
+    section.page_height = Inches(11.69)
+    section.top_margin = Inches(1)
+    section.bottom_margin = Inches(1)
+    section.left_margin = Inches(1)
+    section.right_margin = Inches(1)
+    section.header_distance = Inches(0.5)
+    section.footer_distance = Inches(0.5)
+    section.footer.is_linked_to_previous = False
+    section.footer.paragraphs[0].clear()
+    if show_number:
+        add_page_number(section.footer.paragraphs[0], str(start or 1))
+    for element in list(section._sectPr):
+        if element.tag == qn("w:pgNumType"):
+            section._sectPr.remove(element)
+    pg_num_type = OxmlElement("w:pgNumType")
+    pg_num_type.set(qn("w:fmt"), fmt)
+    if start is not None:
+        pg_num_type.set(qn("w:start"), str(start))
+    section._sectPr.append(pg_num_type)
+
+
+def front_section(doc: Document, *, roman_start: int | None = None, show_number: bool = False) -> None:
+    section = doc.add_section(WD_SECTION.NEW_PAGE)
+    configure_section(section, fmt="lowerRoman", start=roman_start, show_number=show_number)
 
 
 def add_field(paragraph, instruction: str) -> None:
@@ -85,7 +146,8 @@ def configure_document(doc: Document) -> None:
         section.right_margin = Inches(1)
         section.header_distance = Inches(0.5)
         section.footer_distance = Inches(0.5)
-        add_page_number(section.footer.paragraphs[0])
+        section.footer.is_linked_to_previous = False
+        section.footer.paragraphs[0].clear()
         pg_num_type = OxmlElement("w:pgNumType")
         pg_num_type.set(qn("w:fmt"), "lowerRoman")
         pg_num_type.set(qn("w:start"), "1")
@@ -143,12 +205,14 @@ def p(doc: Document, text: str, *, align=None, indent=True, after=6, bold=False,
 
 
 def chapter(doc: Document, number: int, title: str) -> None:
-    doc.add_page_break()
+    title_section = doc.add_section(WD_SECTION.NEW_PAGE)
+    configure_section(title_section, fmt="decimal", start=None, show_number=False)
     chapter_label = p(doc, f"CHAPTER {number}", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=12, bold=True, size=14)
     chapter_label.paragraph_format.space_before = Inches(1.5)
     title_para = p(doc, title.upper(), align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=12, bold=True, size=14)
     title_para.style = doc.styles["Heading 1"]
-    doc.add_page_break()
+    content_section = doc.add_section(WD_SECTION.NEW_PAGE)
+    configure_section(content_section, fmt="decimal", start=MAIN_PAGE_STARTS.get(number), show_number=True)
 
 
 def heading(doc: Document, text: str, level: int = 2) -> None:
@@ -180,19 +244,24 @@ def figure(doc: Document, number: str, caption: str, height: float = 1.45) -> No
     box.paragraph_format.space_before = Pt(6)
     box.paragraph_format.space_after = Pt(4)
     box.paragraph_format.line_spacing = 1.0
-    run = box.add_run(f"[INSERT FIGURE {number} HERE]\n\n\n\n\n\n\n\n\nFIGURE SPACE RESERVED")
-    run.font.name = "Times New Roman"
-    run.font.size = Pt(11)
-    run.font.color.rgb = RGBColor(0, 0, 0)
-    boxPr = OxmlElement("w:pBdr")
-    for edge in ("top", "left", "bottom", "right"):
-        el = OxmlElement(f"w:{edge}")
-        el.set(qn("w:val"), "single")
-        el.set(qn("w:sz"), "8")
-        el.set(qn("w:space"), "6")
-        el.set(qn("w:color"), "000000")
-        boxPr.append(el)
-    box._p.get_or_add_pPr().append(boxPr)
+    image = ROOT.parent / "figures" / "png" / FIGURE_IMAGES[number] if number in FIGURE_IMAGES else None
+    if image is not None and image.exists():
+        run = box.add_run()
+        run.add_picture(str(image), width=Inches(6.2))
+    else:
+        run = box.add_run(f"[INSERT FIGURE {number} HERE]\n\n\n\n\n\n\n\n\nFIGURE SPACE RESERVED")
+        run.font.name = "Times New Roman"
+        run.font.size = Pt(11)
+        run.font.color.rgb = RGBColor(0, 0, 0)
+        boxPr = OxmlElement("w:pBdr")
+        for edge in ("top", "left", "bottom", "right"):
+            el = OxmlElement(f"w:{edge}")
+            el.set(qn("w:val"), "single")
+            el.set(qn("w:sz"), "8")
+            el.set(qn("w:space"), "6")
+            el.set(qn("w:color"), "000000")
+            boxPr.append(el)
+        box._p.get_or_add_pPr().append(boxPr)
     box.paragraph_format.line_spacing = 1.5
     box.paragraph_format.keep_with_next = True
     caption_para = p(doc, f"Figure {number}: {caption}", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=8, size=11)
@@ -210,7 +279,7 @@ def front_matter(doc: Document) -> None:
     p(doc, f"Under the Guidance of\n{GUIDE}\nAssistant Professor, {DEPARTMENT}", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=28, size=12)
     p(doc, f"{COLLEGE}\n(An UGC Autonomous Institution, Approved by AICTE, New Delhi and Affiliated to JNTUH, Hyderabad)\n{ADDRESS}\n\nAPRIL - 2026", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=0, bold=True, size=12)
 
-    doc.add_page_break()
+    front_section(doc)
     certificate_start = len(doc.paragraphs)
     p(doc, COLLEGE, align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=4, bold=True, size=13)
     p(doc, ADDRESS, align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=18, size=11)
@@ -222,7 +291,7 @@ def front_matter(doc: Document) -> None:
     for para in doc.paragraphs[certificate_start:]:
         para.paragraph_format.line_spacing = 2.0
 
-    doc.add_page_break()
+    front_section(doc)
     declaration_start = len(doc.paragraphs)
     p(doc, COLLEGE, align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=4, bold=True, size=13)
     p(doc, "DECLARATION", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=18, bold=True, size=14)
@@ -231,7 +300,7 @@ def front_matter(doc: Document) -> None:
     for para in doc.paragraphs[declaration_start:]:
         para.paragraph_format.line_spacing = 1.5
 
-    doc.add_page_break()
+    front_section(doc)
     acknowledgement_start = len(doc.paragraphs)
     p(doc, COLLEGE, align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=4, bold=True, size=13)
     p(doc, "ACKNOWLEDGEMENT", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=18, bold=True, size=14)
@@ -243,7 +312,7 @@ def front_matter(doc: Document) -> None:
     for para in doc.paragraphs[acknowledgement_start:]:
         para.paragraph_format.line_spacing = 2.0
 
-    doc.add_page_break()
+    front_section(doc, roman_start=5, show_number=True)
     p(doc, "ABSTRACT", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=18, bold=True, size=14)
     p(doc, "FedRouteAI is a traffic intelligence system for detecting temporary road events from GPS-derived traffic behavior and supporting route inspection. The system combines geographically grounded synthetic traffic data, OpenStreetMap road geometry, PostGIS persistence, historical traffic memory, causal feature construction, federated learning, a frozen Geo V2 multilayer perceptron, and a React-Leaflet live map. Eight regional clients train locally and contribute model updates through FedAvg-style aggregation with adaptive weighting. Raw training or live traffic records are not required to be centralized for model inference.")
     p(doc, "The current Geo V2 runtime uses an ordered 23-feature contract containing current traffic state, temporal encodings, road metadata, historical baselines, baseline deviations, prior-window trends, low-speed persistence, and directed-neighbor information. The model is executed in a label-free manner: scenario labels and ground-truth metadata are excluded from inference features. Live telemetry is ingested, associated with road segments, aggregated, combined with history, passed through the frozen model, and persisted as prediction state for the map. The system also imports a Beeramguda/Ashok Nagar OSM network containing 2,968 canonical segments and 11,259 directed transitions.")
@@ -278,21 +347,7 @@ def lists(doc: Document) -> None:
 
 
 def start_main_numbering(doc: Document) -> None:
-    section = doc.add_section(WD_SECTION.CONTINUOUS)
-    section.page_width = Inches(8.27)
-    section.page_height = Inches(11.69)
-    section.top_margin = Inches(1)
-    section.bottom_margin = Inches(1)
-    section.left_margin = Inches(1)
-    section.right_margin = Inches(1)
-    section.header_distance = Inches(0.5)
-    section.footer_distance = Inches(0.5)
-    section.footer.is_linked_to_previous = False
-    add_page_number(section.footer.paragraphs[0])
-    pg_num_type = OxmlElement("w:pgNumType")
-    pg_num_type.set(qn("w:fmt"), "decimal")
-    pg_num_type.set(qn("w:start"), "1")
-    section._sectPr.append(pg_num_type)
+    return None
 
 
 def add_paragraphs(doc: Document, paragraphs: list[str]) -> None:
@@ -740,9 +795,15 @@ def main_content(doc: Document) -> None:
     chapter(doc, 8, "Conclusion and Future Enhancements")
     heading(doc, "8.1 Conclusion")
     p(doc, "FedRouteAI demonstrates a complete and traceable traffic intelligence pipeline. Its contribution is the integration of federated tabular learning, causal traffic features, historical memory, a canonical directed road network, live ingestion, model persistence, dynamic mapping, and route-bound demonstrations. The documented metrics and limitations show that the prototype is suitable for academic evaluation but not unattended safety-critical operation.")
-    heading(doc, "8.2 Learning Outcomes")
-    p(doc, "The project provided practical experience in federated model design, PyTorch training, time-window feature engineering, PostGIS spatial data, directed graph routing, FastAPI service architecture, React-Leaflet visualization, artifact governance, testing, and technical documentation.")
-    heading(doc, "8.3 Future Enhancements")
+    heading(doc, "8.2 Objectives Achieved")
+    p(doc, "The completed system ingests traffic observations, associates them with a canonical road network, constructs label-free Geo V2 features, runs a frozen federated MLP, persists predictions, presents live state on a React-Leaflet map, and calculates directed shortest routes. It also provides a route-bound demonstration that keeps controlled traffic behavior separate from model output.")
+    heading(doc, "8.3 Major Contributions")
+    p(doc, "The major contributions are the ordered 23-feature causal contract, eight-region federated training workflow, versioned OSM/PostGIS network with 2,968 segments and 11,259 directed transitions, integrated ingestion-to-map pipeline, and explicit evidence boundaries for demonstrations, predictions, and routing.")
+    heading(doc, "8.4 Experimental Findings")
+    p(doc, "The frozen artifact records validation macro F1 of 0.3042, test macro F1 of 0.3200, event-balanced macro F1 of 0.4459, anomaly recall of 0.3444, anomaly precision of 0.2093, and normal false-positive rate of 0.0031. Overall accuracy is high because normal traffic dominates the dataset, while diversion and construction remain difficult minority classes.")
+    heading(doc, "8.5 Limitations")
+    p(doc, "The documented dataset is geographically grounded but synthetic, minority-event performance remains limited, and the system is not approved for unattended safety-critical operation. Formal differential privacy, secure aggregation, production queueing, cloud orchestration, and learned traffic-aware route costs are not implemented.")
+    heading(doc, "8.6 Future Enhancements")
     add_paragraphs(doc, [
         "Collect measured GPS traffic across seasons and cities and evaluate transfer beyond the current synthetic network.",
         "Improve minority-event sampling and event-specific calibration, especially for diversion and construction.",
@@ -751,6 +812,8 @@ def main_content(doc: Document) -> None:
         "Move ingestion and replay to queue-backed services and evaluate distributed deployment.",
         "Study graph neural networks as a future extension for learned spatial reasoning.",
     ])
+    heading(doc, "8.7 Final Remarks")
+    p(doc, "FedRouteAI is therefore best understood as a complete and academically honest local prototype: it demonstrates how federated learning, causal traffic features, spatial infrastructure, live services, and user-facing route inspection can be integrated while keeping unverified production and safety claims outside the project scope.")
     chapter(doc, 9, "Appendices")
     heading(doc, "APPENDIX A: Project Run and Reproduction Guide", level=2)
     p(doc, "Prepare Python and Node.js environments, start PostgreSQL with PostGIS, apply Alembic migrations, import the cached Geo V2 network, start the FastAPI backend and Vite frontend, open the Traffic Map, start live mode, calculate a directed route, and select a route-bound demonstration. Exact commands are maintained in HOW_TO_RUN_PROJECT.md and README.md.")

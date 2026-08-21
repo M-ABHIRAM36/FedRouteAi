@@ -1,6 +1,6 @@
 # FedRouteAI Report Content Map
 
-Target: `FedRouteAI_Major_Project_Report.docx`
+Target: `FedRouteAI_Major_Project_Report_FINAL.docx`
 
 ## Chapter Map
 
@@ -13,38 +13,38 @@ Target: `FedRouteAI_Major_Project_Report.docx`
 | 5. Implementation | Dataset generation, regional partitioning, MLP, local training, FedAvg, adaptive aggregation, artifact handling, ingestion, aggregation, inference, persistence, map, routing, demonstrations, APIs, frontend, validation | Module-level implementation description |
 | 6. Testing and Validation | Unit, backend, API, database, Geo V2, artifact, federated, routing, ingestion, frontend, map, demonstration, build, runtime, performance, limitations | 117 backend tests, 17 focused frontend tests, build and artifact evidence, frozen metrics |
 | 7. Deployment, Security and Performance | Local deployment, configuration, security, validation, artifact integrity, data separation, privacy limitations, performance, browser and scalability concerns | Measured versus unmeasured operational claims |
-| 8. Conclusion and Future Enhancements | Conclusions, learning outcomes, limitations, future work | Final project assessment and next research steps |
+| 8. Conclusion and Future Enhancements | Conclusion, achieved objectives, contributions, experimental findings, limitations, future enhancements, final remarks | Final project assessment and next research steps |
 | 9. Appendices | Reproduction, evidence register, figure register, model configuration, network statistics, testing, telemetry, API, database, federated training, metrics, routing, demonstrations, frontend, operations, reproducibility, limitations, and submission review | Reproducibility and review material |
 | 10. References | Research and technical sources | Bibliography |
 
 ## Figure Map
 
-| Figure | Planned content |
-|---|---|
-| 4.1 | Overall system architecture |
-| 4.2 | Federated learning architecture |
-| 4.3 | Regional client and server interaction |
-| 4.4 | End-to-end data pipeline |
-| 4.5 | Geo V2 feature construction pipeline |
-| 4.6 | Historical traffic memory and causal windows |
-| 4.7 | OSM/PostGIS network import |
-| 4.8 | Directed road network and transitions |
-| 4.9 | Backend service and repository layers |
-| 4.10 | Frontend map and API interaction |
-| 4.11 | Directed shortest-path routing |
-| 5.1 | Live GPS ingestion pipeline |
-| 5.2 | Frozen Geo V2 MLP inference |
-| 5.3 | Dynamic traffic map |
-| 5.4 | Moving vehicle visualization |
-| 5.5 | Route-bound demonstration flow |
-| 5.6 | Normal traffic demonstration |
-| 5.7 | Congestion and Accident demonstrations |
-| 6.1 | Model validation results |
-| 6.2 | Model confusion matrix |
-| 6.3 | Backend and frontend test evidence |
-| 7.1 | Local deployment architecture |
+| Figure | Content | Status |
+|---|---|---|
+| 4.1 | Overall system architecture | Embedded grayscale figure |
+| 4.2 | Federated learning architecture | Embedded grayscale figure |
+| 4.3 | Regional client and server interaction | Embedded grayscale figure |
+| 4.4 | End-to-end data pipeline | Embedded grayscale figure |
+| 4.5 | Geo V2 feature construction pipeline | Embedded grayscale figure |
+| 4.6 | Historical traffic memory and causal windows | Embedded grayscale figure |
+| 4.7 | OSM/PostGIS network import | Embedded grayscale figure |
+| 4.8 | Directed road network and transitions | Embedded grayscale figure |
+| 4.9 | Backend service and repository layers | Embedded grayscale figure |
+| 4.10 | Frontend map and API interaction | Embedded grayscale figure |
+| 4.11 | Directed shortest-path routing | Embedded grayscale figure |
+| 5.1 | Live GPS ingestion pipeline | Embedded grayscale figure |
+| 5.2 | Frozen Geo V2 MLP inference | Embedded grayscale figure |
+| 5.3 | Dynamic traffic map | Placeholder; real screenshot unavailable |
+| 5.4 | Moving vehicle visualization | Placeholder; real screenshot unavailable |
+| 5.5 | Route-bound demonstration flow | Placeholder; real screenshot unavailable |
+| 5.6 | Normal traffic demonstration | Placeholder; real screenshot unavailable |
+| 5.7 | Congestion and Accident demonstrations | Placeholder; real screenshot unavailable |
+| 6.1 | Model validation results | Embedded grayscale figure |
+| 6.2 | Model confusion matrix | Embedded from frozen artifact data |
+| 6.3 | Backend and frontend test evidence | Embedded grayscale figure |
+| 7.1 | Local deployment architecture | Embedded grayscale figure |
 
-All figures are currently black-and-white insertion placeholders. No final image assets are embedded.
+Editable SVG masters and PNG/PDF derivatives are stored under `docs/clg_docs/figures/`.
 
 ## Table Map
 
@@ -88,4 +88,4 @@ The generated DOCX contains 12 table objects; some planned table topics are comb
 - Formal front-matter order follows the college rule: cover/title, certificate,
   declaration, acknowledgement, abstract, contents, list of tables, list of
   figures, and abbreviations.
-- The current Microsoft Word rendering is 76 pages.
+- The final Microsoft Word rendering is 75 pages.
