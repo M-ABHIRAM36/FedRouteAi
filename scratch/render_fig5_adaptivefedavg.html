@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  @page { size: 1020.0pt 645.0pt; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1360px; height: 860px; background: #ffffff; overflow: hidden; }
+  svg { display: block; width: 1360px; height: 860px; }
+</style>
+</head>
+<body>
+<svg id="fig5-svg" viewBox="0 0 1360 860" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>
+          .f5-xl { font-family: 'Space Grotesk', sans-serif; font-weight: 700; }
+          .f5-lg { font-family: 'Space Grotesk', sans-serif; font-weight: 600; }
+          .f5-md { font-family: 'Inter', sans-serif; font-weight: 500; }
+          .f5-sm { font-family: 'Inter', sans-serif; font-weight: 400; }
+          .f5-mono { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+        </style>
+        <marker id="f5-ah" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#16A34A"/>
+        </marker>
+        <marker id="f5-ah-blue" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#2563EB"/>
+        </marker>
+        <marker id="f5-ah-dark" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#12151C"/>
+        </marker>
+        <filter id="f5-shadow" x="-5%" y="-5%" width="115%" height="130%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.1"/>
+        </filter>
+      </defs>
+
+      <!-- ====== ZONE BACKGROUNDS ====== -->
+      <!-- Client Zone (left) -->
+      <rect x="18" y="18" width="440" height="820" rx="16" fill="#EFF4FF" opacity="0.55" stroke="#2563EB" stroke-width="1.5" stroke-dasharray="4 5"/>
+      <text x="238" y="46" text-anchor="middle" class="f5-xl" font-size="12.5" fill="#2563EB" letter-spacing="0.05em">CLIENT k  (Each of 8 Edge Regions)</text>
+
+      <!-- Server Zone (right) -->
+      <rect x="480" y="18" width="862" height="820" rx="16" fill="#EEFBF2" opacity="0.55" stroke="#16A34A" stroke-width="1.5" stroke-dasharray="4 5"/>
+      <text x="911" y="46" text-anchor="middle" class="f5-xl" font-size="12.5" fill="#16A34A" letter-spacing="0.05em">CENTRAL SERVER — AdaptiveFedAvg Aggregation Engine</text>
+
+      <!-- ============ CLIENT SIDE ============ -->
+
+      <!-- Step 1: Local Training -->
+      <text x="34" y="74" class="f5-mono" font-size="10" fill="#2563EB">STEP 1 · LOCAL TRAINING</text>
+      <rect x="34" y="82" width="408" height="86" rx="10" fill="white" stroke="#2563EB" stroke-width="1.6" filter="url(#f5-shadow)"/>
+      <rect x="34" y="82" width="408" height="22" rx="10" fill="#2563EB"/>
+      <rect x="34" y="94" width="408" height="10" rx="0" fill="#2563EB"/>
+      <text x="238" y="98" text-anchor="middle" class="f5-xl" font-size="11" fill="white">Client Local Training — 5 Epochs</text>
+      <text x="238" y="120" text-anchor="middle" class="f5-mono" font-size="10" fill="#12151C">Optimizer: Adam  ·  lr = 0.001</text>
+      <text x="238" y="136" text-anchor="middle" class="f5-sm" font-size="9.5" fill="#4B5361">Loss: CrossEntropyLoss on local partition (Non-IID split)</text>
+      <text x="238" y="152" text-anchor="middle" class="f5-mono" font-size="9.5" fill="#2563EB">Output: updated local weights  w_k^{t+1}</text>
+
+      <!-- Step 2: Local Metrics -->
+      <text x="34" y="182" class="f5-mono" font-size="10" fill="#2563EB">STEP 2 · COMPUTE LOCAL METRICS</text>
+      <rect x="34" y="190" width="408" height="136" rx="10" fill="white" stroke="#2563EB" stroke-width="1.6" filter="url(#f5-shadow)"/>
+      <rect x="34" y="190" width="408" height="22" rx="10" fill="#2563EB"/>
+      <rect x="34" y="202" width="408" height="10" rx="0" fill="#2563EB"/>
+      <text x="238" y="206" text-anchor="middle" class="f5-xl" font-size="11" fill="white">Evaluate Local Validation Set → Extract 3 Metrics</text>
+
+      <!-- Metric 1: n_k -->
+      <rect x="50" y="220" width="110" height="94" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.2"/>
+      <text x="105" y="238" text-anchor="middle" class="f5-lg" font-size="11" fill="#2563EB">n_k</text>
+      <text x="105" y="254" text-anchor="middle" class="f5-sm" font-size="8.5" fill="#4B5361">Dataset size</text>
+      <text x="105" y="268" text-anchor="middle" class="f5-sm" font-size="8.5" fill="#4B5361"># training examples</text>
+      <text x="105" y="282" text-anchor="middle" class="f5-sm" font-size="8.5" fill="#4B5361">at this client</text>
+      <text x="105" y="296" text-anchor="middle" class="f5-mono" font-size="8" fill="#2563EB">fit_res.num_examples</text>
+      <text x="105" y="308" text-anchor="middle" class="f5-sm" font-size="7.5" fill="#7C8494">validation: must be &gt; 0</text>
+
+      <!-- Metric 2: F1,k -->
+      <rect x="173" y="220" width="120" height="94" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.2"/>
+      <text x="233" y="238" text-anchor="middle" class="f5-lg" font-size="11" fill="#2563EB">F₁,k</text>
+      <text x="233" y="254" text-anchor="middle" class="f5-sm" font-size="8.5" fill="#4B5361">Validation</text>
+      <text x="233" y="268" text-anchor="middle" class="f5-sm" font-size="8.5" fill="#4B5361">Macro F1 score</text>
+      <text x="233" y="282" text-anchor="middle" class="f5-sm" font-size="8.5" fill="#4B5361">on held-out data</text>
+      <text x="233" y="296" text-anchor="middle" class="f5-mono" font-size="8" fill="#2563EB">metrics["val_macro_f1"]</text>
+      <text x="233" y="308" text-anchor="middle" class="f5-sm" font-size="7.5" fill="#7C8494">validated: ∈ [0.0, 1.0]</text>
+
+      <!-- Metric 3: f_rare -->
+      <rect x="306" y="220" width="120" height="94" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.2"/>
+      <text x="366" y="238" text-anchor="middle" class="f5-lg" font-size="11" fill="#2563EB">f_rare,k</text>
+      <text x="366" y="254" text-anchor="middle" class="f5-sm" font-size="8.5" fill="#4B5361">Rare-class</text>
+      <text x="366" y="268" text-anchor="middle" class="f5-sm" font-size="8.5" fill="#4B5361">fraction in local</text>
+      <text x="366" y="282" text-anchor="middle" class="f5-sm" font-size="8.5" fill="#4B5361">dataset: ∈ [0, 1]</text>
+      <text x="366" y="296" text-anchor="middle" class="f5-mono" font-size="8" fill="#2563EB">metrics["rare_class_fraction"]</text>
+      <text x="366" y="308" text-anchor="middle" class="f5-sm" font-size="7.5" fill="#7C8494">clamped: max(0, min(1, ·))</text>
+
+      <!-- Upload -->
+      <line x1="238" y1="326" x2="238" y2="368" stroke="#2563EB" stroke-width="1.8" marker-end="url(#f5-ah-blue)"/>
+      <rect x="150" y="336" width="176" height="18" rx="9" fill="#F7F8FA" stroke="#E2E5EA" stroke-width="1"/>
+      <text x="238" y="348" text-anchor="middle" class="f5-mono" font-size="9" fill="#2563EB">Upload: w_k, F₁,k, n_k, f_rare,k</text>
+
+      <!-- Upload box -->
+      <rect x="34" y="368" width="408" height="44" rx="10" fill="#2563EB"/>
+      <text x="238" y="386" text-anchor="middle" class="f5-xl" font-size="11" fill="white">Transmit to Server — Weights Only</text>
+      <text x="238" y="403" text-anchor="middle" class="f5-mono" font-size="10" fill="rgba(255,255,255,0.9)">12.96 KB model weights  +  3 metric scalars (no raw data)</text>
+
+      <!-- Privacy note -->
+      <rect x="34" y="422" width="408" height="36" rx="10" fill="#FEF6E8" stroke="#D97706" stroke-width="1.2"/>
+      <text x="238" y="436" text-anchor="middle" class="f5-lg" font-size="9.5" fill="#D97706">⚡ Privacy: Only gradient weights cross the boundary</text>
+      <text x="238" y="450" text-anchor="middle" class="f5-sm" font-size="8.5" fill="#4B5361">No GPS, no zone IDs, no individual trajectories are transmitted</text>
+
+      <!-- ============ SERVER SIDE ============ -->
+
+      <!-- Factor computation boxes -->
+      <text x="498" y="74" class="f5-mono" font-size="10" fill="#16A34A">STEP 3 · COMPUTE 4 ADAPTIVE FACTORS PER CLIENT</text>
+
+      <!-- Factor 1: q_k -->
+      <rect x="498" y="82" width="194" height="148" rx="10" fill="white" stroke="#16A34A" stroke-width="1.6" filter="url(#f5-shadow)"/>
+      <rect x="498" y="82" width="194" height="22" rx="10" fill="#16A34A"/>
+      <rect x="498" y="94" width="194" height="10" rx="0" fill="#16A34A"/>
+      <text x="595" y="98" text-anchor="middle" class="f5-xl" font-size="11" fill="white">Factor 1: Quality q_k</text>
+      <text x="595" y="124" text-anchor="middle" class="f5-mono" font-size="14" fill="#16A34A">q_k = max(0.10, F₁,k)</text>
+      <text x="595" y="144" text-anchor="middle" class="f5-sm" font-size="9" fill="#4B5361">Purpose: Prevent clients with</text>
+      <text x="595" y="157" text-anchor="middle" class="f5-sm" font-size="9" fill="#4B5361">catastrophic local model collapse</text>
+      <text x="595" y="170" text-anchor="middle" class="f5-sm" font-size="9" fill="#4B5361">from dominating aggregation.</text>
+      <text x="595" y="185" text-anchor="middle" class="f5-mono" font-size="9" fill="#D97706">q_floor = 0.10  (config.json)</text>
+      <text x="595" y="200" text-anchor="middle" class="f5-sm" font-size="8.5" fill="#7C8494">Range: [0.10, 1.0]</text>
+      <text x="595" y="214" text-anchor="middle" class="f5-sm" font-size="8" fill="#7C8494">Code: _compute_quality(val_macro_f1)</text>
+      <text x="595" y="226" text-anchor="middle" class="f5-sm" font-size="7.5" fill="#7C8494">Line 63: return max(self.q_floor, val_macro_f1)</text>
+
+      <!-- Factor 2: rho_k -->
+      <rect x="706" y="82" width="210" height="148" rx="10" fill="white" stroke="#16A34A" stroke-width="1.6" filter="url(#f5-shadow)"/>
+      <rect x="706" y="82" width="210" height="22" rx="10" fill="#16A34A"/>
+      <rect x="706" y="94" width="210" height="10" rx="0" fill="#16A34A"/>
+      <text x="811" y="98" text-anchor="middle" class="f5-xl" font-size="11" fill="white">Factor 2: Rarity ρ_k</text>
+      <text x="811" y="124" text-anchor="middle" class="f5-mono" font-size="13.5" fill="#16A34A">ρ_k = 1.0 + 0.3 × f_rare,k</text>
+      <text x="811" y="144" text-anchor="middle" class="f5-sm" font-size="9" fill="#4B5361">Purpose: Boost clients holding</text>
+      <text x="811" y="157" text-anchor="middle" class="f5-sm" font-size="9" fill="#4B5361">locally rare anomaly classes</text>
+      <text x="811" y="170" text-anchor="middle" class="f5-sm" font-size="9" fill="#4B5361">(accident, flood, road_block).</text>
+      <text x="811" y="185" text-anchor="middle" class="f5-mono" font-size="9" fill="#D97706">β = 0.30  ·  rare_threshold = 0.05</text>
+      <text x="811" y="200" text-anchor="middle" class="f5-sm" font-size="8.5" fill="#7C8494">Range: [1.0, 1.3]</text>
+      <text x="811" y="214" text-anchor="middle" class="f5-sm" font-size="8" fill="#7C8494">Code: _compute_rarity_bonus(rare_class_fraction)</text>
+      <text x="811" y="226" text-anchor="middle" class="f5-sm" font-size="7.5" fill="#7C8494">Line 67: return 1.0 + self.beta * rare_class_fraction</text>
+
+      <!-- Factor 3: EMA -->
+      <rect x="930" y="82" width="200" height="148" rx="10" fill="white" stroke="#16A34A" stroke-width="1.6" filter="url(#f5-shadow)"/>
+      <rect x="930" y="82" width="200" height="22" rx="10" fill="#16A34A"/>
+      <rect x="930" y="94" width="200" height="10" rx="0" fill="#16A34A"/>
+      <text x="1030" y="98" text-anchor="middle" class="f5-xl" font-size="11" fill="white">Factor 3a: EMA Update</text>
+      <text x="1030" y="122" text-anchor="middle" class="f5-mono" font-size="11" fill="#16A34A">EMA_k ← α·F₁,k + (1-α)·EMA_k</text>
+      <text x="1030" y="142" text-anchor="middle" class="f5-sm" font-size="9" fill="#4B5361">Exponential Moving Average</text>
+      <text x="1030" y="155" text-anchor="middle" class="f5-sm" font-size="9" fill="#4B5361">of F1 over all rounds.</text>
+      <text x="1030" y="168" text-anchor="middle" class="f5-sm" font-size="9" fill="#4B5361">Tracks long-term reliability</text>
+      <text x="1030" y="181" text-anchor="middle" class="f5-sm" font-size="9" fill="#4B5361">of each client over time.</text>
+      <text x="1030" y="196" text-anchor="middle" class="f5-mono" font-size="9" fill="#D97706">α = 0.30  (smoothing factor)</text>
+      <text x="1030" y="210" text-anchor="middle" class="f5-sm" font-size="7.5" fill="#7C8494">Code: _update_ema(region_id, val_macro_f1)</text>
+      <text x="1030" y="222" text-anchor="middle" class="f5-sm" font-size="7.5" fill="#7C8494">EMA clamped: max(0.0, min(1.0, ema))</text>
+
+      <!-- Factor 4: Gate g_k -->
+      <rect x="1144" y="82" width="196" height="148" rx="10" fill="white" stroke="#16A34A" stroke-width="1.6" filter="url(#f5-shadow)"/>
+      <rect x="1144" y="82" width="196" height="22" rx="10" fill="#16A34A"/>
+      <rect x="1144" y="94" width="196" height="10" rx="0" fill="#16A34A"/>
+      <text x="1242" y="98" text-anchor="middle" class="f5-xl" font-size="11" fill="white">Factor 3b: Gate g_k</text>
+      <text x="1242" y="122" text-anchor="middle" class="f5-mono" font-size="10" fill="#16A34A">if EMA ≥ 0.15: g_k = 1.0</text>
+      <text x="1242" y="136" text-anchor="middle" class="f5-mono" font-size="10" fill="#16A34A">else: g_k = 0.5 + 0.5 × (EMA / 0.15)</text>
+      <text x="1242" y="154" text-anchor="middle" class="f5-sm" font-size="9" fill="#4B5361">Purpose: Soft-gate clients</text>
+      <text x="1242" y="167" text-anchor="middle" class="f5-sm" font-size="9" fill="#4B5361">with consistently poor EMA.</text>
+      <text x="1242" y="180" text-anchor="middle" class="f5-sm" font-size="9" fill="#4B5361">Full contribution once EMA</text>
+      <text x="1242" y="193" text-anchor="middle" class="f5-sm" font-size="9" fill="#4B5361">exceeds stability threshold.</text>
+      <text x="1242" y="208" text-anchor="middle" class="f5-mono" font-size="9" fill="#D97706">g_min=0.50 · τ_thresh=0.15</text>
+      <text x="1242" y="222" text-anchor="middle" class="f5-sm" font-size="7.5" fill="#7C8494">Range: [0.50, 1.0]</text>
+
+      <!-- Arrows from factors down -->
+      <line x1="595" y1="230" x2="595" y2="268" stroke="#16A34A" stroke-width="1.5" marker-end="url(#f5-ah)"/>
+      <line x1="811" y1="230" x2="811" y2="268" stroke="#16A34A" stroke-width="1.5" marker-end="url(#f5-ah)"/>
+      <line x1="1030" y1="230" x2="1030" y2="268" stroke="#16A34A" stroke-width="1.5" marker-end="url(#f5-ah)"/>
+      <line x1="1242" y1="230" x2="1242" y2="268" stroke="#16A34A" stroke-width="1.5" marker-end="url(#f5-ah)"/>
+
+      <!-- ====== WEIGHT COMPUTATION ====== -->
+      <text x="498" y="262" class="f5-mono" font-size="10" fill="#16A34A">STEP 4 · COMPUTE RAW DYNAMIC WEIGHT</text>
+
+      <rect x="498" y="270" width="842" height="80" rx="12" fill="#12151C" filter="url(#f5-shadow)"/>
+      <text x="919" y="302" text-anchor="middle" class="f5-xl" font-size="16" fill="white">ω_k  =  n_k  ×  q_k  ×  ρ_k  ×  g_k</text>
+      <text x="680" y="326" text-anchor="middle" class="f5-mono" font-size="10.5" fill="#4ADE80">n_k: dataset size</text>
+      <text x="810" y="326" text-anchor="middle" class="f5-mono" font-size="10.5" fill="#4ADE80">q_k: quality [0.10, 1.0]</text>
+      <text x="970" y="326" text-anchor="middle" class="f5-mono" font-size="10.5" fill="#4ADE80">ρ_k: rarity [1.0, 1.3]</text>
+      <text x="1130" y="326" text-anchor="middle" class="f5-mono" font-size="10.5" fill="#4ADE80">g_k: gate [0.5, 1.0]</text>
+      <text x="1270" y="326" text-anchor="middle" class="f5-mono" font-size="10.5" fill="#FCA5A5">raw_weight &gt; 0</text>
+
+      <!-- Arrow to normalization -->
+      <line x1="919" y1="350" x2="919" y2="390" stroke="#16A34A" stroke-width="1.8" marker-end="url(#f5-ah)"/>
+
+      <!-- ====== NORMALIZATION ====== -->
+      <text x="498" y="384" class="f5-mono" font-size="10" fill="#16A34A">STEP 5 · NORMALIZE WEIGHTS (SUM = 1.0)</text>
+
+      <rect x="498" y="392" width="842" height="66" rx="12" fill="white" stroke="#16A34A" stroke-width="1.8" filter="url(#f5-shadow)"/>
+      <rect x="498" y="392" width="842" height="22" rx="12" fill="#16A34A"/>
+      <rect x="498" y="404" width="842" height="10" rx="0" fill="#16A34A"/>
+      <text x="919" y="408" text-anchor="middle" class="f5-xl" font-size="11" fill="white">Weight Normalization — Ensures Unbiased Convex Combination</text>
+      <text x="719" y="432" text-anchor="middle" class="f5-mono" font-size="14" fill="#12151C">ω̂_k  =  ω_k  /  Σⱼ∈K ωⱼ</text>
+      <text x="1060" y="432" text-anchor="middle" class="f5-sm" font-size="9.5" fill="#4B5361">Assertion enforced in code: sum(ω̂_k) ≡ 1.0 (rel_tol=1e-5)</text>
+      <text x="1060" y="447" text-anchor="middle" class="f5-mono" font-size="9" fill="#D97706">Fallback: uniform 1/|K| if all raw_weights == 0</text>
+
+      <!-- Arrow to aggregation -->
+      <line x1="919" y1="458" x2="919" y2="498" stroke="#16A34A" stroke-width="1.8" marker-end="url(#f5-ah)"/>
+
+      <!-- ====== AGGREGATION ====== -->
+      <text x="498" y="492" class="f5-mono" font-size="10" fill="#16A34A">STEP 6 · WEIGHTED PARAMETER AGGREGATION</text>
+
+      <rect x="498" y="500" width="842" height="92" rx="12" fill="white" stroke="#16A34A" stroke-width="1.8" filter="url(#f5-shadow)"/>
+      <rect x="498" y="500" width="842" height="22" rx="12" fill="#16A34A"/>
+      <rect x="498" y="512" width="842" height="10" rx="0" fill="#16A34A"/>
+      <text x="919" y="516" text-anchor="middle" class="f5-xl" font-size="11" fill="white">Global Parameter Aggregation — Layer-Wise Weighted Sum</text>
+      <text x="919" y="546" text-anchor="middle" class="f5-mono" font-size="14" fill="#12151C">w_{t+1}  =  Σ_{k∈K}  ω̂_k  ·  w_k^{t+1}</text>
+      <text x="919" y="570" text-anchor="middle" class="f5-sm" font-size="9.5" fill="#4B5361">Applied layer-by-layer: each layer tensor is separately weighted and summed across all K clients</text>
+      <text x="919" y="583" text-anchor="middle" class="f5-sm" font-size="9" fill="#7C8494">Shape assertion enforced: each aggregated layer must match client parameter shape</text>
+
+      <!-- Arrow to broadcast -->
+      <line x1="919" y1="592" x2="919" y2="632" stroke="#16A34A" stroke-width="1.8" marker-end="url(#f5-ah)"/>
+
+      <!-- ====== BROADCAST ====== -->
+      <text x="498" y="626" class="f5-mono" font-size="10" fill="#16A34A">STEP 7 · BROADCAST UPDATED GLOBAL MODEL</text>
+
+      <rect x="498" y="634" width="842" height="72" rx="12" fill="#16A34A" filter="url(#f5-shadow)"/>
+      <text x="919" y="656" text-anchor="middle" class="f5-xl" font-size="13" fill="white">Updated Global Model  w_{t+1}  →  All 8 Clients</text>
+      <text x="919" y="676" text-anchor="middle" class="f5-mono" font-size="10.5" fill="rgba(255,255,255,0.9)">12.96 KB download per client  ·  207.36 KB total per round  ·  30 training rounds</text>
+      <text x="919" y="694" text-anchor="middle" class="f5-sm" font-size="9.5" fill="rgba(255,255,255,0.8)">Each client initializes next epoch from this updated global model — federated loop continues</text>
+
+      <!-- Loopback arrow to client -->
+      <path d="M458,820 Q435,820 435,670 Q435,160 458,160" stroke="#16A34A" stroke-width="1.8" fill="none" stroke-dasharray="6 4" marker-end="url(#f5-ah)"/>
+      <rect x="400" y="470" width="52" height="36" rx="8" fill="#EEFBF2" stroke="#16A34A" stroke-width="1"/>
+      <text x="426" y="483" text-anchor="middle" class="f5-mono" font-size="8.5" fill="#16A34A">w_{t+1}</text>
+      <text x="426" y="496" text-anchor="middle" class="f5-mono" font-size="8" fill="#4B5361">→ client</text>
+
+      <!-- Round counter -->
+      <rect x="498" y="730" width="842" height="90" rx="12" fill="#F7F8FA" stroke="#E2E5EA" stroke-width="1"/>
+      <text x="919" y="752" text-anchor="middle" class="f5-xl" font-size="11" fill="#12151C">Simulation Configuration — Verified from train_federated_mlp.py</text>
+      <text x="620" y="772" text-anchor="middle" class="f5-mono" font-size="9.5" fill="#4B5361">α = 0.30 (EMA smoothing)</text>
+      <text x="790" y="772" text-anchor="middle" class="f5-mono" font-size="9.5" fill="#4B5361">β = 0.30 (rarity scaling)</text>
+      <text x="960" y="772" text-anchor="middle" class="f5-mono" font-size="9.5" fill="#4B5361">q_floor = 0.10</text>
+      <text x="1130" y="772" text-anchor="middle" class="f5-mono" font-size="9.5" fill="#4B5361">g_min = 0.50</text>
+      <text x="1270" y="772" text-anchor="middle" class="f5-mono" font-size="9.5" fill="#4B5361">τ = 0.15</text>
+      <text x="620" y="793" text-anchor="middle" class="f5-mono" font-size="9.5" fill="#16A34A">Rounds: 30</text>
+      <text x="790" y="793" text-anchor="middle" class="f5-mono" font-size="9.5" fill="#16A34A">Clients: 8</text>
+      <text x="960" y="793" text-anchor="middle" class="f5-mono" font-size="9.5" fill="#16A34A">rare_threshold=0.05</text>
+      <text x="1130" y="793" text-anchor="middle" class="f5-mono" font-size="9.5" fill="#16A34A">Acc: 82.21%</text>
+      <text x="1270" y="793" text-anchor="middle" class="f5-mono" font-size="9.5" fill="#16A34A">F1: 0.6401</text>
+      <text x="919" y="812" text-anchor="middle" class="f5-sm" font-size="9" fill="#7C8494">Aggregation logs written to CSV: round, region_id, dataset_size, val_macro_f1, ema_f1, quality, rare_fraction, rarity_bonus, gate, raw_weight, normalized_weight</text>
+    </svg>
+</body>
+</html>

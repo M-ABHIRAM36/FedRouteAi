@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Figure 3 — Feature Engineering Pipeline · FedRouteAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="index.html" class="brand"><span class="brand-mark"></span>FedRouteAI</a>
+    <span class="crumb">/ <b>Figure 3 — Feature Engineering Pipeline</b></span>
+  </div>
+  <div class="topbar-right">
+    <button class="btn" onclick="toggleTheme()">☀ Theme</button>
+    <button class="btn primary" onclick="downloadSVG('fig3-svg','fig3_feature_engineering.svg')">↓ Export SVG</button>
+  </div>
+</div>
+
+<div class="page">
+  <div class="fig-header">
+    <div class="fig-eyebrow">Figure 3 · Feature Engineering Pipeline</div>
+    <h1 class="fig-title">From Raw GPS to a 10-Dimensional Normalized Feature Tensor</h1>
+    <p class="fig-desc">The feature engineering pipeline transforms raw vehicular telemetry (absolute physical values) into a standardized 10-dimensional feature vector suitable for federated learning. Each transformation is designed to be privacy-preserving, computationally lightweight for edge deployment, and robust to missing sensor data through deterministic zero-imputation.</p>
+  </div>
+
+  <div class="canvas">
+    <svg id="fig3-svg" viewBox="0 0 1360 780" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>
+          .f3-xl { font-family: 'Space Grotesk', sans-serif; font-weight: 700; }
+          .f3-lg { font-family: 'Space Grotesk', sans-serif; font-weight: 600; }
+          .f3-md { font-family: 'Inter', sans-serif; font-weight: 500; }
+          .f3-sm { font-family: 'Inter', sans-serif; font-weight: 400; }
+          .f3-mono { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+        </style>
+        <marker id="f3-ah" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#7C3AED"/>
+        </marker>
+        <marker id="f3-ah-dark" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#4B5361"/>
+        </marker>
+        <filter id="f3-shadow" x="-5%" y="-5%" width="120%" height="130%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.1"/>
+        </filter>
+      </defs>
+
+      <!-- Row 1: Raw input header -->
+      <rect x="18" y="18" width="1322" height="70" rx="12" fill="white" stroke="#2563EB" stroke-width="1.8" filter="url(#f3-shadow)"/>
+      <rect x="18" y="18" width="1322" height="24" rx="12" fill="#2563EB"/>
+      <rect x="18" y="30" width="1322" height="12" rx="0" fill="#2563EB"/>
+      <text x="679" y="35" text-anchor="middle" class="f3-xl" font-size="12" fill="white">STAGE 1 — RAW TELEMETRY INPUT  (from Edge Sensor + Historical Memory Module)</text>
+
+      <!-- Input fields -->
+      <rect x="34" y="50" width="135" height="30" rx="7" fill="#EFF4FF" stroke="#2563EB" stroke-width="1"/>
+      <text x="102" y="69" text-anchor="middle" class="f3-mono" font-size="9.5" fill="#2563EB">speed_kmh: 60.0</text>
+
+      <rect x="180" y="50" width="165" height="30" rx="7" fill="#EFF4FF" stroke="#2563EB" stroke-width="1"/>
+      <text x="263" y="69" text-anchor="middle" class="f3-mono" font-size="9.5" fill="#2563EB">density_veh_km: 45.2</text>
+
+      <rect x="356" y="50" width="150" height="30" rx="7" fill="#EFF4FF" stroke="#2563EB" stroke-width="1"/>
+      <text x="431" y="69" text-anchor="middle" class="f3-mono" font-size="9.5" fill="#2563EB">zone_id: "ZONE_04"</text>
+
+      <rect x="516" y="50" width="175" height="30" rx="7" fill="#EFF4FF" stroke="#2563EB" stroke-width="1"/>
+      <text x="604" y="69" text-anchor="middle" class="f3-mono" font-size="9.5" fill="#2563EB">road_condition: "wet"</text>
+
+      <rect x="702" y="50" width="165" height="30" rx="7" fill="#EFF4FF" stroke="#2563EB" stroke-width="1"/>
+      <text x="785" y="69" text-anchor="middle" class="f3-mono" font-size="9.5" fill="#2563EB">v_avg: 48.3 (from DB)</text>
+
+      <rect x="878" y="50" width="165" height="30" rx="7" fill="#EFF4FF" stroke="#2563EB" stroke-width="1"/>
+      <text x="961" y="69" text-anchor="middle" class="f3-mono" font-size="9.5" fill="#2563EB">d_avg: 31.6 (from DB)</text>
+
+      <rect x="1054" y="50" width="100" height="30" rx="7" fill="#FEEEF0" stroke="#E11D48" stroke-width="1"/>
+      <text x="1104" y="65" text-anchor="middle" class="f3-mono" font-size="8.5" fill="#E11D48">up_vel: MISSING</text>
+      <text x="1104" y="77" text-anchor="middle" class="f3-mono" font-size="8" fill="#E11D48">→ impute 0.0</text>
+
+      <rect x="1165" y="50" width="108" height="30" rx="7" fill="#FEEEF0" stroke="#E11D48" stroke-width="1"/>
+      <text x="1219" y="65" text-anchor="middle" class="f3-mono" font-size="8.5" fill="#E11D48">dn_den: MISSING</text>
+      <text x="1219" y="77" text-anchor="middle" class="f3-mono" font-size="8" fill="#E11D48">→ impute 0.0</text>
+
+      <!-- Arrow down -->
+      <line x1="679" y1="88" x2="679" y2="118" stroke="#4B5361" stroke-width="1.8" marker-end="url(#f3-ah-dark)"/>
+
+      <!-- Stage 2: Transformations row -->
+      <text x="18" y="136" class="f3-mono" font-size="11" fill="#7C3AED" letter-spacing="0.05em">STAGE 2 — FEATURE TRANSFORMATIONS  (5 Parallel Transformation Streams)</text>
+
+      <!-- Stream 1: Speed Ratio -->
+      <rect x="18" y="144" width="232" height="220" rx="12" fill="white" stroke="#7C3AED" stroke-width="1.8" filter="url(#f3-shadow)"/>
+      <rect x="18" y="144" width="232" height="24" rx="12" fill="#7C3AED"/>
+      <rect x="18" y="156" width="232" height="12" rx="0" fill="#7C3AED"/>
+      <text x="134" y="161" text-anchor="middle" class="f3-xl" font-size="11" fill="white">Stream A: Speed Ratio</text>
+      <text x="134" y="186" text-anchor="middle" class="f3-lg" font-size="11" fill="#7C3AED">v_ratio = v / v_avg</text>
+      <text x="134" y="208" text-anchor="middle" class="f3-mono" font-size="12" fill="#12151C">60.0 / 48.3 = 1.24</text>
+      <line x1="34" y1="218" x2="234" y2="218" stroke="#7C3AED" stroke-width="0.8" stroke-dasharray="3 3"/>
+      <text x="134" y="234" text-anchor="middle" class="f3-sm" font-size="9" fill="#4B5361">Interpretation:</text>
+      <text x="134" y="248" text-anchor="middle" class="f3-sm" font-size="9" fill="#4B5361">1.0 = at historical avg</text>
+      <text x="134" y="262" text-anchor="middle" class="f3-sm" font-size="9" fill="#4B5361">1.24 = 24% above avg</text>
+      <text x="134" y="276" text-anchor="middle" class="f3-sm" font-size="9" fill="#D97706">3.0+ = OOD threshold</text>
+      <text x="134" y="294" text-anchor="middle" class="f3-mono" font-size="8.5" fill="#7C3AED">Output dim: [0]</text>
+      <text x="134" y="308" text-anchor="middle" class="f3-sm" font-size="8" fill="#7C8494">Replaces absolute speed.</text>
+      <text x="134" y="320" text-anchor="middle" class="f3-sm" font-size="8" fill="#7C8494">Cross-zone comparable.</text>
+      <text x="134" y="354" text-anchor="middle" class="f3-mono" font-size="11" fill="#7C3AED">→ x[0]</text>
+
+      <!-- Stream 2: Density Ratio -->
+      <rect x="262" y="144" width="232" height="220" rx="12" fill="white" stroke="#7C3AED" stroke-width="1.8" filter="url(#f3-shadow)"/>
+      <rect x="262" y="144" width="232" height="24" rx="12" fill="#7C3AED"/>
+      <rect x="262" y="156" width="232" height="12" rx="0" fill="#7C3AED"/>
+      <text x="378" y="161" text-anchor="middle" class="f3-xl" font-size="11" fill="white">Stream B: Density Ratio</text>
+      <text x="378" y="186" text-anchor="middle" class="f3-lg" font-size="11" fill="#7C3AED">d_ratio = d / d_avg</text>
+      <text x="378" y="208" text-anchor="middle" class="f3-mono" font-size="12" fill="#12151C">45.2 / 31.6 = 1.43</text>
+      <line x1="278" y1="218" x2="478" y2="218" stroke="#7C3AED" stroke-width="0.8" stroke-dasharray="3 3"/>
+      <text x="378" y="234" text-anchor="middle" class="f3-sm" font-size="9" fill="#4B5361">Interpretation:</text>
+      <text x="378" y="248" text-anchor="middle" class="f3-sm" font-size="9" fill="#4B5361">1.0 = at historical avg</text>
+      <text x="378" y="262" text-anchor="middle" class="f3-sm" font-size="9" fill="#4B5361">1.43 = 43% above avg</text>
+      <text x="378" y="276" text-anchor="middle" class="f3-sm" font-size="9" fill="#D97706">7.0+ = OOD threshold</text>
+      <text x="378" y="294" text-anchor="middle" class="f3-mono" font-size="8.5" fill="#7C3AED">Output dim: [1]</text>
+      <text x="378" y="308" text-anchor="middle" class="f3-sm" font-size="8" fill="#7C8494">Replaces absolute density.</text>
+      <text x="378" y="320" text-anchor="middle" class="f3-sm" font-size="8" fill="#7C8494">Higher threshold: density</text>
+      <text x="378" y="332" text-anchor="middle" class="f3-sm" font-size="8" fill="#7C8494">naturally spikes more.</text>
+      <text x="378" y="354" text-anchor="middle" class="f3-mono" font-size="11" fill="#7C3AED">→ x[1]</text>
+
+      <!-- Stream 3: Road Condition One-Hot -->
+      <rect x="506" y="144" width="260" height="220" rx="12" fill="white" stroke="#7C3AED" stroke-width="1.8" filter="url(#f3-shadow)"/>
+      <rect x="506" y="144" width="260" height="24" rx="12" fill="#7C3AED"/>
+      <rect x="506" y="156" width="260" height="12" rx="0" fill="#7C3AED"/>
+      <text x="636" y="161" text-anchor="middle" class="f3-xl" font-size="11" fill="white">Stream C: Road Condition</text>
+      <text x="636" y="183" text-anchor="middle" class="f3-lg" font-size="10.5" fill="#7C3AED">One-Hot Encoding  (3 dims)</text>
+      <text x="636" y="201" text-anchor="middle" class="f3-sm" font-size="9.5" fill="#4B5361">Input: road_condition = "wet"</text>
+      <line x1="522" y1="210" x2="750" y2="210" stroke="#7C3AED" stroke-width="0.8" stroke-dasharray="3 3"/>
+      <rect x="522" y="218" width="228" height="60" rx="6" fill="#F5F0FE"/>
+      <text x="524" y="232" class="f3-mono" font-size="9" fill="#12151C">  "dry"  → [1, 0, 0]</text>
+      <text x="524" y="248" class="f3-mono" font-size="9" fill="#12151C">  "wet"  → [0, 1, 0]   ← selected</text>
+      <text x="524" y="264" class="f3-mono" font-size="9" fill="#12151C">  "snow" → [0, 0, 1]</text>
+      <text x="636" y="296" text-anchor="middle" class="f3-sm" font-size="9" fill="#4B5361">Purpose: Allows MLP to treat each</text>
+      <text x="636" y="310" text-anchor="middle" class="f3-sm" font-size="9" fill="#4B5361">road surface condition as an</text>
+      <text x="636" y="324" text-anchor="middle" class="f3-sm" font-size="9" fill="#4B5361">independent binary signal rather</text>
+      <text x="636" y="338" text-anchor="middle" class="f3-sm" font-size="9" fill="#4B5361">than assuming ordinal ordering.</text>
+      <text x="636" y="354" text-anchor="middle" class="f3-mono" font-size="11" fill="#7C3AED">→ x[2], x[3], x[4]</text>
+
+      <!-- Stream 4: Neighbor Imputation -->
+      <rect x="778" y="144" width="265" height="220" rx="12" fill="white" stroke="#E11D48" stroke-width="1.8" filter="url(#f3-shadow)"/>
+      <rect x="778" y="144" width="265" height="24" rx="12" fill="#E11D48"/>
+      <rect x="778" y="156" width="265" height="12" rx="0" fill="#E11D48"/>
+      <text x="911" y="161" text-anchor="middle" class="f3-xl" font-size="11" fill="white">Stream D: Neighbor Imputation</text>
+      <text x="911" y="183" text-anchor="middle" class="f3-lg" font-size="10.5" fill="#E11D48">Deterministic Zero-Fill</text>
+      <text x="911" y="200" text-anchor="middle" class="f3-sm" font-size="9.5" fill="#4B5361">Input: upstream_velocity = NULL</text>
+      <text x="911" y="215" text-anchor="middle" class="f3-sm" font-size="9.5" fill="#4B5361">Input: downstream_density = NULL</text>
+      <line x1="794" y1="222" x2="1027" y2="222" stroke="#E11D48" stroke-width="0.8" stroke-dasharray="3 3"/>
+      <rect x="794" y="230" width="232" height="44" rx="6" fill="#FEEEF0"/>
+      <text x="910" y="248" text-anchor="middle" class="f3-mono" font-size="10" fill="#E11D48">upstream_velocity → 0.0</text>
+      <text x="910" y="264" text-anchor="middle" class="f3-mono" font-size="10" fill="#E11D48">downstream_density → 0.0</text>
+      <text x="911" y="290" text-anchor="middle" class="f3-sm" font-size="9" fill="#4B5361">Why zero? Ratio 0.0 means "no</text>
+      <text x="911" y="304" text-anchor="middle" class="f3-sm" font-size="9" fill="#4B5361">deviation from nothing" — a neutral</text>
+      <text x="911" y="318" text-anchor="middle" class="f3-sm" font-size="9" fill="#4B5361">baseline value that signals absence</text>
+      <text x="911" y="332" text-anchor="middle" class="f3-sm" font-size="9" fill="#4B5361">rather than introducing bias.</text>
+      <text x="911" y="350" text-anchor="middle" class="f3-sm" font-size="8" fill="#7C8494">Privacy: no cross-neighbor querying.</text>
+      <text x="911" y="354" text-anchor="middle" class="f3-mono" font-size="11" fill="#7C3AED">→ x[5], x[6]</text>
+
+      <!-- Stream 5: Binary Flags -->
+      <rect x="1055" y="144" width="287" height="220" rx="12" fill="white" stroke="#7C3AED" stroke-width="1.8" filter="url(#f3-shadow)"/>
+      <rect x="1055" y="144" width="287" height="24" rx="12" fill="#7C3AED"/>
+      <rect x="1055" y="156" width="287" height="12" rx="0" fill="#7C3AED"/>
+      <text x="1199" y="161" text-anchor="middle" class="f3-xl" font-size="11" fill="white">Stream E: Environmental Flags</text>
+      <text x="1199" y="183" text-anchor="middle" class="f3-lg" font-size="10.5" fill="#7C3AED">Binary Categorical Encoding</text>
+      <line x1="1071" y1="192" x2="1326" y2="192" stroke="#7C3AED" stroke-width="0.8" stroke-dasharray="3 3"/>
+      <rect x="1071" y="200" width="256" height="88" rx="6" fill="#F5F0FE"/>
+      <text x="1071" y="216" class="f3-mono" font-size="9.5" fill="#12151C">  weather_encoded</text>
+      <text x="1280" y="216" text-anchor="end" class="f3-mono" font-size="9.5" fill="#7C3AED">→ x[7]</text>
+      <text x="1071" y="234" class="f3-sm" font-size="8.5" fill="#4B5361">  0=clear, 1=rain, 2=fog, 3=snow</text>
+      <text x="1071" y="252" class="f3-mono" font-size="9.5" fill="#12151C">  accident_flag</text>
+      <text x="1280" y="252" text-anchor="end" class="f3-mono" font-size="9.5" fill="#7C3AED">→ x[8]</text>
+      <text x="1071" y="270" class="f3-sm" font-size="8.5" fill="#4B5361">  0=none reported, 1=active incident</text>
+      <text x="1071" y="288" class="f3-mono" font-size="9.5" fill="#12151C">  roadwork_flag</text>
+      <text x="1280" y="288" text-anchor="end" class="f3-mono" font-size="9.5" fill="#7C3AED">→ x[9]</text>
+      <text x="1071" y="298" class="f3-sm" font-size="8.5" fill="#4B5361">  0=none active, 1=in progress</text>
+      <text x="1199" y="320" text-anchor="middle" class="f3-sm" font-size="8.5" fill="#4B5361">Binary signals from municipal sensors</text>
+      <text x="1199" y="334" text-anchor="middle" class="f3-sm" font-size="8.5" fill="#4B5361">and incident management feeds.</text>
+      <text x="1199" y="350" text-anchor="middle" class="f3-sm" font-size="8" fill="#7C8494">No geo-location data in these flags.</text>
+      <text x="1199" y="354" text-anchor="middle" class="f3-mono" font-size="11" fill="#7C3AED">→ x[7], x[8], x[9]</text>
+
+      <!-- Arrows to bottom -->
+      <line x1="134" y1="364" x2="134" y2="420" stroke="#7C3AED" stroke-width="1.5" marker-end="url(#f3-ah)"/>
+      <line x1="378" y1="364" x2="378" y2="420" stroke="#7C3AED" stroke-width="1.5" marker-end="url(#f3-ah)"/>
+      <line x1="636" y1="364" x2="636" y2="420" stroke="#7C3AED" stroke-width="1.5" marker-end="url(#f3-ah)"/>
+      <line x1="911" y1="364" x2="911" y2="420" stroke="#7C3AED" stroke-width="1.5" marker-end="url(#f3-ah)"/>
+      <line x1="1199" y1="364" x2="1199" y2="420" stroke="#7C3AED" stroke-width="1.5" marker-end="url(#f3-ah)"/>
+
+      <!-- Merge line -->
+      <line x1="134" y1="420" x2="1199" y2="420" stroke="#7C3AED" stroke-width="1.5"/>
+      <line x1="679" y1="420" x2="679" y2="458" stroke="#7C3AED" stroke-width="1.8" marker-end="url(#f3-ah)"/>
+
+      <!-- Stage 3: Output tensor -->
+      <text x="18" y="475" class="f3-mono" font-size="11" fill="#7C3AED" letter-spacing="0.05em">STAGE 3 — FINAL 10-DIMENSIONAL FEATURE TENSOR  x ∈ ℝ¹⁰</text>
+
+      <rect x="18" y="483" width="1322" height="96" rx="12" fill="white" stroke="#7C3AED" stroke-width="2" filter="url(#f3-shadow)"/>
+      <rect x="18" y="483" width="1322" height="26" rx="12" fill="#7C3AED"/>
+      <rect x="18" y="497" width="1322" height="13" rx="0" fill="#7C3AED"/>
+      <text x="679" y="503" text-anchor="middle" class="f3-xl" font-size="13" fill="white">x  =  [v_ratio,  d_ratio,  road_dry,  road_wet,  road_snow,  up_vel,  dn_den,  weather,  acc_flag,  roadwork]  ∈ ℝ¹⁰</text>
+
+      <!-- 10 dimension slots -->
+      <rect x="34" y="518" width="96" height="50" rx="8" fill="#7C3AED"/>
+      <text x="82" y="535" text-anchor="middle" class="f3-xl" font-size="10" fill="white">x[0]</text>
+      <text x="82" y="550" text-anchor="middle" class="f3-mono" font-size="8.5" fill="rgba(255,255,255,0.9)">v_ratio</text>
+      <text x="82" y="563" text-anchor="middle" class="f3-mono" font-size="8" fill="rgba(255,255,255,0.8)">1.24</text>
+
+      <rect x="144" y="518" width="96" height="50" rx="8" fill="#7C3AED"/>
+      <text x="192" y="535" text-anchor="middle" class="f3-xl" font-size="10" fill="white">x[1]</text>
+      <text x="192" y="550" text-anchor="middle" class="f3-mono" font-size="8.5" fill="rgba(255,255,255,0.9)">d_ratio</text>
+      <text x="192" y="563" text-anchor="middle" class="f3-mono" font-size="8" fill="rgba(255,255,255,0.8)">1.43</text>
+
+      <rect x="254" y="518" width="96" height="50" rx="8" fill="#6D28D9"/>
+      <text x="302" y="535" text-anchor="middle" class="f3-xl" font-size="10" fill="white">x[2]</text>
+      <text x="302" y="550" text-anchor="middle" class="f3-mono" font-size="8.5" fill="rgba(255,255,255,0.9)">road_dry</text>
+      <text x="302" y="563" text-anchor="middle" class="f3-mono" font-size="8" fill="rgba(255,255,255,0.8)">0</text>
+
+      <rect x="364" y="518" width="96" height="50" rx="8" fill="#6D28D9"/>
+      <text x="412" y="535" text-anchor="middle" class="f3-xl" font-size="10" fill="white">x[3]</text>
+      <text x="412" y="550" text-anchor="middle" class="f3-mono" font-size="8.5" fill="rgba(255,255,255,0.9)">road_wet</text>
+      <text x="412" y="563" text-anchor="middle" class="f3-mono" font-size="8" fill="rgba(255,255,255,0.8)">1</text>
+
+      <rect x="474" y="518" width="96" height="50" rx="8" fill="#6D28D9"/>
+      <text x="522" y="535" text-anchor="middle" class="f3-xl" font-size="10" fill="white">x[4]</text>
+      <text x="522" y="550" text-anchor="middle" class="f3-mono" font-size="8.5" fill="rgba(255,255,255,0.9)">road_snow</text>
+      <text x="522" y="563" text-anchor="middle" class="f3-mono" font-size="8" fill="rgba(255,255,255,0.8)">0</text>
+
+      <rect x="584" y="518" width="96" height="50" rx="8" fill="#B91C1C"/>
+      <text x="632" y="535" text-anchor="middle" class="f3-xl" font-size="10" fill="white">x[5]</text>
+      <text x="632" y="550" text-anchor="middle" class="f3-mono" font-size="8.5" fill="rgba(255,255,255,0.9)">up_vel</text>
+      <text x="632" y="563" text-anchor="middle" class="f3-mono" font-size="8" fill="rgba(255,255,255,0.8)">0.0 *</text>
+
+      <rect x="694" y="518" width="96" height="50" rx="8" fill="#B91C1C"/>
+      <text x="742" y="535" text-anchor="middle" class="f3-xl" font-size="10" fill="white">x[6]</text>
+      <text x="742" y="550" text-anchor="middle" class="f3-mono" font-size="8.5" fill="rgba(255,255,255,0.9)">dn_den</text>
+      <text x="742" y="563" text-anchor="middle" class="f3-mono" font-size="8" fill="rgba(255,255,255,0.8)">0.0 *</text>
+
+      <rect x="804" y="518" width="96" height="50" rx="8" fill="#0D9488"/>
+      <text x="852" y="535" text-anchor="middle" class="f3-xl" font-size="10" fill="white">x[7]</text>
+      <text x="852" y="550" text-anchor="middle" class="f3-mono" font-size="8.5" fill="rgba(255,255,255,0.9)">weather</text>
+      <text x="852" y="563" text-anchor="middle" class="f3-mono" font-size="8" fill="rgba(255,255,255,0.8)">1 (rain)</text>
+
+      <rect x="914" y="518" width="96" height="50" rx="8" fill="#0D9488"/>
+      <text x="962" y="535" text-anchor="middle" class="f3-xl" font-size="10" fill="white">x[8]</text>
+      <text x="962" y="550" text-anchor="middle" class="f3-mono" font-size="8.5" fill="rgba(255,255,255,0.9)">acc_flag</text>
+      <text x="962" y="563" text-anchor="middle" class="f3-mono" font-size="8" fill="rgba(255,255,255,0.8)">0</text>
+
+      <rect x="1024" y="518" width="96" height="50" rx="8" fill="#0D9488"/>
+      <text x="1072" y="535" text-anchor="middle" class="f3-xl" font-size="10" fill="white">x[9]</text>
+      <text x="1072" y="550" text-anchor="middle" class="f3-mono" font-size="8.5" fill="rgba(255,255,255,0.9)">roadwork</text>
+      <text x="1072" y="563" text-anchor="middle" class="f3-mono" font-size="8" fill="rgba(255,255,255,0.8)">0</text>
+
+      <rect x="1134" y="518" width="190" height="50" rx="8" fill="#12151C"/>
+      <text x="1229" y="535" text-anchor="middle" class="f3-mono" font-size="10" fill="#4ADE80">x ∈ ℝ¹⁰</text>
+      <text x="1229" y="550" text-anchor="middle" class="f3-sm" font-size="9" fill="white">Ready for MLP Inference</text>
+      <text x="1229" y="563" text-anchor="middle" class="f3-mono" font-size="8.5" fill="#4ADE80">* zero-imputed missing</text>
+
+      <!-- Arrow down -->
+      <line x1="679" y1="579" x2="679" y2="615" stroke="#4B5361" stroke-width="1.8" marker-end="url(#f3-ah-dark)"/>
+
+      <!-- Stage 4: OOD check + MLP -->
+      <rect x="18" y="623" width="1322" height="68" rx="12" fill="#F5F0FE" stroke="#7C3AED" stroke-width="1.5"/>
+      <text x="679" y="646" text-anchor="middle" class="f3-xl" font-size="12" fill="#7C3AED">x ∈ ℝ¹⁰  →  OOD Threshold Guard  →  EventClassifierMLP(10→64→8)  →  Softmax  →  8-Class Prediction</text>
+      <text x="340" y="668" text-anchor="middle" class="f3-mono" font-size="9.5" fill="#4B5361">Check: x[0] &gt; 3.0 OR x[1] &gt; 7.0 → ood_warning flag</text>
+      <text x="679" y="668" text-anchor="middle" class="f3-mono" font-size="9.5" fill="#4B5361">→</text>
+      <text x="1040" y="668" text-anchor="middle" class="f3-mono" font-size="9.5" fill="#4B5361">argmax(Softmax(MLP(x))) → predicted class + confidence score</text>
+
+      <!-- Stage label note -->
+      <text x="34" y="718" class="f3-sm" font-size="9" fill="#7C8494">* x[5] and x[6] are imputed to 0.0 when upstream/downstream neighbor segment data is unavailable (sensor unreachable or feed offline)</text>
+      <text x="34" y="734" class="f3-sm" font-size="9" fill="#7C8494">  This is a deterministic structural decision, not a dynamic runtime check — the imputation happens unconditionally when those fields are absent from the telemetry record</text>
+    </svg>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h3><span class="dot" style="background:#7C3AED"></span> Design Choices Explained</h3>
+      <ul class="step-list">
+        <li><b>Relative ratios instead of absolute values:</b> A speed of 60 km/h in a school zone (normal avg: 30 km/h) gives ratio 2.0. Same speed on a highway (normal avg: 100 km/h) gives ratio 0.6. The model receives interpretable context instead of raw absolute values.</li>
+        <li><b>One-hot road condition:</b> Prevents the model from treating "wet" as numerically between "dry" and "snow". Each condition is an independent signal.</li>
+        <li><b>Zero-imputation instead of mean:</b> Computing a mean would require knowing global population statistics, violating federated privacy. Zero represents "no signal" at a neutral baseline.</li>
+        <li><b>Fixed 10 dimensions:</b> A fixed tensor size is required for consistent MLP weight shapes across all clients during federated aggregation. Varying feature sets would cause shape mismatch errors in parameter averaging.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3><span class="dot" style="background:#12151C"></span> The Example Tensor from This Figure</h3>
+      <div class="formula-row">
+        <div class="formula-name">Input context: Zone 04, wet road, peak hour, 2 missing sensors</div>
+        <div class="formula-math" style="font-family: monospace; font-size: 12px">x = [1.24, 1.43, 0, 1, 0, 0.0, 0.0, 1, 0, 0]</div>
+        <div class="formula-note">v_ratio=1.24 (24% above normal), d_ratio=1.43 (43% above normal), road_wet=1, weather=rain, neighbor sensors unavailable (imputed to 0.0). Not OOD. Likely predicts: congestion.</div>
+      </div>
+      <div class="formula-row">
+        <div class="formula-name">OOD example: Sensor malfunction detected</div>
+        <div class="formula-math" style="font-family: monospace; font-size: 12px">x = [8.2, 0.9, 1, 0, 0, 0.0, 0.0, 0, 0, 0]</div>
+        <div class="formula-note">v_ratio=8.2 exceeds OOD threshold of 3.0 → ood_warning=True appended to response. MLP still executes but prediction flagged as potentially unreliable.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pagenav">
+    <a href="historical_memory.html">
+      <span class="nav-label">← Prev</span>
+      <span class="nav-title">Figure 2 — Historical Memory Module</span>
+    </a>
+    <a href="ood_pipeline.html" class="next">
+      <span class="nav-label">Next →</span>
+      <span class="nav-title">Figure 4 — OOD Inference Pipeline</span>
+    </a>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

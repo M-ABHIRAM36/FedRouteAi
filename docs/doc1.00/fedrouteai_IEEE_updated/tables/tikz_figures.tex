@@ -1,0 +1,202 @@
+% TikZ Figure Definitions for FedRouteAI Manuscript with Auto-Scaling Bounds
+\definecolor{ieeeblue}{RGB}{0,102,204}
+\definecolor{lightbg}{RGB}{245,247,250}
+\definecolor{bordergray}{RGB}{120,120,120}
+
+\tikzset{
+    module/.style={draw=black!80, line width=0.5pt, fill=white, rounded corners=3pt, align=center, font=\sffamily\fontsize{8}{9.5}\selectfont, inner sep=4pt},
+    accentmodule/.style={draw=ieeeblue, line width=0.8pt, fill=ieeeblue!5, rounded corners=3pt, align=center, font=\sffamily\fontsize{8}{9.5}\selectfont, inner sep=4pt},
+    subsystem/.style={draw=bordergray, line width=0.5pt, dashed, fill=lightbg!50, rounded corners=4pt, inner sep=6pt},
+    arrow/.style={-{Latex[length=4pt, width=3pt]}, line width=0.6pt, draw=black!80},
+    accentarrow/.style={-{Latex[length=4pt, width=3pt]}, line width=0.8pt, draw=ieeeblue},
+    lbl/.style={font=\sffamily\fontsize{7}{8}\selectfont, text=black!70}
+}
+
+% Figure 1: Overall FedRouteAI System Architecture
+\newcommand{\drawFigSystemArchitecture}{
+\begin{figure*}[t]
+\centering
+\resizebox{0.95\textwidth}{!}{%
+\begin{tikzpicture}[node distance=1.2cm and 1.5cm]
+    % Edge Layer
+    \node[module] (client1) {Edge Node 1\\Telemetry};
+    \node[module, right=0.6cm of client1] (client2) {Edge Node 2\\Telemetry};
+    \node[module, right=0.6cm of client2] (clientN) {Edge Node K\\Telemetry};
+    \node[subsystem, fit={(client1) (client2) (clientN)}] (edge_sub) {};
+    \node[above=0.1cm of edge_sub.north, font=\sffamily\bfseries\fontsize{8}{9.5}\selectfont] {Edge Client Layer (Decentralized Nodes)};
+
+    % Memory Layer
+    \node[accentmodule, below=1.2cm of edge_sub] (memory) {Historical Memory Module\\(PostgreSQL Database -- Zone Statistics $v_{avg}, d_{avg}$)};
+    \node[module, right=1.2cm of memory] (feat) {Feature Engineering\\Normalized Ratio Vectors ($v/v_{hist}, d/d_{hist}$)};
+
+    % Inference Engine
+    \node[accentmodule, right=1.2cm of feat] (mlp) {EventClassifierMLP\\3,240 Params (Edge Inference)};
+
+    % Server & Aggregator
+    \node[module, above=1.2cm of mlp] (server) {Central Backend Server\\(FastAPI Router \& Flower FL Server)};
+    \node[accentmodule, right=1.2cm of server] (agg) {AdaptiveFedAvg Aggregator\\Weight Scaling ($w_k = n_k q_k \rho_k g_k$)};
+
+    % Dashboard
+    \node[module, below=1.2cm of agg] (dash) {React Dashboard\\Real-Time Anomaly Alerting};
+
+    % Flow Arrows
+    \draw[arrow] (client1) -- (memory);
+    \draw[arrow] (client2) -- (memory);
+    \draw[arrow] (clientN) -- (memory);
+    \draw[accentarrow] (memory) -- node[lbl, above] {Historical Baselines} (feat);
+    \draw[accentarrow] (feat) -- node[lbl, above] {Relative Features} (mlp);
+    \draw[arrow] (mlp) -- node[lbl, left] {12.96 KB Weights} (server);
+    \draw[accentarrow] (server) -- node[lbl, above] {Client Updates} (agg);
+    \draw[arrow] (agg) |- node[lbl, right] {Updated Global Model} (mlp);
+    \draw[arrow] (mlp) -- node[lbl, above] {Predictions} (dash);
+\end{tikzpicture}%
+}
+\caption{Overall FedRouteAI system architecture illustrating the decoupled interaction between decentralized edge clients, the PostgreSQL Historical Memory Module, the lightweight EventClassifierMLP inference engine, and the server-side AdaptiveFedAvg aggregator.}
+\label{fig:architecture}
+\end{figure*}
+}
+
+% Figure 2: Historical Memory Module Dataflow
+\newcommand{\drawFigHistoricalMemory}{
+\begin{figure}[htbp]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=1.0cm and 1.2cm]
+    \node[module] (telemetry) {Incoming Telemetry\\(GPS Speed $v$, Density $d$, Zone ID)};
+    \node[accentmodule, below=0.8cm of telemetry] (db) {PostgreSQL Historical Store\\(Spatial-Temporal Zone Averages)};
+    \node[module, below=0.8cm of db] (calc) {Relative Ratio Engine\\$v_{ratio} = v / v_{hist}$, $d_{ratio} = d / d_{hist}$};
+    \node[accentmodule, below=0.8cm of calc] (tensor) {Normalized Feature Tensor\\(10-Dimensional Vector)};
+
+    \draw[arrow] (telemetry) -- node[lbl, right] {Raw Metrics} (db);
+    \draw[accentarrow] (db) -- node[lbl, right] {Zone Baselines} (calc);
+    \draw[accentarrow] (calc) -- node[lbl, right] {Standardized Inputs} (tensor);
+\end{tikzpicture}%
+}
+\caption{Historical Memory module dataflow depicting real-time queries against spatial-temporal baseline statistics ($v_{avg}, d_{avg}$) to compute normalized relative telemetry ratios.}
+\label{fig:historical_memory}
+\end{figure}
+}
+
+% Figure 3: Feature Engineering Pipeline
+\newcommand{\drawFigFeatureEngineering}{
+\begin{figure}[htbp]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=0.8cm and 1.0cm]
+    \node[module] (raw) {Raw Vehicle Telemetry\\$[v, d, lat, lon, t]$};
+    \node[module, right=0.8cm of raw] (norm) {Zone Relative Scaling\\$v / v_{hist}, d / d_{hist}$};
+    \node[accentmodule, right=0.8cm of norm] (vec) {10D Feature Vector\\$\mathbf{x} \in \mathbb{R}^{10}$};
+
+    \draw[arrow] (raw) -- (norm);
+    \draw[accentarrow] (norm) -- (vec);
+\end{tikzpicture}%
+}
+\caption{Feature engineering pipeline transforming raw absolute GPS speed and traffic density telemetry into standardized 10-dimensional relative ratio vectors.}
+\label{fig:feature_engineering}
+\end{figure}
+}
+
+% Figure 4: Deployment-Aware Inference Pipeline
+\newcommand{\drawFigInferencePipeline}{
+\begin{figure}[htbp]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=0.8cm and 1.0cm]
+    \node[module] (input) {Raw Telemetry Vector};
+    \node[module, below=0.7cm of input] (impute) {Deterministic Zero-Imputation\\(Missing Attribute Fallback)};
+    \node[accentmodule, below=0.7cm of impute] (ood) {OOD Threshold Check\\($v_{ratio} > 3.0$ or $d_{ratio} > 7.0$)};
+    \node[module, left=1.0cm of ood] (warn) {Generate Dynamic\\OOD Warning Flag};
+    \node[accentmodule, below=0.7cm of ood] (mlp) {EventClassifierMLP\\Inference (0.2069 ms)};
+    \node[module, below=0.7cm of mlp] (out) {Anomaly Prediction + Warning Header};
+
+    \draw[arrow] (input) -- (impute);
+    \draw[arrow] (impute) -- (ood);
+    \draw[arrow] (ood) -- node[lbl, above] {Threshold Exceeded} (warn);
+    \draw[accentarrow] (ood) -- node[lbl, right] {Valid / Warning Flagged} (mlp);
+    \draw[accentarrow] (mlp) -- (out);
+    \draw[arrow] (warn) |- (out);
+\end{tikzpicture}%
+}
+\caption{Deployment-aware inference execution flow incorporating deterministic zero-imputation for missing attributes and dynamic Out-of-Distribution (OOD) threshold alert generation ($speed\_ratio > 3.0$ or $density\_ratio > 7.0$).}
+\label{fig:inference_pipeline}
+\end{figure}
+}
+
+% Figure 5: AdaptiveFedAvg Aggregation Workflow
+\newcommand{\drawFigAdaptiveFedAvg}{
+\begin{figure}[htbp]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=0.8cm and 1.0cm]
+    \node[module] (updates) {Client Updates ($w_t^k, F_{1,k}, f_{rare}^k$)};
+    \node[accentmodule, below=0.7cm of updates] (quality) {Quality Factor: $q_k = \max(q_{floor}, F_{1,k})$};
+    \node[accentmodule, right=0.8cm of quality] (rarity) {Rarity Bonus: $\rho_k = 1 + \beta f_{rare}^k$};
+    \node[accentmodule, below=0.7cm of quality] (gate) {Reliability Gate: $g_k = f(\text{EMA}_{F1})$};
+    \node[module, below=0.7cm of rarity] (weight) {Weighting: $\omega_k = n_k \cdot q_k \cdot \rho_k \cdot g_k$};
+    \node[accentmodule, below=0.7cm of weight] (norm) {Normalize: $\hat{\omega}_k = \omega_k / \sum \omega_j$};
+    \node[module, below=0.7cm of norm] (agg) {Global Model: $w_{t+1} = \sum \hat{\omega}_k w_t^k$};
+
+    \draw[arrow] (updates) -- (quality);
+    \draw[arrow] (updates) -| (rarity);
+    \draw[arrow] (quality) -- (gate);
+    \draw[arrow] (gate) |- (weight);
+    \draw[arrow] (rarity) -- (weight);
+    \draw[accentarrow] (weight) -- (norm);
+    \draw[accentarrow] (norm) -- (agg);
+\end{tikzpicture}%
+}
+\caption{Server-side AdaptiveFedAvg aggregation workflow showing the multi-factor dynamic weight calculation combining dataset volume ($n_k$), floored validation quality ($q_k$), bounded rarity bonus ($\rho_k$), and EMA reliability gating ($g_k$).}
+\label{fig:adaptivefedavg_workflow}
+\end{figure}
+}
+
+% Figure 6: Federated Learning Communication Workflow
+\newcommand{\drawFigFLCommunication}{
+\begin{figure*}[t]
+\centering
+\resizebox{0.95\textwidth}{!}{%
+\begin{tikzpicture}[node distance=1.0cm and 2.0cm]
+    \node[accentmodule] (server) {Flower FL Server\\Global Model $w_t$};
+    \node[module, below left=1.2cm and 2.5cm of server] (c1) {Client 1\\Local Train (5 Epochs)};
+    \node[module, below left=1.2cm and 0.5cm of server] (c2) {Client 2\\Local Train (5 Epochs)};
+    \node[module, below right=1.2cm and 0.5cm of server] (c3) {Client 3\\Local Train (5 Epochs)};
+    \node[module, below right=1.2cm and 2.5cm of server] (cK) {Client 8\\Local Train (5 Epochs)};
+
+    \draw[accentarrow] (server) -- node[lbl, left] {1. Broadcast $w_t$ (12.96 KB)} (c1);
+    \draw[accentarrow] (server) -- (c2);
+    \draw[accentarrow] (server) -- (c3);
+    \draw[accentarrow] (server) -- node[lbl, right] {1. Broadcast $w_t$} (cK);
+
+    \draw[arrow] (c1) -- node[lbl, right] {2. Upload $w_{t+1}^1, F_{1,1}$} (server);
+    \draw[arrow] (c2) -- (server);
+    \draw[arrow] (c3) -- (server);
+    \draw[arrow] (cK) -- node[lbl, left] {2. Upload $w_{t+1}^8, F_{1,8}$} (server);
+\end{tikzpicture}%
+}
+\caption{Federated learning communication protocol detailing parameter exchanges (12.96 KB per client) across 8 simulated edge nodes.}
+\label{fig:fl_communication}
+\end{figure*}
+}
+
+% Figure 10: Complete End-to-End Experimental Pipeline
+\newcommand{\drawFigExperimentalPipeline}{
+\begin{figure*}[t]
+\centering
+\resizebox{0.95\textwidth}{!}{%
+\begin{tikzpicture}[node distance=1.0cm and 1.2cm]
+    \node[module] (gen) {Synthetic Telemetry\\Dataset (30,195 Samples)};
+    \node[module, right=0.8cm of gen] (part) {Non-IID Data Partition\\(8 Edge Clients)};
+    \node[accentmodule, right=0.8cm of part] (fl) {Flower FL Simulation\\(30 Communication Rounds)};
+    \node[accentmodule, right=0.8cm of fl] (eval) {Held-Out Evaluation\\(Centralized vs. AdaptiveFedAvg)};
+    \node[module, right=0.8cm of eval] (bench) {Latency \& Communication\\Benchmarking (0.2069 ms)};
+
+    \draw[arrow] (gen) -- (part);
+    \draw[arrow] (part) -- (fl);
+    \draw[accentarrow] (fl) -- (eval);
+    \draw[accentarrow] (eval) -- (bench);
+\end{tikzpicture}%
+}
+\caption{End-to-end experimental evaluation pipeline from non-IID data partitioning across 8 clients through federated training to systems-level latency benchmarking.}
+\label{fig:experimental_pipeline}
+\end{figure*}
+}

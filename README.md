@@ -71,9 +71,10 @@ have.)
 
 ### 2. Install dependencies
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv
 pip install -r backend/requirements.txt
 cp backend/.env.example backend/.env    # edit if your DB isn't the default above
+.\.venv\Scripts\Activate.ps1 
 ```
 
 ### 3. Generate the synthetic dataset + seed the DB

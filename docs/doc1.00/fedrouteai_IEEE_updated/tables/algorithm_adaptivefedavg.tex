@@ -1,0 +1,30 @@
+\begin{algorithm}[htbp]
+\caption{AdaptiveFedAvg Server Aggregation}
+\label{alg:adaptivefedavg}
+\small
+\begin{algorithmic}[1]
+\REQUIRE Set of participating clients $\mathcal{K}$, Global model $w_t$, Round $t$, Hyperparameters $\alpha, \beta, q_{floor}, g_{min}, \tau_{thresh}$
+\ENSURE Updated global model $w_{t+1}$
+\FOR{each client $k \in \mathcal{K}$ \textbf{in parallel}}
+    \STATE $w_{t+1}^k \leftarrow \text{ClientUpdate}(k, w_t)$
+    \STATE Evaluate validation Macro F1 $F_{1,k}$ and dataset size $n_k$
+    \STATE Send $w_{t+1}^k, F_{1,k}, n_k, f_{rare}^k$ to server
+\ENDFOR
+\STATE Server receives updates from all $k \in \mathcal{K}$
+\FOR{each client $k \in \mathcal{K}$}
+    \STATE Quality factor: $q_k = \max(q_{floor}, F_{1,k})$
+    \STATE Rarity bonus: $\rho_k = 1.0 + \beta \cdot f_{rare}^k$
+    \STATE Update F1 Exponential Moving Average:
+    \STATE \quad $\text{EMA}_{F1}^k \leftarrow \alpha F_{1,k} + (1 - \alpha) \text{EMA}_{F1}^k$
+    \IF{$\text{EMA}_{F1}^k \ge \tau_{thresh}$}
+        \STATE $g_k \leftarrow 1.0$
+    \ELSE
+        \STATE $g_k \leftarrow g_{min} + (1.0 - g_{min}) \cdot \left(\frac{\text{EMA}_{F1}^k}{\tau_{thresh}}\right)$
+    \ENDIF
+    \STATE Dynamic raw weight: $\omega_k = n_k \cdot q_k \cdot \rho_k \cdot g_k$
+\ENDFOR
+\STATE Normalize weights: $\hat{\omega}_k = \frac{\omega_k}{\sum_{j \in \mathcal{K}} \omega_j}$
+\STATE Aggregate parameters: $w_{t+1} \leftarrow \sum_{k \in \mathcal{K}} \hat{\omega}_k w_{t+1}^k$
+\RETURN $w_{t+1}$
+\end{algorithmic}
+\end{algorithm}

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 2720px; height: 1640px; background: #ffffff; overflow: hidden; }
+  svg { display: block; width: 2720px; height: 1640px; }
+</style>
+</head>
+<body>
+<svg id="fig2-svg" viewBox="0 0 1360 820" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>
+          .f2-xl { font-family: 'Space Grotesk', sans-serif; font-weight: 700; }
+          .f2-lg { font-family: 'Space Grotesk', sans-serif; font-weight: 600; }
+          .f2-md { font-family: 'Inter', sans-serif; font-weight: 500; }
+          .f2-sm { font-family: 'Inter', sans-serif; font-weight: 400; }
+          .f2-mono { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+        </style>
+        <marker id="f2-ah" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#0D9488"/>
+        </marker>
+        <marker id="f2-ah-dark" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#4B5361"/>
+        </marker>
+        <marker id="f2-ah-purple" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#7C3AED"/>
+        </marker>
+        <filter id="f2-shadow" x="-5%" y="-5%" width="120%" height="130%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.1"/>
+        </filter>
+      </defs>
+
+      <!-- ====== STEP 1: INCOMING TELEMETRY ====== -->
+      <text x="34" y="36" class="f2-mono" font-size="11" fill="#2563EB" letter-spacing="0.06em">① RAW TELEMETRY — EDGE SENSOR INPUT</text>
+
+      <rect x="34" y="44" width="1290" height="86" rx="12" fill="white" stroke="#2563EB" stroke-width="1.8" filter="url(#f2-shadow)"/>
+      <rect x="34" y="44" width="1290" height="26" rx="12" fill="#2563EB"/>
+      <rect x="34" y="58" width="1290" height="12" rx="0" fill="#2563EB"/>
+      <text x="679" y="63" text-anchor="middle" class="f2-xl" font-size="12" fill="white">Raw Vehicular Telemetry Batch — Absolute Physical Values from Edge Sensor</text>
+
+      <rect x="56" y="78" width="130" height="44" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.2"/>
+      <text x="121" y="96" text-anchor="middle" class="f2-lg" font-size="10" fill="#2563EB">speed_kmh</text>
+      <text x="121" y="111" text-anchor="middle" class="f2-mono" font-size="8.5" fill="#4B5361">current GPS speed</text>
+
+      <rect x="200" y="78" width="130" height="44" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.2"/>
+      <text x="265" y="96" text-anchor="middle" class="f2-lg" font-size="10" fill="#2563EB">density_veh_km</text>
+      <text x="265" y="111" text-anchor="middle" class="f2-mono" font-size="8.5" fill="#4B5361">vehicles per km</text>
+
+      <rect x="344" y="78" width="130" height="44" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.2"/>
+      <text x="409" y="96" text-anchor="middle" class="f2-lg" font-size="10" fill="#2563EB">zone_id</text>
+      <text x="409" y="111" text-anchor="middle" class="f2-mono" font-size="8.5" fill="#4B5361">urban zone identifier</text>
+
+      <rect x="488" y="78" width="130" height="44" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.2"/>
+      <text x="553" y="96" text-anchor="middle" class="f2-lg" font-size="10" fill="#2563EB">timestamp</text>
+      <text x="553" y="111" text-anchor="middle" class="f2-mono" font-size="8.5" fill="#4B5361">UTC datetime</text>
+
+      <rect x="632" y="78" width="130" height="44" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.2"/>
+      <text x="697" y="96" text-anchor="middle" class="f2-lg" font-size="10" fill="#2563EB">road_condition</text>
+      <text x="697" y="111" text-anchor="middle" class="f2-mono" font-size="8.5" fill="#4B5361">categorical string</text>
+
+      <rect x="776" y="78" width="130" height="44" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.2"/>
+      <text x="841" y="96" text-anchor="middle" class="f2-lg" font-size="10" fill="#2563EB">lat, lon</text>
+      <text x="841" y="111" text-anchor="middle" class="f2-mono" font-size="8.5" fill="#4B5361">GPS coordinates</text>
+
+      <rect x="920" y="78" width="172" height="44" rx="8" fill="#2563EB"/>
+      <text x="1006" y="96" text-anchor="middle" class="f2-lg" font-size="10" fill="white">Problem: Raw values</text>
+      <text x="1006" y="111" text-anchor="middle" class="f2-sm" font-size="8.5" fill="rgba(255,255,255,0.9)">60 km/h means different things</text>
+
+      <rect x="1106" y="78" width="202" height="44" rx="8" fill="#2563EB"/>
+      <text x="1207" y="96" text-anchor="middle" class="f2-lg" font-size="10" fill="white">in highway vs. school zone</text>
+      <text x="1207" y="111" text-anchor="middle" class="f2-sm" font-size="8.5" fill="rgba(255,255,255,0.9)">→ Need zone-relative normalization</text>
+
+      <!-- ====== ARROW DOWN ====== -->
+      <line x1="679" y1="130" x2="679" y2="170" stroke="#4B5361" stroke-width="1.8" marker-end="url(#f2-ah-dark)"/>
+      <rect x="603" y="140" width="152" height="18" rx="9" fill="#F7F8FA" stroke="#E2E5EA" stroke-width="1"/>
+      <text x="679" y="152" text-anchor="middle" class="f2-mono" font-size="9" fill="#4B5361">zone_id, timestamp, speed, density</text>
+
+      <!-- ====== STEP 2: HISTORICAL MEMORY ====== -->
+      <text x="34" y="190" class="f2-mono" font-size="11" fill="#0D9488" letter-spacing="0.06em">② HISTORICAL MEMORY MODULE — POSTGRESQL SPATIAL-TEMPORAL BASELINE STORE</text>
+
+      <rect x="34" y="198" width="1290" height="310" rx="14" fill="white" stroke="#0D9488" stroke-width="2" filter="url(#f2-shadow)"/>
+      <rect x="34" y="198" width="1290" height="28" rx="14" fill="#0D9488"/>
+      <rect x="34" y="214" width="1290" height="14" rx="0" fill="#0D9488"/>
+      <text x="679" y="219" text-anchor="middle" class="f2-xl" font-size="12" fill="white">PostgreSQL Historical Memory Store — Zone-Aggregated Speed &amp; Density Baselines</text>
+
+      <!-- Database Schema Box -->
+      <rect x="56" y="236" width="360" height="256" rx="10" fill="#EDFAF8" stroke="#0D9488" stroke-width="1.5"/>
+      <text x="236" y="258" text-anchor="middle" class="f2-xl" font-size="11.5" fill="#0D9488">Database Schema Concept</text>
+      <text x="236" y="278" text-anchor="middle" class="f2-mono" font-size="9.5" fill="#12151C">TABLE: zone_baselines</text>
+      <line x1="76" y1="284" x2="396" y2="284" stroke="#0D9488" stroke-width="0.8" stroke-dasharray="3 3"/>
+      <text x="80" y="298" class="f2-mono" font-size="9" fill="#4B5361">zone_id     VARCHAR(32)   PK</text>
+      <text x="80" y="314" class="f2-mono" font-size="9" fill="#4B5361">hour_bin    INTEGER       PK</text>
+      <text x="80" y="330" class="f2-mono" font-size="9" fill="#4B5361">v_avg       FLOAT         NOT NULL</text>
+      <text x="80" y="346" class="f2-mono" font-size="9" fill="#4B5361">d_avg       FLOAT         NOT NULL</text>
+      <text x="80" y="362" class="f2-mono" font-size="9" fill="#4B5361">sample_count INTEGER      DEFAULT 0</text>
+      <text x="80" y="378" class="f2-mono" font-size="9" fill="#4B5361">last_updated TIMESTAMP</text>
+      <line x1="76" y1="386" x2="396" y2="386" stroke="#0D9488" stroke-width="0.8" stroke-dasharray="3 3"/>
+      <text x="236" y="404" text-anchor="middle" class="f2-sm" font-size="9" fill="#4B5361">Partitioned by: zone_id × hour_of_day</text>
+      <text x="236" y="420" text-anchor="middle" class="f2-sm" font-size="9" fill="#4B5361">Indexing: PRIMARY KEY (zone_id, hour_bin)</text>
+      <text x="236" y="436" text-anchor="middle" class="f2-sm" font-size="9" fill="#4B5361">Updates: EMA over incoming samples</text>
+      <text x="236" y="452" text-anchor="middle" class="f2-sm" font-size="9" fill="#4B5361">Purpose: Local average ≠ global average</text>
+      <text x="236" y="468" text-anchor="middle" class="f2-sm" font-size="9" fill="#7C8494">School zones, highways, urban centres</text>
+      <text x="236" y="482" text-anchor="middle" class="f2-sm" font-size="9" fill="#7C8494">each need their own reference baseline</text>
+
+      <!-- Query Flow Box -->
+      <rect x="434" y="236" width="310" height="256" rx="10" fill="#EDFAF8" stroke="#0D9488" stroke-width="1.5"/>
+      <text x="589" y="258" text-anchor="middle" class="f2-xl" font-size="11.5" fill="#0D9488">Conceptual Query Logic</text>
+      <text x="589" y="278" text-anchor="middle" class="f2-mono" font-size="9" fill="#4B5361">1. Extract zone_id from telemetry</text>
+      <text x="589" y="294" text-anchor="middle" class="f2-mono" font-size="9" fill="#4B5361">2. Compute hour_bin = hour(timestamp)</text>
+      <text x="589" y="310" text-anchor="middle" class="f2-mono" font-size="9" fill="#4B5361">3. Query baseline store:</text>
+      <rect x="450" y="316" width="278" height="52" rx="6" fill="#12151C"/>
+      <text x="589" y="334" text-anchor="middle" class="f2-mono" font-size="9" fill="#4ADE80">SELECT v_avg, d_avg</text>
+      <text x="589" y="348" text-anchor="middle" class="f2-mono" font-size="9" fill="#4ADE80">FROM zone_baselines</text>
+      <text x="589" y="362" text-anchor="middle" class="f2-mono" font-size="9" fill="#4ADE80">WHERE zone_id = ? AND hour_bin = ?</text>
+      <text x="589" y="380" text-anchor="middle" class="f2-mono" font-size="9" fill="#4B5361">4. If no baseline found:</text>
+      <text x="589" y="396" text-anchor="middle" class="f2-mono" font-size="9" fill="#D97706">   v_avg = speed_kmh (cold-start)</text>
+      <text x="589" y="412" text-anchor="middle" class="f2-mono" font-size="9" fill="#D97706">   d_avg = density_veh_km</text>
+      <text x="589" y="428" text-anchor="middle" class="f2-sm" font-size="9" fill="#4B5361">5. Return baselines to ratio engine</text>
+      <text x="589" y="450" text-anchor="middle" class="f2-sm" font-size="8.5" fill="#7C8494">Fast index lookup: O(1) on (zone_id, hour_bin)</text>
+      <text x="589" y="466" text-anchor="middle" class="f2-sm" font-size="8.5" fill="#7C8494">No cross-zone data exposed to any client</text>
+      <text x="589" y="482" text-anchor="middle" class="f2-sm" font-size="8.5" fill="#7C8494">Each edge client queries only its own zone</text>
+
+      <!-- Ratio Engine Box -->
+      <rect x="762" y="236" width="324" height="256" rx="10" fill="#EDFAF8" stroke="#0D9488" stroke-width="1.5"/>
+      <text x="924" y="258" text-anchor="middle" class="f2-xl" font-size="11.5" fill="#0D9488">Relative Ratio Computation</text>
+
+      <rect x="778" y="268" width="292" height="44" rx="8" fill="#12151C"/>
+      <text x="924" y="285" text-anchor="middle" class="f2-mono" font-size="13" fill="white">v_ratio  =  v  /  v_avg</text>
+      <text x="924" y="302" text-anchor="middle" class="f2-mono" font-size="13" fill="#4ADE80">d_ratio  =  d  /  d_avg</text>
+
+      <text x="924" y="328" text-anchor="middle" class="f2-sm" font-size="9.5" fill="#4B5361">v_ratio = 1.0 → currently at historical average</text>
+      <text x="924" y="344" text-anchor="middle" class="f2-sm" font-size="9.5" fill="#4B5361">v_ratio = 2.0 → twice the historical speed</text>
+      <text x="924" y="360" text-anchor="middle" class="f2-sm" font-size="9.5" fill="#D97706">v_ratio &gt; 3.0 → OOD threshold exceeded</text>
+      <text x="924" y="378" text-anchor="middle" class="f2-sm" font-size="9.5" fill="#4B5361">d_ratio = 0.5 → half the historical density</text>
+      <text x="924" y="394" text-anchor="middle" class="f2-sm" font-size="9.5" fill="#D97706">d_ratio &gt; 7.0 → OOD threshold exceeded</text>
+
+      <text x="924" y="420" text-anchor="middle" class="f2-lg" font-size="10" fill="#0D9488">Privacy Benefit</text>
+      <text x="924" y="436" text-anchor="middle" class="f2-sm" font-size="9" fill="#4B5361">Ratio = deviation from local norm</text>
+      <text x="924" y="450" text-anchor="middle" class="f2-sm" font-size="9" fill="#4B5361">No raw GPS absolute values needed</text>
+      <text x="924" y="464" text-anchor="middle" class="f2-sm" font-size="9" fill="#4B5361">by downstream model or server</text>
+      <text x="924" y="480" text-anchor="middle" class="f2-sm" font-size="8.5" fill="#7C8494">A person's exact location is not recoverable</text>
+      <text x="924" y="494" text-anchor="middle" class="f2-sm" font-size="8.5" fill="#7C8494">from a speed_ratio = 1.3 value</text>
+
+      <!-- Why it matters -->
+      <rect x="1104" y="236" width="204" height="256" rx="10" fill="#0D9488"/>
+      <text x="1206" y="258" text-anchor="middle" class="f2-xl" font-size="11" fill="white">Why This</text>
+      <text x="1206" y="272" text-anchor="middle" class="f2-xl" font-size="11" fill="white">Module Exists</text>
+      <text x="1206" y="298" text-anchor="middle" class="f2-sm" font-size="9" fill="rgba(255,255,255,0.9)">Without historical baselines,</text>
+      <text x="1206" y="314" text-anchor="middle" class="f2-sm" font-size="9" fill="rgba(255,255,255,0.9)">a model trained on Zone A</text>
+      <text x="1206" y="330" text-anchor="middle" class="f2-sm" font-size="9" fill="rgba(255,255,255,0.9)">would classify Zone B's</text>
+      <text x="1206" y="346" text-anchor="middle" class="f2-sm" font-size="9" fill="rgba(255,255,255,0.9)">normal rush-hour density</text>
+      <text x="1206" y="362" text-anchor="middle" class="f2-sm" font-size="9" fill="rgba(255,255,255,0.9)">as an anomaly.</text>
+      <line x1="1124" y1="374" x2="1292" y2="374" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+      <text x="1206" y="396" text-anchor="middle" class="f2-sm" font-size="9" fill="rgba(255,255,255,0.9)">Relative ratios make</text>
+      <text x="1206" y="412" text-anchor="middle" class="f2-sm" font-size="9" fill="rgba(255,255,255,0.9)">features comparable</text>
+      <text x="1206" y="428" text-anchor="middle" class="f2-sm" font-size="9" fill="rgba(255,255,255,0.9)">across all urban zones</text>
+      <text x="1206" y="444" text-anchor="middle" class="f2-sm" font-size="9" fill="rgba(255,255,255,0.9)">and time periods.</text>
+      <line x1="1124" y1="458" x2="1292" y2="458" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+      <text x="1206" y="476" text-anchor="middle" class="f2-sm" font-size="9" fill="rgba(255,255,255,0.9)">Enables privacy-safe</text>
+      <text x="1206" y="492" text-anchor="middle" class="f2-sm" font-size="9" fill="rgba(255,255,255,0.9)">federated learning without</text>
+      <text x="1206" y="508" text-anchor="middle" class="f2-sm" font-size="9" fill="rgba(255,255,255,0.9)">exposing raw trajectories.</text>
+
+      <!-- Arrows connecting boxes -->
+      <line x1="416" y1="364" x2="434" y2="364" stroke="#0D9488" stroke-width="1.5" marker-end="url(#f2-ah)"/>
+      <line x1="744" y1="364" x2="762" y2="364" stroke="#0D9488" stroke-width="1.5" marker-end="url(#f2-ah)"/>
+      <line x1="1086" y1="364" x2="1104" y2="364" stroke="#0D9488" stroke-width="1.5" marker-end="url(#f2-ah)"/>
+
+      <!-- ====== ARROW DOWN ====== -->
+      <line x1="679" y1="508" x2="679" y2="548" stroke="#4B5361" stroke-width="1.8" marker-end="url(#f2-ah-dark)"/>
+      <rect x="558" y="518" width="242" height="18" rx="9" fill="#F7F8FA" stroke="#E2E5EA" stroke-width="1"/>
+      <text x="679" y="530" text-anchor="middle" class="f2-mono" font-size="9" fill="#4B5361">v_ratio, d_ratio + remaining raw features</text>
+
+      <!-- ====== STEP 3: OUTPUT ====== -->
+      <text x="34" y="568" class="f2-mono" font-size="11" fill="#7C3AED" letter-spacing="0.06em">③ OUTPUT — NORMALIZED FEATURE VECTOR READY FOR FEATURE ENGINEERING</text>
+
+      <rect x="34" y="576" width="1290" height="114" rx="12" fill="white" stroke="#7C3AED" stroke-width="1.8" filter="url(#f2-shadow)"/>
+      <rect x="34" y="576" width="1290" height="26" rx="12" fill="#7C3AED"/>
+      <rect x="34" y="590" width="1290" height="12" rx="0" fill="#7C3AED"/>
+      <text x="679" y="595" text-anchor="middle" class="f2-xl" font-size="12" fill="white">Output from Historical Memory Module → Input to Feature Engineering Stage</text>
+
+      <!-- Before/After comparison -->
+      <rect x="56" y="610" width="560" height="70" rx="10" fill="#F5F0FE" stroke="#7C3AED" stroke-width="1.2"/>
+      <text x="336" y="630" text-anchor="middle" class="f2-xl" font-size="11" fill="#7C3AED">Before Normalization (Raw, Zone-Dependent)</text>
+      <text x="336" y="648" text-anchor="middle" class="f2-mono" font-size="10" fill="#12151C">speed=60.0 km/h  ·  density=45.2 veh/km</text>
+      <text x="336" y="665" text-anchor="middle" class="f2-sm" font-size="9" fill="#7C8494">Meaningless without knowing whether 60 km/h is fast or slow in this zone</text>
+      <text x="336" y="678" text-anchor="middle" class="f2-sm" font-size="8.5" fill="#7C8494">Cannot be directly compared with samples from another zone</text>
+
+      <text x="648" y="650" text-anchor="middle" class="f2-xl" font-size="14" fill="#0D9488">→</text>
+
+      <rect x="680" y="610" width="618" height="70" rx="10" fill="#EDFAF8" stroke="#0D9488" stroke-width="1.5"/>
+      <text x="989" y="630" text-anchor="middle" class="f2-xl" font-size="11" fill="#0D9488">After Normalization (Relative, Cross-Zone Comparable)</text>
+      <text x="989" y="648" text-anchor="middle" class="f2-mono" font-size="10" fill="#12151C">v_ratio = 60.0 / 48.3 = 1.24  ·  d_ratio = 45.2 / 31.6 = 1.43</text>
+      <text x="989" y="665" text-anchor="middle" class="f2-sm" font-size="9" fill="#4B5361">1.24 means "24% above historical average" — interpretable across any zone</text>
+      <text x="989" y="678" text-anchor="middle" class="f2-sm" font-size="8.5" fill="#4B5361">Features are now comparable: model can be trained federated on all 8 regions</text>
+
+      <!-- ====== BASELINE UPDATE LOOP ====== -->
+      <rect x="34" y="706" width="1290" height="98" rx="12" fill="#F7F8FA" stroke="#E2E5EA" stroke-width="1.2"/>
+      <text x="679" y="728" text-anchor="middle" class="f2-xl" font-size="11.5" fill="#12151C">Baseline Update Loop — How the Historical Memory Stays Current</text>
+      <text x="340" y="750" text-anchor="middle" class="f2-sm" font-size="9.5" fill="#4B5361">Each incoming telemetry sample updates the zone baseline via EMA:</text>
+      <text x="340" y="767" text-anchor="middle" class="f2-mono" font-size="10.5" fill="#0D9488">v_avg_new = α × speed_kmh + (1−α) × v_avg_old</text>
+      <text x="340" y="784" text-anchor="middle" class="f2-mono" font-size="10.5" fill="#0D9488">d_avg_new = α × density + (1−α) × d_avg_old</text>
+      <line x1="700" y1="746" x2="700" y2="790" stroke="#E2E5EA" stroke-width="1"/>
+      <text x="1010" y="750" text-anchor="middle" class="f2-sm" font-size="9.5" fill="#4B5361">Baselines adapt over time to reflect gradual changes (new road, construction, seasonal patterns).</text>
+      <text x="1010" y="768" text-anchor="middle" class="f2-sm" font-size="9.5" fill="#4B5361">Privacy: only zone-level aggregated statistics are maintained, never individual trajectories.</text>
+      <text x="1010" y="785" text-anchor="middle" class="f2-sm" font-size="9.5" fill="#4B5361">No raw GPS points, user IDs, or timestamps are retained in the historical store.</text>
+    </svg>
+</body>
+</html>

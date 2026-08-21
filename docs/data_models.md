@@ -11,6 +11,9 @@ here since explicit is easier to reason about at this project's size.
 - **Region** — one federated-learning silo (`region_id`, `pincode`, center coords)
 - **Segment** — the fundamental unit; the road between two intersections
 - **GPSPing** — one raw (map-matched) GPS observation
+- **LiveIngestionBatch** — one idempotent receipt for a trusted simulator batch
+- **SegmentCurrentState** — the latest derived live state for one segment; this
+  is an updatable projection, while `GPSPing` remains append-only history
 - **Event** — a detected OR ground-truth road event
 - **HistoricalMemory** — per-segment, per-hour-of-day normal baseline
 - **FLRoundRecord** — one region's contribution to one FL aggregation
@@ -32,8 +35,12 @@ accurate than a second copy of the schema here.
   trajectory (`GPSBatchIn.device_id`), so a second identity field per
   ping would only ever redundantly repeat that value or silently
   disagree with it. An earlier version of this schema had one; it was
-  removed after it turned out to be both required-but-unused by
-  `ingest.py` and actively misleading in tests (see `docs/architecture.md`).
+   removed after it turned out to be both required-but-unused by
+   `ingest.py` and actively misleading in tests (see `docs/architecture.md`).
+- **LiveGPSObservationIn / LiveGPSBatchIn** — trusted, pre-matched,
+  multi-vehicle simulator observations posted to `/ingest/live/batch`.
+  `observation_id` is unique within its ingestion batch, and the complete
+  payload is hashed so changed retries cannot silently overwrite history.
 - **EventOut** — THE contract from the project spec:
   `{segment_id, event, confidence, affected_neighbors, recommended_route}`
 - **RouteRequest / RouteResponse** — `/routes` input/output

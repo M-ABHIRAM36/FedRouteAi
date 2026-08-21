@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Figure 4 — Deployment-Aware OOD Inference Pipeline · FedRouteAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="index.html" class="brand"><span class="brand-mark"></span>FedRouteAI</a>
+    <span class="crumb">/ <b>Figure 4 — Deployment-Aware OOD Inference Pipeline</b></span>
+  </div>
+  <div class="topbar-right">
+    <button class="btn" onclick="toggleTheme()">☀ Theme</button>
+    <button class="btn primary" onclick="downloadSVG('fig4-svg','fig4_ood_inference_pipeline.svg')">↓ Export SVG</button>
+  </div>
+</div>
+
+<div class="page">
+  <div class="fig-header">
+    <div class="fig-eyebrow">Figure 4 · Deployment-Aware Inference Pipeline</div>
+    <h1 class="fig-title">Edge Inference: From Raw Telemetry to Anomaly Prediction with OOD Guard</h1>
+    <p class="fig-desc">The deployment-aware inference pipeline handles two critical real-world deployment hazards simultaneously: (1) <b>missing sensor data</b> — resolved via deterministic zero-imputation before reaching the model, and (2) <b>extreme out-of-distribution inputs</b> — flagged dynamically via threshold thresholds on normalized feature ratios. Inference always executes; the OOD flag is a system-level alert, not a prediction blocker.</p>
+  </div>
+
+  <div class="legend">
+    <span class="legend-item"><span class="legend-swatch" style="background:#7C3AED"></span>Input Feature Tensor (from Feature Engineering)</span>
+    <span class="legend-item"><span class="legend-swatch" style="background:#D97706"></span>OOD Detection & Warning Path</span>
+    <span class="legend-item"><span class="legend-swatch" style="background:#2563EB"></span>EventClassifierMLP Inference</span>
+    <span class="legend-item"><span class="legend-swatch" style="background:#E11D48"></span>Final Output — Anomaly Prediction</span>
+  </div>
+
+  <div class="canvas">
+    <svg id="fig4-svg" viewBox="0 0 1360 860" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>
+          .f4-xl { font-family: 'Space Grotesk', sans-serif; font-weight: 700; }
+          .f4-lg { font-family: 'Space Grotesk', sans-serif; font-weight: 600; }
+          .f4-md { font-family: 'Inter', sans-serif; font-weight: 500; }
+          .f4-sm { font-family: 'Inter', sans-serif; font-weight: 400; }
+          .f4-mono { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+        </style>
+        <marker id="f4-ah" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#4B5361"/>
+        </marker>
+        <marker id="f4-ah-orange" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#D97706"/>
+        </marker>
+        <marker id="f4-ah-red" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#E11D48"/>
+        </marker>
+        <marker id="f4-ah-blue" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#2563EB"/>
+        </marker>
+        <filter id="f4-shadow" x="-5%" y="-5%" width="120%" height="135%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.1"/>
+        </filter>
+      </defs>
+
+      <!-- ====== BACKGROUND ZONES ====== -->
+      <!-- Main pipeline zone -->
+      <rect x="18" y="18" width="860" height="820" rx="16" fill="#F5F0FE" opacity="0.4" stroke="#7C3AED" stroke-width="1.2" stroke-dasharray="4 5"/>
+      <text x="448" y="44" text-anchor="middle" class="f4-xl" font-size="12" fill="#7C3AED" letter-spacing="0.05em">MAIN INFERENCE PIPELINE  (Always Executes)</text>
+
+      <!-- OOD Side path zone -->
+      <rect x="898" y="18" width="444" height="820" rx="16" fill="#FEF6E8" opacity="0.6" stroke="#D97706" stroke-width="1.5" stroke-dasharray="4 5"/>
+      <text x="1120" y="44" text-anchor="middle" class="f4-xl" font-size="12" fill="#D97706" letter-spacing="0.05em">OOD WARNING PATH  (Triggered Only If Threshold Exceeded)</text>
+
+      <!-- ====== STEP 1: INCOMING TENSOR ====== -->
+      <text x="34" y="70" class="f4-mono" font-size="10.5" fill="#7C3AED">① INCOMING FEATURE TENSOR — FROM FEATURE ENGINEERING MODULE</text>
+
+      <rect x="34" y="78" width="826" height="82" rx="12" fill="white" stroke="#7C3AED" stroke-width="1.8" filter="url(#f4-shadow)"/>
+      <rect x="34" y="78" width="826" height="24" rx="12" fill="#7C3AED"/>
+      <rect x="34" y="90" width="826" height="12" rx="0" fill="#7C3AED"/>
+      <text x="447" y="95" text-anchor="middle" class="f4-xl" font-size="11.5" fill="white">Input Feature Tensor  x ∈ ℝ¹⁰  (Produced by Feature Engineering Stage)</text>
+
+      <!-- Feature slots -->
+      <rect x="50" y="108" width="86" height="42" rx="6" fill="#F5F0FE" stroke="#7C3AED" stroke-width="1"/>
+      <text x="93" y="125" text-anchor="middle" class="f4-mono" font-size="9" fill="#7C3AED">v_ratio</text>
+      <text x="93" y="139" text-anchor="middle" class="f4-sm" font-size="7.5" fill="#4B5361">speed ratio</text>
+      <text x="93" y="149" text-anchor="middle" class="f4-mono" font-size="7" fill="#D97706">OOD:&gt;3.0</text>
+
+      <rect x="148" y="108" width="86" height="42" rx="6" fill="#F5F0FE" stroke="#7C3AED" stroke-width="1"/>
+      <text x="191" y="125" text-anchor="middle" class="f4-mono" font-size="9" fill="#7C3AED">d_ratio</text>
+      <text x="191" y="139" text-anchor="middle" class="f4-sm" font-size="7.5" fill="#4B5361">density ratio</text>
+      <text x="191" y="149" text-anchor="middle" class="f4-mono" font-size="7" fill="#D97706">OOD:&gt;7.0</text>
+
+      <rect x="246" y="108" width="86" height="42" rx="6" fill="#F5F0FE" stroke="#7C3AED" stroke-width="1"/>
+      <text x="289" y="125" text-anchor="middle" class="f4-mono" font-size="9" fill="#7C3AED">road_cond</text>
+      <text x="289" y="139" text-anchor="middle" class="f4-sm" font-size="7.5" fill="#4B5361">one-hot ×3</text>
+      <text x="289" y="149" text-anchor="middle" class="f4-mono" font-size="7" fill="#4B5361">dims 3–5</text>
+
+      <rect x="344" y="108" width="86" height="42" rx="6" fill="#F5F0FE" stroke="#7C3AED" stroke-width="1"/>
+      <text x="387" y="125" text-anchor="middle" class="f4-mono" font-size="9" fill="#7C3AED">up_vel</text>
+      <text x="387" y="139" text-anchor="middle" class="f4-sm" font-size="7.5" fill="#4B5361">upstream vel.</text>
+      <text x="387" y="149" text-anchor="middle" class="f4-mono" font-size="7" fill="#4B5361">dim 6</text>
+
+      <rect x="442" y="108" width="86" height="42" rx="6" fill="#F5F0FE" stroke="#7C3AED" stroke-width="1"/>
+      <text x="485" y="125" text-anchor="middle" class="f4-mono" font-size="9" fill="#7C3AED">dn_den</text>
+      <text x="485" y="139" text-anchor="middle" class="f4-sm" font-size="7.5" fill="#4B5361">downstream den.</text>
+      <text x="485" y="149" text-anchor="middle" class="f4-mono" font-size="7" fill="#4B5361">dim 7</text>
+
+      <rect x="540" y="108" width="86" height="42" rx="6" fill="#F5F0FE" stroke="#7C3AED" stroke-width="1"/>
+      <text x="583" y="125" text-anchor="middle" class="f4-mono" font-size="9" fill="#7C3AED">weather</text>
+      <text x="583" y="139" text-anchor="middle" class="f4-sm" font-size="7.5" fill="#4B5361">encoded flag</text>
+      <text x="583" y="149" text-anchor="middle" class="f4-mono" font-size="7" fill="#4B5361">dim 8</text>
+
+      <rect x="638" y="108" width="86" height="42" rx="6" fill="#F5F0FE" stroke="#7C3AED" stroke-width="1"/>
+      <text x="681" y="125" text-anchor="middle" class="f4-mono" font-size="9" fill="#7C3AED">acc_flag</text>
+      <text x="681" y="139" text-anchor="middle" class="f4-sm" font-size="7.5" fill="#4B5361">accident flag</text>
+      <text x="681" y="149" text-anchor="middle" class="f4-mono" font-size="7" fill="#4B5361">dim 9</text>
+
+      <rect x="736" y="108" width="108" height="42" rx="6" fill="#F5F0FE" stroke="#7C3AED" stroke-width="1"/>
+      <text x="790" y="125" text-anchor="middle" class="f4-mono" font-size="9" fill="#7C3AED">roadwork</text>
+      <text x="790" y="139" text-anchor="middle" class="f4-sm" font-size="7.5" fill="#4B5361">roadwork flag</text>
+      <text x="790" y="149" text-anchor="middle" class="f4-mono" font-size="7" fill="#4B5361">dim 10</text>
+
+      <!-- Step 2: Zero Imputation -->
+      <line x1="447" y1="160" x2="447" y2="198" stroke="#4B5361" stroke-width="1.8" marker-end="url(#f4-ah)"/>
+
+      <text x="34" y="214" class="f4-mono" font-size="10.5" fill="#7C3AED">② DETERMINISTIC ZERO-IMPUTATION — MISSING SENSOR FALLBACK</text>
+
+      <rect x="34" y="222" width="826" height="104" rx="12" fill="white" stroke="#7C3AED" stroke-width="1.8" filter="url(#f4-shadow)"/>
+      <rect x="34" y="222" width="826" height="24" rx="12" fill="#7C3AED"/>
+      <rect x="34" y="234" width="826" height="12" rx="0" fill="#7C3AED"/>
+      <text x="447" y="239" text-anchor="middle" class="f4-xl" font-size="11.5" fill="white">Zero-Imputation — Deterministic Structural Gap Handler</text>
+
+      <!-- Two-column explanation -->
+      <rect x="50" y="254" width="380" height="62" rx="8" fill="#F5F0FE" stroke="#7C3AED" stroke-width="1"/>
+      <text x="240" y="270" text-anchor="middle" class="f4-lg" font-size="10.5" fill="#7C3AED">What Happens</text>
+      <text x="240" y="286" text-anchor="middle" class="f4-sm" font-size="9.5" fill="#4B5361">If neighbor segment velocities or downstream density</text>
+      <text x="240" y="300" text-anchor="middle" class="f4-sm" font-size="9.5" fill="#4B5361">is unavailable, those feature dimensions are set to 0.0.</text>
+      <text x="240" y="314" text-anchor="middle" class="f4-mono" font-size="9" fill="#4B5361">x[6] = 0.0, x[7] = 0.0  →  tensor remains 10-dimensional</text>
+
+      <rect x="446" y="254" width="398" height="62" rx="8" fill="#F5F0FE" stroke="#7C3AED" stroke-width="1"/>
+      <text x="645" y="270" text-anchor="middle" class="f4-lg" font-size="10.5" fill="#7C3AED">Why Zero, Not Mean Imputation?</text>
+      <text x="645" y="286" text-anchor="middle" class="f4-sm" font-size="9.5" fill="#4B5361">Zero maps to the normalized baseline state (ratio=0 ≡ no relative</text>
+      <text x="645" y="300" text-anchor="middle" class="f4-sm" font-size="9.5" fill="#4B5361">deviation from historical). Mean imputation would require knowing</text>
+      <text x="645" y="314" text-anchor="middle" class="f4-sm" font-size="9.5" fill="#4B5361">the global mean — which would require cross-client data sharing.</text>
+
+      <!-- Step 3: OOD Check -->
+      <line x1="447" y1="326" x2="447" y2="366" stroke="#4B5361" stroke-width="1.8" marker-end="url(#f4-ah)"/>
+
+      <text x="34" y="382" class="f4-mono" font-size="10.5" fill="#D97706">③ OUT-OF-DISTRIBUTION THRESHOLD GUARD</text>
+
+      <rect x="34" y="390" width="826" height="130" rx="12" fill="white" stroke="#D97706" stroke-width="2" filter="url(#f4-shadow)"/>
+      <rect x="34" y="390" width="826" height="26" rx="12" fill="#D97706"/>
+      <rect x="34" y="404" width="826" height="12" rx="0" fill="#D97706"/>
+      <text x="447" y="410" text-anchor="middle" class="f4-xl" font-size="12" fill="white">OOD Threshold Detection — Two-Condition OR Logic</text>
+
+      <!-- Threshold 1 -->
+      <rect x="50" y="426" width="370" height="82" rx="10" fill="#FEF6E8" stroke="#D97706" stroke-width="1.5"/>
+      <text x="235" y="444" text-anchor="middle" class="f4-lg" font-size="11" fill="#D97706">Condition 1: Speed Out-of-Range</text>
+      <text x="235" y="465" text-anchor="middle" class="f4-mono" font-size="16" fill="#12151C">v_ratio  &gt;  3.0</text>
+      <text x="235" y="484" text-anchor="middle" class="f4-sm" font-size="9.5" fill="#4B5361">Current speed is 3× the historical zone average.</text>
+      <text x="235" y="498" text-anchor="middle" class="f4-sm" font-size="9" fill="#4B5361">Indicates sensor malfunction, GPS error, or extreme event.</text>
+
+      <!-- OR connector -->
+      <text x="447" y="476" text-anchor="middle" class="f4-xl" font-size="14" fill="#D97706">OR</text>
+
+      <!-- Threshold 2 -->
+      <rect x="464" y="426" width="380" height="82" rx="10" fill="#FEF6E8" stroke="#D97706" stroke-width="1.5"/>
+      <text x="654" y="444" text-anchor="middle" class="f4-lg" font-size="11" fill="#D97706">Condition 2: Density Out-of-Range</text>
+      <text x="654" y="465" text-anchor="middle" class="f4-mono" font-size="16" fill="#12151C">d_ratio  &gt;  7.0</text>
+      <text x="654" y="484" text-anchor="middle" class="f4-sm" font-size="9.5" fill="#4B5361">Current density is 7× the historical zone average.</text>
+      <text x="654" y="498" text-anchor="middle" class="f4-sm" font-size="9" fill="#4B5361">Indicates sensor failure or catastrophic traffic event.</text>
+
+      <!-- OOD trigger arrow → right zone -->
+      <line x1="860" y1="455" x2="898" y2="455" stroke="#D97706" stroke-width="2" marker-end="url(#f4-ah-orange)"/>
+      <text x="879" y="449" text-anchor="middle" class="f4-mono" font-size="8.5" fill="#D97706">TRIGGERED</text>
+
+      <!-- OOD RIGHT ZONE: Warning Generation -->
+      <text x="916" y="70" class="f4-mono" font-size="10" fill="#D97706">OOD WARNING — SIDE CHANNEL</text>
+
+      <rect x="916" y="78" width="410" height="96" rx="12" fill="white" stroke="#D97706" stroke-width="1.8" filter="url(#f4-shadow)"/>
+      <rect x="916" y="78" width="410" height="24" rx="12" fill="#D97706"/>
+      <rect x="916" y="90" width="410" height="12" rx="0" fill="#D97706"/>
+      <text x="1121" y="95" text-anchor="middle" class="f4-xl" font-size="11" fill="white">Dynamic OOD Warning Flag Generator</text>
+      <text x="1121" y="118" text-anchor="middle" class="f4-lg" font-size="10.5" fill="#D97706">ood_warning = True</text>
+      <text x="1121" y="136" text-anchor="middle" class="f4-sm" font-size="9.5" fill="#4B5361">Injected into prediction response header</text>
+      <text x="1121" y="151" text-anchor="middle" class="f4-sm" font-size="9.5" fill="#4B5361">Does NOT block inference — model still runs</text>
+      <text x="1121" y="164" text-anchor="middle" class="f4-sm" font-size="9" fill="#7C8494">Downstream system decides whether to suppress/alert/audit</text>
+
+      <line x1="1121" y1="174" x2="1121" y2="218" stroke="#D97706" stroke-width="1.6" marker-end="url(#f4-ah-orange)"/>
+
+      <rect x="916" y="218" width="410" height="96" rx="12" fill="white" stroke="#D97706" stroke-width="1.6" filter="url(#f4-shadow)"/>
+      <rect x="916" y="218" width="410" height="20" rx="12" fill="#D97706" opacity="0.7"/>
+      <rect x="916" y="228" width="410" height="10" rx="0" fill="#D97706" opacity="0.7"/>
+      <text x="1121" y="232" text-anchor="middle" class="f4-xl" font-size="10.5" fill="white">Dashboard OOD Alert Banner</text>
+      <text x="1121" y="252" text-anchor="middle" class="f4-lg" font-size="9.5" fill="#D97706">⚠ SENSOR RELIABILITY WARNING</text>
+      <text x="1121" y="268" text-anchor="middle" class="f4-sm" font-size="9" fill="#4B5361">Zone: [zone_id] · ratio_type: [speed|density]</text>
+      <text x="1121" y="282" text-anchor="middle" class="f4-sm" font-size="9" fill="#4B5361">Predicted class shown with OOD flag attached</text>
+      <text x="1121" y="296" text-anchor="middle" class="f4-sm" font-size="8.5" fill="#7C8494">Alert propagated to React dashboard notification system</text>
+      <text x="1121" y="308" text-anchor="middle" class="f4-sm" font-size="8.5" fill="#7C8494">Traffic operations center may dispatch physical inspection</text>
+
+      <!-- Merge arrow back to main pipeline -->
+      <line x1="1121" y1="314" x2="1121" y2="710" stroke="#D97706" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <line x1="1121" y1="710" x2="880" y2="710" stroke="#D97706" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#f4-ah-orange)"/>
+      <text x="1050" y="704" text-anchor="middle" class="f4-mono" font-size="8.5" fill="#D97706">ood_warning merged into response</text>
+
+      <!-- Step 4: MLP Inference -->
+      <line x1="447" y1="520" x2="447" y2="558" stroke="#4B5361" stroke-width="1.8" marker-end="url(#f4-ah)"/>
+
+      <text x="34" y="574" class="f4-mono" font-size="10.5" fill="#2563EB">④ EVENTCLASSIFIERMLP — EDGE INFERENCE ENGINE</text>
+
+      <rect x="34" y="582" width="826" height="130" rx="12" fill="white" stroke="#2563EB" stroke-width="1.8" filter="url(#f4-shadow)"/>
+      <rect x="34" y="582" width="826" height="24" rx="12" fill="#2563EB"/>
+      <rect x="34" y="594" width="826" height="12" rx="0" fill="#2563EB"/>
+      <text x="447" y="599" text-anchor="middle" class="f4-xl" font-size="11.5" fill="white">EventClassifierMLP — Lightweight 3-Layer Edge Model</text>
+
+      <!-- Architecture visualization -->
+      <!-- Input Layer -->
+      <rect x="60" y="614" width="120" height="88" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.2"/>
+      <text x="120" y="630" text-anchor="middle" class="f4-lg" font-size="10" fill="#2563EB">Input Layer</text>
+      <text x="120" y="646" text-anchor="middle" class="f4-mono" font-size="12" fill="#12151C">10 neurons</text>
+      <text x="120" y="662" text-anchor="middle" class="f4-sm" font-size="9" fill="#4B5361">x ∈ ℝ¹⁰</text>
+      <text x="120" y="676" text-anchor="middle" class="f4-sm" font-size="8.5" fill="#7C8494">No activation</text>
+      <text x="120" y="691" text-anchor="middle" class="f4-sm" font-size="8" fill="#7C8494">Direct passthrough</text>
+      <text x="120" y="700" text-anchor="middle" class="f4-sm" font-size="7.5" fill="#7C8494">10 input weights</text>
+
+      <line x1="180" y1="658" x2="224" y2="658" stroke="#2563EB" stroke-width="1.5" marker-end="url(#f4-ah-blue)"/>
+
+      <!-- Hidden Layer -->
+      <rect x="224" y="614" width="140" height="88" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.5"/>
+      <text x="294" y="630" text-anchor="middle" class="f4-lg" font-size="10" fill="#2563EB">Hidden Layer</text>
+      <text x="294" y="646" text-anchor="middle" class="f4-mono" font-size="12" fill="#12151C">64 neurons</text>
+      <text x="294" y="662" text-anchor="middle" class="f4-sm" font-size="9" fill="#4B5361">Activation: ReLU</text>
+      <text x="294" y="676" text-anchor="middle" class="f4-sm" font-size="8.5" fill="#7C8494">Weights: 10×64 = 640</text>
+      <text x="294" y="690" text-anchor="middle" class="f4-sm" font-size="8.5" fill="#7C8494">Biases: 64</text>
+      <text x="294" y="702" text-anchor="middle" class="f4-mono" font-size="7.5" fill="#7C8494">Params: 704</text>
+
+      <line x1="364" y1="658" x2="408" y2="658" stroke="#2563EB" stroke-width="1.5" marker-end="url(#f4-ah-blue)"/>
+
+      <!-- Output Layer -->
+      <rect x="408" y="614" width="130" height="88" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.5"/>
+      <text x="473" y="630" text-anchor="middle" class="f4-lg" font-size="10" fill="#2563EB">Output Layer</text>
+      <text x="473" y="646" text-anchor="middle" class="f4-mono" font-size="12" fill="#12151C">8 neurons</text>
+      <text x="473" y="662" text-anchor="middle" class="f4-sm" font-size="9" fill="#4B5361">Activation: Softmax</text>
+      <text x="473" y="676" text-anchor="middle" class="f4-sm" font-size="8.5" fill="#7C8494">Weights: 64×8 = 512</text>
+      <text x="473" y="690" text-anchor="middle" class="f4-sm" font-size="8.5" fill="#7C8494">Biases: 8</text>
+      <text x="473" y="702" text-anchor="middle" class="f4-mono" font-size="7.5" fill="#7C8494">Params: 520</text>
+
+      <!-- Stats -->
+      <rect x="570" y="614" width="270" height="42" rx="8" fill="#12151C"/>
+      <text x="705" y="630" text-anchor="middle" class="f4-xl" font-size="11" fill="white">Total: 3,240 Parameters</text>
+      <text x="705" y="646" text-anchor="middle" class="f4-mono" font-size="9.5" fill="#4ADE80">704 + 2,016 + 520 = 3,240 · Size: 12.96 KB</text>
+
+      <rect x="570" y="664" width="270" height="38" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1"/>
+      <text x="705" y="680" text-anchor="middle" class="f4-lg" font-size="10" fill="#2563EB">Inference Performance</text>
+      <text x="705" y="694" text-anchor="middle" class="f4-mono" font-size="9.5" fill="#4B5361">0.2069 ms/sample on CPU  (benchmarked)</text>
+
+      <!-- Step 5: Output -->
+      <line x1="447" y1="712" x2="447" y2="752" stroke="#4B5361" stroke-width="1.8" marker-end="url(#f4-ah)"/>
+
+      <text x="34" y="768" class="f4-mono" font-size="10.5" fill="#E11D48">⑤ FINAL OUTPUT — ANOMALY PREDICTION RESPONSE</text>
+
+      <rect x="34" y="776" width="826" height="64" rx="12" fill="#E11D48" filter="url(#f4-shadow)"/>
+      <text x="447" y="800" text-anchor="middle" class="f4-xl" font-size="12" fill="white">Prediction Response JSON Object</text>
+      <text x="240" y="822" text-anchor="middle" class="f4-mono" font-size="9.5" fill="rgba(255,255,255,0.9)">predicted_class: "accident"</text>
+      <text x="447" y="822" text-anchor="middle" class="f4-mono" font-size="9.5" fill="rgba(255,255,255,0.9)">confidence: 0.87</text>
+      <text x="640" y="822" text-anchor="middle" class="f4-mono" font-size="9.5" fill="rgba(255,255,255,0.9)">ood_warning: true/false</text>
+
+      <!-- 8 Classes panel -->
+      <rect x="880" y="578" width="452" height="134" rx="12" fill="white" stroke="#E11D48" stroke-width="1.6" filter="url(#f4-shadow)"/>
+      <rect x="880" y="578" width="452" height="22" rx="12" fill="#E11D48"/>
+      <rect x="880" y="590" width="452" height="10" rx="0" fill="#E11D48"/>
+      <text x="1106" y="594" text-anchor="middle" class="f4-xl" font-size="11" fill="white">8 Anomaly Classes — Distribution in Dataset</text>
+      <text x="916" y="616" class="f4-mono" font-size="9.5" fill="#12151C">normal</text>
+      <text x="1240" y="616" text-anchor="end" class="f4-mono" font-size="9.5" fill="#16A34A">76.5% (24,200 samples)</text>
+      <text x="916" y="632" class="f4-mono" font-size="9.5" fill="#12151C">road_damage</text>
+      <text x="1240" y="632" text-anchor="end" class="f4-mono" font-size="9.5" fill="#D97706">11.0% (3,320 samples)</text>
+      <text x="916" y="648" class="f4-mono" font-size="9.5" fill="#12151C">construction</text>
+      <text x="1240" y="648" text-anchor="end" class="f4-mono" font-size="9.5" fill="#D97706">4.6%  (1,390 samples)</text>
+      <text x="916" y="664" class="f4-mono" font-size="9.5" fill="#12151C">congestion</text>
+      <text x="1240" y="664" text-anchor="end" class="f4-mono" font-size="9.5" fill="#D97706">3.8%  (1,148 samples)</text>
+      <text x="916" y="680" class="f4-mono" font-size="9.5" fill="#E11D48">accident · flood · diversion · road_block</text>
+      <text x="1240" y="680" text-anchor="end" class="f4-mono" font-size="9.5" fill="#E11D48">&lt;2.0%  each (rare classes)</text>
+      <text x="1106" y="700" text-anchor="middle" class="f4-sm" font-size="8.5" fill="#7C8494">Total: 30,195 samples · Severe class imbalance → rarity bonus in AdaptiveFedAvg</text>
+
+    </svg>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h3><span class="dot" style="background:#D97706"></span> The OOD Problem in Vehicular Edge Deployment</h3>
+      <ul class="step-list">
+        <li><b>Sensor degradation:</b> GPS units mounted on vehicles experience humidity, vibration, and voltage fluctuations. Readings can spike to physically impossible values.</li>
+        <li><b>Traditional approach:</b> Post-hoc confidence calibration (ODIN, temperature scaling) intervenes <i>after</i> the model has processed the malformed input — which can cause mathematical saturation on resource-constrained edge hardware.</li>
+        <li><b>FedRouteAI approach:</b> Pre-inference threshold detection on normalized feature ratios — a one-comparison check that adds near-zero latency overhead while providing a clear system alert before any downstream consumer acts on the prediction.</li>
+        <li><b>OR logic is correct:</b> Either condition alone indicates sensor unreliability. AND would miss single-sensor faults entirely.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3><span class="dot" style="background:#2563EB"></span> MLP Architecture Design Rationale</h3>
+      <div class="formula-row">
+        <div class="formula-name">Why 10 input features?</div>
+        <div class="formula-note">2 ratio features (v_ratio, d_ratio) + 3 road condition one-hot + 2 neighbor segment values + 3 other environmental flags. Zero-imputed where sensor absent.</div>
+      </div>
+      <div class="formula-row">
+        <div class="formula-name">Why 64 hidden units?</div>
+        <div class="formula-note">Balances representational capacity for 8-class separation against the 12.96 KB weight budget constraint for edge deployment over V2X channels.</div>
+      </div>
+      <div class="formula-row">
+        <div class="formula-name">Why Softmax output?</div>
+        <div class="formula-note">Produces normalized class probability distribution — confidence score (max probability) is attached to each prediction and displayed on dashboard.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pagenav">
+    <a href="feature_engineering.html">
+      <span class="nav-label">← Prev</span>
+      <span class="nav-title">Figure 3 — Feature Engineering Pipeline</span>
+    </a>
+    <a href="adaptivefedavg.html" class="next">
+      <span class="nav-label">Next →</span>
+      <span class="nav-title">Figure 5 — AdaptiveFedAvg Aggregation</span>
+    </a>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

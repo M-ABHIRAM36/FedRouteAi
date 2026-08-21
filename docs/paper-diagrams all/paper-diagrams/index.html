@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FedRouteAI — Paper Diagrams Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  body { background: var(--bg-soft); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="index.html" class="brand"><span class="brand-mark"></span>FedRouteAI Diagrams</a>
+  </div>
+  <div class="topbar-right">
+    <button class="btn" onclick="toggleTheme()">☀ Theme</button>
+  </div>
+</div>
+<div class="page">
+  <div class="hero">
+    <h1>FedRouteAI — IEEE Conference Paper Figures</h1>
+    <p>Publication-quality architecture diagrams for <em>Adaptive Federated Learning for Resilient Edge-Based Traffic Anomaly Detection</em>. All formulas verified against source code. SVG export available on each figure page.</p>
+    <div class="hero-badges">
+      <span class="databadge verified">✓ Formulas Verified Against Code</span>
+      <span class="databadge illustrated">6 Architecture Diagrams</span>
+      <span class="databadge unverified">IEEE Conference Ready</span>
+    </div>
+  </div>
+
+  <p class="section-label">Core Architecture Diagrams</p>
+  <div class="fig-grid">
+    <a href="architecture.html" class="fig-card">
+      <div class="num" style="background: linear-gradient(135deg,#2563EB,#1d4ed8)">1</div>
+      <div class="fc-title">Overall System Architecture</div>
+      <div class="fc-desc">End-to-end FedRouteAI pipeline: edge telemetry → Historical Memory → Feature Engineering → OOD Guard → MLP → AdaptiveFedAvg → Dashboard. Privacy boundary clearly demarcated.</div>
+      <div class="fc-tags">
+        <span class="tag">full-width</span><span class="tag">6-layers</span><span class="tag">privacy-boundary</span>
+      </div>
+    </a>
+
+    <a href="historical_memory.html" class="fig-card">
+      <div class="num" style="background: linear-gradient(135deg,#0D9488,#0f766e)">2</div>
+      <div class="fc-title">Historical Memory Module</div>
+      <div class="fc-desc">PostgreSQL spatial-temporal baseline store. Schema, SQL query logic, relative ratio engine (v_ratio = v/v_avg, d_ratio = d/d_avg), before/after normalization comparison.</div>
+      <div class="fc-tags">
+        <span class="tag">postgresql</span><span class="tag">normalization</span><span class="tag">privacy</span>
+      </div>
+    </a>
+
+    <a href="feature_engineering.html" class="fig-card">
+      <div class="num" style="background: linear-gradient(135deg,#7C3AED,#6d28d9)">3</div>
+      <div class="fc-title">Feature Engineering Pipeline</div>
+      <div class="fc-desc">5 parallel transformation streams producing x ∈ ℝ¹⁰. Speed ratio, density ratio, road condition one-hot, zero-imputed neighbors, environmental binary flags.</div>
+      <div class="fc-tags">
+        <span class="tag">10-dim tensor</span><span class="tag">one-hot</span><span class="tag">zero-imputation</span>
+      </div>
+    </a>
+
+    <a href="ood_pipeline.html" class="fig-card">
+      <div class="num" style="background: linear-gradient(135deg,#D97706,#b45309)">4</div>
+      <div class="fc-title">Deployment-Aware OOD Inference</div>
+      <div class="fc-desc">Two-zone layout: main MLP pipeline + OOD side channel. v_ratio &gt; 3.0 OR d_ratio &gt; 7.0 triggers warning flag. EventClassifierMLP: Input(10)→Dense(64,ReLU)→Output(8,Softmax).</div>
+      <div class="fc-tags">
+        <span class="tag">ood-detection</span><span class="tag">mlp-3240-params</span><span class="tag">0.2069ms</span>
+      </div>
+    </a>
+
+    <a href="adaptivefedavg.html" class="fig-card">
+      <div class="num" style="background: linear-gradient(135deg,#16A34A,#15803d)">5</div>
+      <div class="fc-title">AdaptiveFedAvg Aggregation</div>
+      <div class="fc-desc">7-step aggregation pipeline. All 4 factors with code-verified formulas: q_k=max(0.10,F1), ρ_k=1+0.3×f_rare, EMA gate. Hyperparameter table included.</div>
+      <div class="fc-tags">
+        <span class="tag">verified-formulas</span><span class="tag">4-factors</span><span class="tag">ema-gate</span>
+      </div>
+    </a>
+
+    <a href="communication.html" class="fig-card">
+      <div class="num" style="background: linear-gradient(135deg,#0D9488,#16A34A)">6</div>
+      <div class="fc-title">FL Communication Protocol</div>
+      <div class="fc-desc">8 client nodes individually labeled with region types. Broadcast/upload arrows. Per-round 5-phase timeline. 12.96 KB payload breakdown: 3240 × 4 bytes.</div>
+      <div class="fc-tags">
+        <span class="tag">8-clients</span><span class="tag">30-rounds</span><span class="tag">12.96KB</span>
+      </div>
+    </a>
+  </div>
+
+  <p class="section-label">Results & Experimental Figures</p>
+  <div class="fig-grid">
+    <a href="evaluation.html" class="fig-card">
+      <div class="num" style="background: linear-gradient(135deg,#E11D48,#be123c)">7</div>
+      <div class="fc-title">Experimental Pipeline & Results</div>
+      <div class="fc-desc">End-to-end experimental setup: 30,195 samples, 8-client non-IID partition, 30 FL rounds, convergence analysis, per-class F1 breakdown.</div>
+      <div class="fc-tags">
+        <span class="tag">convergence</span><span class="tag">per-class-f1</span><span class="tag">30-rounds</span>
+      </div>
+    </a>
+
+    <a href="results.html" class="fig-card">
+      <div class="num" style="background: linear-gradient(135deg,#E11D48,#9f1239)">8–10</div>
+      <div class="fc-title">Confusion Matrix & Class Distribution</div>
+      <div class="fc-desc">8-class confusion matrix showing prediction accuracy per class. Dataset class distribution chart. Performance comparison table: Centralized vs FedAvg vs AdaptiveFedAvg.</div>
+      <div class="fc-tags">
+        <span class="tag">confusion-matrix</span><span class="tag">82.21%-acc</span><span class="tag">macro-f1-0.6401</span>
+      </div>
+    </a>
+  </div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>

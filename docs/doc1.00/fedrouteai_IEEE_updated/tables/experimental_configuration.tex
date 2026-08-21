@@ -1,0 +1,25 @@
+\begin{table}[htbp]
+\centering
+\caption{Experimental Hyperparameters and Network Configuration}
+\label{tab:experimental_configuration}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Configured Value} \\
+\midrule
+Simulated Edge Clients ($|\mathcal{K}|$) & 8 non-IID regional partitions \\
+Federated Communication Rounds ($T$)     & 30 rounds \\
+Local Training Epochs ($E$)             & 5 epochs per round \\
+Local Optimizer                         & Adam ($\beta_1=0.9, \beta_2=0.999$) \\
+Learning Rate ($\eta$)                  & 0.001 \\
+Local Batch Size ($B$)                  & 32 samples \\
+Adaptive Quality Floor ($q_{floor}$)    & 0.10 \\
+Adaptive Rarity Scaling ($\beta$)       & 0.30 \\
+Adaptive Gate Floor ($g_{min}$)         & 0.50 \\
+Adaptive Gate Threshold ($\tau$)       & 0.15 \\
+EMA Smoothing Factor ($\alpha$)         & 0.30 \\
+Primary Evaluation Metric               & Macro F1 score \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

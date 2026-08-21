@@ -1,0 +1,28 @@
+\section{Introduction}
+
+\subsection{Background}
+
+The rapid deployment of Connected and Automated Vehicles (CAVs) has fundamentally transformed the landscape of Intelligent Transportation Systems (ITS). Modern ITS relies heavily on the continuous collection and analysis of vehicular telemetry, enabling complex machine learning architectures to predict traffic flows, manage congestion, and detect anomalous road events. However, this centralized paradigm demands the constant transmission of highly sensitive geospatial data---including high-frequency GPS trajectories, localized density metrics, and acceleration profiles---to cloud servers. Such bulk data aggregation exposes critical vulnerabilities regarding passenger privacy and location tracking, necessitating a shift toward decentralized processing architectures \cite{Zhang_2025}.
+
+Federated Learning (FL) has emerged as the definitive framework for resolving the privacy-utility tradeoff in distributed edge networks \cite{Kairouz_2021}. By distributing the training process directly to the edge nodes (i.e., the vehicles or roadside units), FL allows statistical models to converge globally without requiring raw, privacy-sensitive data to leave the local device. In this architecture, edge nodes compute localized gradients using their immediate environmental data and transmit only the ephemeral model weight updates to a central aggregation server. This paradigm is rapidly becoming the standard for Vehicle-to-Everything (V2X) communication networks, theoretically offering scalable, privacy-preserving intelligence across the entire transportation grid.
+
+\subsection{Motivation}
+
+Despite the privacy advantages of Federated Learning, transitioning these models from controlled simulations to real-world edge deployments introduces significant challenges. Conventional FL algorithms, such as FedAvg, operate under the implicit assumption that the data distributions across all participating clients are relatively stable and complete. However, vehicular environments are inherently highly heterogeneous and volatile \cite{Lu_2024}.
+
+In practical ITS deployments, edge devices---ranging from low-power roadside sensors to advanced on-board vehicle computers---frequently experience intermittent network connectivity, sensor degradation, and extreme environmental variations. These physical limitations directly translate into data abnormalities. When an autonomous vehicle encounters a faulty sensor or drops a telemetry packet, the resulting real-time feature vector becomes incomplete or severely skewed compared to the data distribution upon which the model was trained. Incomplete or out-of-distribution feature vectors can reduce the reliability of machine learning models during edge inference. Therefore, for an FL framework to be genuinely viable for mission-critical traffic anomaly detection, the inference pipeline itself must be engineered to withstand the volatile realities of edge data collection.
+
+\subsection{Research Gap}
+
+While existing literature has extensively explored federated optimization techniques to handle statistical heterogeneity, existing federated learning approaches for intelligent transportation systems primarily focus on privacy-preserving distributed training. Comparatively less attention has been given to maintaining reliable inference when deployed edge devices provide incomplete or out-of-distribution feature information. This creates a practical gap between successful model training and robust real-world deployment.
+
+\subsection{Contributions}
+
+Motivated by this gap, we propose FedRouteAI, a deployment-ready architecture that bridges federated training and practical edge inference. The specific contributions of this work are as follows:
+\begin{enumerate}
+    \item A federated learning framework for privacy-preserving multi-class traffic anomaly detection in intelligent transportation systems.
+    \item A deployment-aware inference pipeline that maintains preprocessing consistency when feature information is incomplete or out-of-distribution.
+    \item An adaptive federated aggregation mechanism designed to support decentralized traffic anomaly classification across heterogeneous edge nodes.
+    \item An end-to-end implementation integrating edge inference, federated training, backend services, and visualization for practical deployment.
+    \item A comprehensive experimental evaluation demonstrating the framework on a multi-class traffic anomaly dataset using standard classification metrics.
+\end{enumerate}

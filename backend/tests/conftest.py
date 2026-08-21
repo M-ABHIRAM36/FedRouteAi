@@ -15,7 +15,7 @@ from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
 
 from app.db.base import Base
-from app.models import segment, region, gps_ping, event, historical_memory, fl_round_record  # noqa: F401
+from app.models import segment, region, gps_ping, event, historical_memory, fl_round_record, live_ingestion, geo_v2  # noqa: F401
 
 
 @pytest.fixture()
@@ -43,6 +43,7 @@ def client(monkeypatch):
     from app.main import app
     from app.db.session import get_db
     from app.services.road_graph.graph_cache import GRAPH_CACHE
+    from app.services.road_graph.geo_v2_graph_cache import GEO_V2_GRAPH_CACHE
 
     def override_get_db():
         db = TestSession()
@@ -53,6 +54,7 @@ def client(monkeypatch):
 
     app.dependency_overrides[get_db] = override_get_db
     GRAPH_CACHE._graph = None  # each test starts with a cold cache
+    GEO_V2_GRAPH_CACHE.clear()
 
     # ingest.py's background task opens its own session directly via
     # SessionLocal — patch that name in both places it's imported so

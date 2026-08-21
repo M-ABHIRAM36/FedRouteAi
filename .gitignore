@@ -17,10 +17,19 @@ dist/
 # Data
 data/raw/*
 data/processed/*
+data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1/*
+data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1_fixed_contract_v2/*
+data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1_fixed_contract_v2
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 backend/data/calibration/high/features/*
 backend/data/calibration/*
+backend/data/geo_v2*
+backend/data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1/
+backend/data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1/features/*
+backend/data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1_fixed
+backend/data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1_fixed_contract_v2
+backend/app/ml/artifacts/
 
 # OS / editor
 .DS_Store
@@ -30,6 +39,8 @@ Thumbs.db
 
 # Generated datasets
 data/calibration/
+# Geo V2 causal telemetry, feature tables, partitions, and audit outputs
+data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1/
 
 # Feature tables
 *.parquet
@@ -37,6 +48,8 @@ data/calibration/
 # Trained models
 *.pth
 *.ubj
+# Geo V2 federated checkpoints, metrics, and training-run outputs
+backend/app/ml/artifacts/geo_v2/
 # Ignore intermediate checkpoints
 round_*.pt
 checkpoints/
@@ -48,3 +61,8 @@ checkpoints/
 
 # Logs
 *.log
+
+opencode.json/
+docs/docs1.01/extracted_reference/
+docs/docs1.01/fedrouteai_IEEE_updated_v1.zip
+docs/docs1.01/*
