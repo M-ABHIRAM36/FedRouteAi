@@ -14,7 +14,7 @@ Target: `FedRouteAI_Major_Project_Report.docx`
 | 6. Testing and Validation | Unit, backend, API, database, Geo V2, artifact, federated, routing, ingestion, frontend, map, demonstration, build, runtime, performance, limitations | 117 backend tests, 17 focused frontend tests, build and artifact evidence, frozen metrics |
 | 7. Deployment, Security and Performance | Local deployment, configuration, security, validation, artifact integrity, data separation, privacy limitations, performance, browser and scalability concerns | Measured versus unmeasured operational claims |
 | 8. Conclusion and Future Enhancements | Conclusions, learning outcomes, limitations, future work | Final project assessment and next research steps |
-| 9. Appendices | Reproduction, evidence register, figure register, model configuration, network statistics, testing evidence, telemetry semantics, response semantics, screenshot register | Reproducibility and review material |
+| 9. Appendices | Reproduction, evidence register, figure register, model configuration, network statistics, testing, telemetry, API, database, federated training, metrics, routing, demonstrations, frontend, operations, reproducibility, limitations, and submission review | Reproducibility and review material |
 | 10. References | Research and technical sources | Bibliography |
 
 ## Figure Map
@@ -77,3 +77,15 @@ The generated DOCX contains 12 table objects; some planned table topics are comb
 - The default route cost is distance-based; predictions and explicit exclusions are separate route-inspection behavior.
 - The documented model metrics come from the frozen artifact report.
 - Unmeasured hardware, end-to-end production throughput, memory pressure, formal privacy guarantees, and production deployment claims are excluded.
+
+## Format Structure
+
+- Every chapter uses a dedicated centered separator page.
+- Chapter content begins on the page following its separator.
+- Front matter uses lower-case Roman numbering.
+- Chapter 1 restarts page numbering with Arabic numeral 1.
+- Page numbers are centered at the bottom.
+- Formal front-matter order follows the college rule: cover/title, certificate,
+  declaration, acknowledgement, abstract, contents, list of tables, list of
+  figures, and abbreviations.
+- The current Microsoft Word rendering is 76 pages.
