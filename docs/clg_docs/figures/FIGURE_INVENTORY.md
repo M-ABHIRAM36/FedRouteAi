@@ -1,6 +1,6 @@
 # FedRouteAI Figure Inventory
 
-The final report embeds 17 generated technical figures. Each has an editable
+The final report embeds 16 generated technical figures. Each has an editable
 SVG master and PNG/PDF derivatives under the corresponding format directory.
 The 13 current-architecture replacement figures listed below were regenerated
 and verified on 2026-08-22. PNG exports are RGB, 2400 pixels wide, and each
@@ -20,16 +20,16 @@ white, and restrained academic accent fills.
 | 4.9 | `fig_4_9_backend_architecture.svg` | SVG, PNG, PDF; embedded | API, service, repository, model/database, ML, and routing boundaries |
 | 4.10 | `fig_4_10_frontend_architecture.svg` | SVG, PNG, PDF; embedded | React API state and Leaflet layers with backend-owned inference/routing |
 | 4.11 | `fig_4_11_routing.svg` | SVG, PNG, PDF; embedded | Distance-based directed shortest path and separate prediction inspection |
-| 5.1 | `fig_5_1_live_ingestion.svg` | SVG, PNG, PDF; embedded | Append-only telemetry and current-state/prediction projection |
-| 5.2 | `fig_5_2_frozen_mlp.svg` | SVG, PNG, PDF; embedded | Frozen MLP runtime |
+| 5.1 | `fig_5_1_live_gps_ingestion.svg` | SVG, PNG, PDF; embedded | Append-only telemetry and current-state/prediction projection |
 | 6.1 | SVG, PNG, PDF; embedded | Frozen artifact metrics |
 | 6.2 | SVG, PNG, PDF; embedded | Frozen `confusion_matrix.csv` |
 | 6.3 | SVG, PNG, PDF; embedded | Verified backend/frontend test counts |
-| 7.1 | `fig_7_1_deployment.svg` | SVG, PNG, PDF; embedded | Documented local deployment topology and artifact/network contracts |
-| 5.3-5.7 | No generated asset; report placeholder retained | Real application screenshots unavailable |
+| 7.1 | `fig_7_1_local_deployment.svg` | SVG, PNG, PDF; embedded | Documented local deployment topology and artifact/network contracts |
+| 5.2-5.7 | No generated technical asset; separate compact screenshot register | Real application screenshots unavailable |
 
-UI/demo screenshots are intentionally not fabricated. When verified screenshots
-become available, they can replace only figure positions 5.3 through 5.7.
+UI/demo screenshots are intentionally not fabricated and are excluded from the
+technical figure numbering. Six application screenshot positions are maintained
+in a separate report list.
 
 ## Export Verification
 

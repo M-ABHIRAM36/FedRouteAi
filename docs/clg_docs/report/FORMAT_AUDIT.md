@@ -13,16 +13,18 @@ report and `B.Tech Project Report Format26.docx` as formatting references.
 | Chapter layout | Centered `CHAPTER n` and title; content starts in the next section |
 | Paragraph objects | Regenerated from current generator |
 | Tables | Regenerated from current generator |
-| Figure positions | 16 embedded technical figures plus 6 reserved live-demo positions |
-| Embedded technical figures | 16 current PNG images; 6 live-demo spaces reserved |
+| Figure positions | 16 embedded technical figures plus 6 separate application-screenshot positions |
+| Embedded technical figures | 16 current grayscale PNG images |
 | Intentional placeholders | 6 clearly labeled screenshot reservations |
 | Front matter | Title, certificate, declaration, acknowledgement, abstract, contents, lists, and abbreviations |
 | Page size and margins | A4; left 3.25 cm; right/top/bottom 2.5 cm |
-| Word-rendered page count | 92 physical pages in current render |
-| Counted typed matter | 77 displayed Arabic pages from Chapter 1 content through last Appendix |
+| Word-rendered page count | 61 physical pages in current render |
+| Counted typed matter | 38 displayed Arabic pages from Chapter 1 content through References |
 | Chapter subsection inventory | 10, 18, 17, 17, 30, 21, 16, and 10 sections in Chapters 1-8 |
 | Combined range headings | None detected |
-| Canonical figure captions | 22 detected |
+| Technical figure captions | 16 detected |
+| Application screenshot captions | 6 detected separately |
+| Consolidated appendices | 7 |
 | References | 34 numbered entries |
 
 ## Typography And Color
@@ -61,12 +63,11 @@ diagrams use controlled color where required for architecture or result readabil
 - Later chapter-content sections continue Arabic numbering without hard-coded page estimates.
 - Footer fields are centered, black, and Times New Roman.
 
-Microsoft Word automation rendered the current package at 92 physical pages. The
-Chapter 1 separator begins on physical page 16, with Chapter 1 content following
-it; the last appendix content ends before References on physical page 90. The
-resulting counted typed matter is 77 displayed Arabic pages, excluding chapter
-separator pages. Chapter 1 restarts at Arabic `1`; subsequent chapter sections and
-appendices continue that numbering.
+Microsoft Word automation rendered the current package at 61 physical pages. The
+abstract begins at displayed Roman `v`; chapter separators are physically present
+but have no visible page number. Chapter 1 content begins at Arabic `1` and the
+sequence continues without gaps through Arabic `38`. The eight separator pages are
+the only intentionally sparse pages.
 
 ## Final Review
 

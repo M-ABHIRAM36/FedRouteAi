@@ -14,7 +14,7 @@ Target: `FedRouteAI_Major_Project_Report.docx`
 | 6. Testing and Validation | Unit, backend, API, database, Geo V2, artifact, federated, routing, ingestion, frontend, map, demonstration, build, runtime, performance, limitations | 117 backend tests, 17 focused frontend tests, build and artifact evidence, frozen metrics |
 | 7. Results and Discussion | Model interpretation, controlled demonstrations, local deployment, security, artifact integrity, data separation, privacy limitations, performance, browser and scalability concerns | Measured results versus unmeasured operational claims |
 | 8. Summary and Conclusions | Conclusion, achieved objectives, contributions, experimental findings, limitations, future enhancements, final remarks | Final project assessment and next research steps |
-| Appendices | Reproduction, evidence register, figure register, model configuration, network statistics, testing, telemetry, API, database, federated training, metrics, routing, demonstrations, frontend, operations, reproducibility, limitations, and submission review | Reproducibility and review material |
+| Appendices | Seven consolidated sections covering setup, Geo V2 specification, database/network/API, testing, screenshots, artifacts, and limitations | Reproducibility and review material |
 | References | At least 30 research and technical sources, alphabetically arranged | Bibliography |
 
 ## Figure Map
@@ -42,7 +42,7 @@ Target: `FedRouteAI_Major_Project_Report.docx`
 | 6.1 | Model validation results | Embedded grayscale figure |
 | 6.2 | Model confusion matrix | Embedded from frozen artifact data |
 | 6.3 | Backend and frontend test evidence | Embedded grayscale figure |
-| 7.1 | Local deployment architecture | Embedded grayscale figure |
+| 7.1 | Local deployment architecture | Embedded grayscale figure in section 7.11 |
 
 Editable SVG masters and PNG/PDF derivatives are stored under `docs/clg_docs/figures/`.
 
@@ -68,7 +68,7 @@ Editable SVG masters and PNG/PDF derivatives are stored under `docs/clg_docs/fig
 | A2.1 | Evidence register |
 | A5.1 | Database and network evidence |
 
-The generated DOCX contains 13 table objects; some planned table topics are combined into larger tables in the final document to avoid unnecessary fragmentation.
+The generated DOCX contains 12 table objects; some planned table topics are combined into larger tables in the final document to avoid unnecessary fragmentation.
 
 ## Evidence Boundaries
 
@@ -90,4 +90,4 @@ The generated DOCX contains 13 table objects; some planned table topics are comb
 - Formal front-matter order follows the college rule: cover/title, certificate,
   declaration, acknowledgement, abstract, contents, list of tables, list of
   figures, and abbreviations.
-- The current Microsoft Word rendering is 92 physical pages. Chapter 1 begins after its separator on physical page 16, References begin on physical page 91, and the counted typed matter is 77 displayed Arabic pages.
+- The current Microsoft Word rendering is 61 physical pages. Chapter 1 begins after its separator at displayed Arabic `1`; the numbering continues without gaps through Arabic `38`; the report contains seven consolidated appendices.

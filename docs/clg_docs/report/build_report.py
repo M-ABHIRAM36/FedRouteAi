@@ -24,7 +24,7 @@ COLLEGE = "B V RAJU INSTITUTE OF TECHNOLOGY"
 ADDRESS = "Vishnupur, Narsapur, Medak, Telangana, India 502313"
 # Chapter separator pages are intentionally unnumbered and do not consume the
 # displayed Arabic sequence. Values are measured from the current Word layout.
-MAIN_PAGE_STARTS: dict[int, int] = {1: 1, 2: 5, 3: 11, 4: 16, 5: 23, 6: 34, 7: 41, 8: 46}
+MAIN_PAGE_STARTS: dict[int, int] = {1: 1, 2: 4, 3: 8, 4: 12, 5: 19, 6: 25, 7: 30, 8: 33}
 FIGURE_IMAGES = {
     "4.1": "fig_4_1_overall_architecture.png",
     "4.2": "fig_4_2_federated_learning.png",
@@ -36,12 +36,12 @@ FIGURE_IMAGES = {
     "4.8": "fig_4_8_directed_network.png",
     "4.9": "fig_4_9_backend_architecture.png",
     "4.10": "fig_4_10_frontend_architecture.png",
-    "4.11": "fig_4_11_routing.png",
-    "5.1": "fig_5_1_live_ingestion.png",
+    "4.11": "fig_4_11_directed_shortest_path.png",
+    "5.1": "fig_5_1_live_gps_ingestion.png",
     "6.1": "fig_6_1_model_validation.png",
     "6.2": "fig_6_2_confusion_matrix.png",
     "6.3": "fig_6_3_test_evidence.png",
-    "7.1": "fig_7_1_deployment.png",
+    "7.1": "fig_7_1_local_deployment.png",
 }
 RESERVED_SCREENSHOT_FIGURES = {"5.2", "5.3", "5.4", "5.5", "5.6", "5.7"}
 
@@ -53,7 +53,7 @@ def set_cell_shading(cell, fill: str) -> None:
     tc_pr.append(shd)
 
 
-def set_cell_text(cell, text: str, bold: bool = False, size: float = 10) -> None:
+def set_cell_text(cell, text: str, bold: bool = False, size: float = 9) -> None:
     cell.text = ""
     p = cell.paragraphs[0]
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -63,6 +63,8 @@ def set_cell_text(cell, text: str, bold: bool = False, size: float = 10) -> None
     r.font.size = Pt(size)
     r.font.color.rgb = RGBColor(0, 0, 0)
     cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+    p.paragraph_format.space_after = Pt(0)
+    p.paragraph_format.line_spacing = 1.0
 
 
 def add_page_number(paragraph, initial: str = "1") -> None:
@@ -174,7 +176,7 @@ def configure_document(doc: Document) -> None:
         style.paragraph_format.space_after = Pt(0)
         style.font.color.rgb = RGBColor(0, 0, 0)
 
-    for name in ("Figure Caption", "Table Caption"):
+    for name in ("Figure Caption", "Table Caption", "Application Screenshot Caption"):
         if name not in [s.name for s in doc.styles]:
             style = doc.styles.add_style(name, WD_STYLE_TYPE.PARAGRAPH)
             style.font.name = "Times New Roman"
@@ -239,6 +241,8 @@ def table(doc: Document, caption: str, headers: list[str], rows: list[list[str]]
         cells = t.add_row().cells
         for i, value in enumerate(row):
             set_cell_text(cells[i], value)
+        tr_pr = t.rows[-1]._tr.get_or_add_trPr()
+        tr_pr.append(OxmlElement("w:cantSplit"))
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
 
@@ -254,11 +258,7 @@ def figure(doc: Document, number: str, caption: str, height: float = 1.45) -> No
         run = box.add_run()
         run.add_picture(str(image), width=Inches(5.5))
     else:
-        run = box.add_run(
-            f"[RESERVED SCREENSHOT SPACE: FIGURE {number}]\n\n"
-            "Insert one verified live-project screenshot here.\n"
-            "Do not include credentials, keys, or unverified claims."
-        )
+        run = box.add_run(f"[Verified application screenshot not yet available: {caption}]")
         run.font.name = "Times New Roman"
         run.font.size = Pt(10)
         run.font.color.rgb = RGBColor(0, 0, 0)
@@ -271,13 +271,15 @@ def figure(doc: Document, number: str, caption: str, height: float = 1.45) -> No
             el.set(qn("w:color"), "000000")
             boxPr.append(el)
         box._p.get_or_add_pPr().append(boxPr)
-        box.paragraph_format.space_after = Pt(8)
+        box.paragraph_format.space_after = Pt(3)
         box.paragraph_format.keep_together = True
     box.paragraph_format.line_spacing = 1.5
     box.paragraph_format.keep_with_next = True
-    caption_para = p(doc, f"Figure {number} {caption}", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=8, size=11)
-    caption_para.style = doc.styles["Figure Caption"]
-    add_field(caption_para, f'TC "Figure {number} {caption}" \\f F')
+    is_screenshot = number in RESERVED_SCREENSHOT_FIGURES
+    label = f"Application Screenshot {number} {caption}" if is_screenshot else f"Figure {number} {caption}"
+    caption_para = p(doc, label, align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=8, size=11)
+    caption_para.style = doc.styles["Application Screenshot Caption" if is_screenshot else "Figure Caption"]
+    add_field(caption_para, f'TC "{label}" \\f {"S" if is_screenshot else "F"}')
     caption_para.paragraph_format.line_spacing = 1.0
 
 
@@ -336,10 +338,9 @@ def front_matter(doc: Document) -> None:
 def lists(doc: Document) -> None:
     doc.add_page_break()
     p(doc, "CONTENTS", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=14, bold=True, size=14)
-    p(doc, "The contents below is generated from the report heading structure. Refresh Word fields after the final pagination review.", indent=False, after=8, size=10)
     toc = doc.add_paragraph()
     toc.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    toc.paragraph_format.line_spacing = 1.5
+    toc.paragraph_format.line_spacing = 1.0
     add_field(toc, 'TOC \\o "1-2" \\h \\z \\u')
     p(doc, "ABSTRACT", indent=False, after=3, size=11)
     p(doc, "DECLARATION", indent=False, after=3, size=11)
@@ -349,13 +350,18 @@ def lists(doc: Document) -> None:
     doc.add_page_break()
     p(doc, "LIST OF TABLES", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=14, bold=True, size=14)
     table_list = doc.add_paragraph()
-    table_list.paragraph_format.line_spacing = 1.5
+    table_list.paragraph_format.line_spacing = 1.0
     add_field(table_list, 'TOC \\f T \\h \\z')
     doc.add_page_break()
     p(doc, "LIST OF FIGURES", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=14, bold=True, size=14)
     figure_list = doc.add_paragraph()
-    figure_list.paragraph_format.line_spacing = 1.5
+    figure_list.paragraph_format.line_spacing = 1.0
     add_field(figure_list, 'TOC \\f F \\h \\z')
+    doc.add_page_break()
+    p(doc, "LIST OF APPLICATION SCREENSHOTS", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=14, bold=True, size=14)
+    screenshot_list = doc.add_paragraph()
+    screenshot_list.paragraph_format.line_spacing = 1.0
+    add_field(screenshot_list, 'TOC \\f S \\h \\z')
     doc.add_page_break()
     p(doc, "LIST OF SYMBOLS, ABBREVIATIONS AND NOMENCLATURE", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=14, bold=True, size=14)
     table(doc, "Table 0.1: Symbols and abbreviations", ["Symbol / abbreviation", "Meaning"], [["AI", "Artificial Intelligence"], ["API", "Application Programming Interface"], ["CPU", "Central Processing Unit"], ["F1", "Harmonic mean of precision and recall"], ["FL", "Federated Learning"], ["FedAvg", "Federated Averaging"], ["FPR", "False Positive Rate"], ["GPS", "Global Positioning System"], ["GIS", "Geographic Information System"], ["JSON", "JavaScript Object Notation"], ["MLP", "Multilayer Perceptron"], ["OSM", "OpenStreetMap"], ["PostGIS", "PostgreSQL spatial database extension"], ["REST", "Representational State Transfer"], ["SRID", "Spatial Reference Identifier"], ["V1 / V2", "Version 1 / Geo V2 system contracts"], ["km/h", "Kilometres per hour"], ["m", "Metres"]])
@@ -379,7 +385,6 @@ def equation(doc: Document, number: str, expression: str, explanation: str) -> N
 
 
 def appendix_heading(doc: Document, title: str) -> None:
-    doc.add_page_break()
     heading(doc, title, level=2)
 
 
@@ -643,6 +648,25 @@ def appendices_expansion(doc: Document) -> None:
         p(doc, second)
 
 
+def consolidated_appendices(doc: Document) -> None:
+    """Render a compact evidence appendix set without page-inflating breaks."""
+    appendix_heading(doc, "APPENDIX A: Project Setup and Reproduction")
+    p(doc, "Prepare the Python and Node.js environments, start PostgreSQL with PostGIS, apply migrations, import the cached Geo V2 network, start FastAPI and Vite, open the Traffic Map, calculate a directed route, and run a bounded demonstration. The exact local commands remain in HOW_TO_RUN_PROJECT.md and README.md.")
+    appendix_heading(doc, "APPENDIX B: Geo V2 Feature and Model Specification")
+    p(doc, "The promoted artifact uses feature version geo-v2-history_spatial_strong-23-v2 and the exact 23-feature order documented in Chapter 4. The groups are current traffic state, cyclical time, road metadata, normal baselines, baseline deviations, prior-window means, trends, low-speed persistence, and directed-neighbor speed context. Runtime input excludes labels, scenario names, event IDs, vehicle IDs, and severity. GeoV2MLP maps 23 values through 64 and 32 hidden units to eight output classes, with the frozen scaler and compatibility metadata loaded before inference.")
+    table(doc, "Table A.1: Promoted Artifact and Network Identity", ["Item", "Verified value"], [["Artifact", "Geo V2 federated checkpoint, selected round 45"], ["Feature version", "geo-v2-history_spatial_strong-23-v2"], ["Model", "GeoV2MLP, 23 -> 64 -> 32 -> 8"], ["Clients", "Eight regional clients"], ["Network", "osm_geo_v2 / beeramguda-osm-20260506"], ["Topology", "2,968 segments; 11,259 directed transitions"]])
+    appendix_heading(doc, "APPENDIX C: Database, Network and API Specification")
+    p(doc, "The database lifecycle imports and versions the OSM-derived network, persists canonical segments and directed transitions, accepts identity-checked live batches, stores append-only observations, builds current segment projections, and persists predictions separately. Route responses contain snapped endpoints, distance, duration, ordered segment IDs, geometry, and prediction coverage. A valid route does not require complete prediction coverage.")
+    appendix_heading(doc, "APPENDIX D: Testing and Validation Evidence")
+    p(doc, "The verified evidence register contains 117 passing backend tests, 17 focused Traffic Map tests, a successful frontend production build, Python compilation, FastAPI import, artifact compatibility checks, and normalized network counts. The frozen artifact reports validation macro F1 0.3042, test accuracy 0.9952, test macro F1 0.3200, event-balanced macro F1 0.4459, anomaly recall 0.3444, anomaly precision 0.2093, and normal false-positive rate 0.0031. Accuracy is dominated by Normal traffic; minority-event metrics define the limitation.")
+    appendix_heading(doc, "APPENDIX E: Demonstration and Application Screenshot Register")
+    p(doc, "Normal, Congestion, and Accident are route-bound controlled traffic behaviors. Their scenario metadata remains outside model features and does not become ground truth. The six compact positions in Chapter 5 are reserved for reviewed application screenshots only. No unavailable screenshot is represented as an actual application result.")
+    appendix_heading(doc, "APPENDIX F: Reproducibility and Artifact Register")
+    p(doc, "A reproducible run records repository revision, Python and Node versions, database configuration, network source and version, dataset manifest, feature schema, artifact identity, selected round, model metrics, and test commands. Credentials, API keys, passwords, and local environment secrets must be omitted from evidence captures and the submitted report.")
+    appendix_heading(doc, "APPENDIX G: Limitations and Final Review Checklist")
+    p(doc, "The experiment uses geographically grounded synthetic traffic, has imbalanced event classes, uses distance-based default routing, and does not implement differential privacy, secure aggregation, production authentication, queue-backed ingestion, cloud orchestration, or measured city-scale capacity. Before submission, confirm refreshed Word fields, populated lists, unnumbered chapter separators, continuous Arabic numbering, matching captions, in-margin tables, print-safe diagrams, and absence of secrets.")
+
+
 def legacy_main_content(doc: Document) -> None:
     chapter(doc, 1, "Introduction")
     heading(doc, "1.1 Introduction")
@@ -723,12 +747,13 @@ def legacy_main_content(doc: Document) -> None:
     table(doc, "Table 5.2: Federated Client Configuration", ["Property", "Current implementation"], [["Clients", "8 regional clients: REGION_01 through REGION_08"], ["Model", "Geo V2 PyTorch MLP"], ["Aggregation", "FedAvg-family with adaptive weighting in the training workflow"], ["Feature version", "geo-v2-history_spatial_strong-23-v2"], ["Maximum rounds", "50"], ["Selected checkpoint", "Round 45"], ["Local epochs", "2"], ["Random seed", "42"]])
     heading(doc, "5.4 Dynamic Traffic Map")
     p(doc, "The Traffic Map presents OSM road geometry, current telemetry, moving vehicles, prediction states, live freshness, network identity, route overlays, origin and destination markers, and scenario controls. Vehicle positions are animated between authoritative backend snapshots for visual continuity; intermediate movement is not presented as additional GPS evidence. A rendering cap keeps the browser responsive while backend counts remain authoritative.")
-    figure(doc, "5.3", "Dynamic Traffic Map")
-    figure(doc, "5.4", "Moving Vehicle Visualization")
+    figure(doc, "5.2", "Dynamic Traffic Map")
+    figure(doc, "5.3", "Moving Vehicle Visualization")
     heading(doc, "5.5 Controlled Route-Bound Demonstration")
     p(doc, "The user selects an origin and destination, calculates a directed route, and must use a route of at least approximately 1.5 km. The selected ordered segment IDs are passed to the demonstration service. Vehicles follow that route and telemetry flows through the existing ingestion and frozen-model pipeline. The available scenarios are Normal, Congestion, and Accident. The UI separately reports route behavior and model prediction coverage. The correct interpretation is: Traffic behavior only. Not ground truth.")
-    figure(doc, "5.5", "Route-Bound Demonstration Flow")
-    figure(doc, "5.6", "Normal and Congestion Demonstration")
+    figure(doc, "5.4", "Route-Bound Demonstration Flow")
+    figure(doc, "5.5", "Normal Traffic Demonstration")
+    figure(doc, "5.6", "Congestion Demonstration")
     figure(doc, "5.7", "Accident Demonstration")
     heading(doc, "5.6 API Summary")
     table(doc, "Table 5.3: API and Data Flow Summary", ["Interface", "Purpose"], [["GET /health", "Service liveness"], ["GET /segments", "Canonical road geometry"], ["POST /ingest/live/batch", "Trusted pre-matched live observations"], ["GET /live-map/snapshot", "Current map state and metadata"], ["POST /routes/shortest", "Directed shortest route"], ["POST /demo/geo-v2/runs", "Create route-bound demonstration"], ["POST /demo/geo-v2/runs/{id}/step", "Advance demonstration"], ["DELETE /demo/geo-v2/runs/{id}", "Stop and clean up demonstration"]])
@@ -883,6 +908,7 @@ def main_content(doc: Document) -> None:
     p(doc, "Normal, Congestion, and Accident controls exercise repeatable traffic behavior and orchestration. They are not ground-truth model labels.")
     heading(doc, "7.11 Deployment Evaluation")
     p(doc, "The local deployment is appropriate for a bounded academic demonstration. Queue-backed ingestion, horizontal scaling, cloud orchestration, and production authentication remain outside the verified scope.")
+    figure(doc, "7.1", "Local Deployment Architecture")
     heading(doc, "7.12 Performance Discussion")
     p(doc, "Warmed single-row CPU inference averages approximately 0.414 ms over 1,000 calls in the recorded setup. This excludes HTTP, database, feature construction, browser, and end-to-end load behavior.")
     heading(doc, "7.13 Security and Privacy Discussion")
@@ -893,7 +919,6 @@ def main_content(doc: Document) -> None:
     p(doc, "The project achieves the stated ingestion, feature, federated model, artifact, map, routing, demonstration, and validation objectives, while the evaluation records which objectives are demonstrated and which production extensions remain future work.")
     heading(doc, "7.16 Summary")
     p(doc, "The evaluation supports the project as a complete and traceable B.Tech prototype with meaningful current evidence and explicit boundaries on generalization and deployment.")
-    figure(doc, "7.1", "Local Deployment Architecture")
     chapter(doc, 8, "Conclusion and Future Enhancements")
     heading(doc, "8.1 Introduction")
     p(doc, "This chapter summarizes the completed implementation, findings, practical significance, limitations, and future research direction.")
@@ -922,13 +947,7 @@ def main_content(doc: Document) -> None:
     p(doc, "Future research should evaluate measured traffic across seasons and cities, improve minority-event sampling and calibration, add formal privacy mechanisms, study traffic-aware route costs, move ingestion to queue-backed services, and investigate graph-based spatial models after the current baseline is preserved.")
     heading(doc, "8.10 Final Conclusion")
     p(doc, "FedRouteAI is therefore best understood as a complete and academically honest local prototype: it demonstrates how federated learning, causal traffic features, spatial infrastructure, live services, and user-facing route inspection can be integrated while keeping unverified production and safety claims outside the project scope.")
-    appendix_heading(doc, "APPENDIX 1: Project Run and Reproduction Guide")
-    p(doc, "Prepare Python and Node.js environments, start PostgreSQL with PostGIS, apply Alembic migrations, import the cached Geo V2 network, start the FastAPI backend and Vite frontend, open the Traffic Map, start live mode, calculate a directed route, and select a route-bound demonstration. Exact commands are maintained in HOW_TO_RUN_PROJECT.md and README.md.")
-    appendix_heading(doc, "APPENDIX 2: Evidence and Artifact Register")
-    table(doc, "Table A2.1: Evidence Register", ["Evidence", "Role"], [["Geo V2 model report", "Frozen selection, metrics, limitations, and runtime contract"], ["Feature schema JSON", "Ordered 23-feature contract and version"], ["Network source JSON", "Cached OSM input for normalized network"], ["Dataset manifest", "Generated data configuration and counts"], ["Backend test suite", "Service, API, model, ingestion, and routing validation"], ["Frontend test suite", "Traffic Map and interaction validation"]])
-    appendix_heading(doc, "APPENDIX 3: Figure Insertion Register")
-    p(doc, "The report includes a focused set of verified technical figures generated from the current implementation. Unverified scenario screenshots are intentionally omitted; any future screenshot must visibly distinguish controlled traffic behavior from independent model prediction.")
-    appendices_expansion(doc)
+    consolidated_appendices(doc)
     doc.add_page_break()
     heading(doc, "REFERENCES", level=1)
     refs = [
@@ -1009,12 +1028,6 @@ def validate_report_package(path: Path) -> None:
         "Figure 4.10 Frontend Architecture",
         "Figure 4.11 Directed Shortest-Path Routing",
         "Figure 5.1 Live GPS Ingestion Pipeline",
-        "Figure 5.2 Dynamic Traffic Map",
-        "Figure 5.3 Moving Vehicle Visualization",
-        "Figure 5.4 Route-Bound Demonstration Flow",
-        "Figure 5.5 Normal Traffic Demonstration",
-        "Figure 5.6 Congestion Demonstration",
-        "Figure 5.7 Accident Demonstration",
         "Figure 6.1 Model Validation Results",
         "Figure 6.2 Confusion Matrix",
         "Figure 6.3 Testing Evidence",
@@ -1023,8 +1036,17 @@ def validate_report_package(path: Path) -> None:
     missing = [caption for caption in required if caption not in text]
     if missing:
         raise ValueError(f"Missing canonical figure captions: {missing}")
-    if text.count("RESERVED SCREENSHOT SPACE") != len(RESERVED_SCREENSHOT_FIGURES):
-        raise ValueError("Unexpected application screenshot reservation count")
+    expected_screenshots = [
+        "Application Screenshot 5.2 Dynamic Traffic Map",
+        "Application Screenshot 5.3 Moving Vehicle Visualization",
+        "Application Screenshot 5.4 Route-Bound Demonstration Flow",
+        "Application Screenshot 5.5 Normal Traffic Demonstration",
+        "Application Screenshot 5.6 Congestion Demonstration",
+        "Application Screenshot 5.7 Accident Demonstration",
+    ]
+    missing_screenshots = [label for label in expected_screenshots if label not in text]
+    if missing_screenshots:
+        raise ValueError(f"Missing application screenshot entries: {missing_screenshots}")
 
 
 if __name__ == "__main__":

@@ -33,7 +33,7 @@ STYLE = """<style>
 def svg(name: str, width: int, height: int, body: str) -> None:
     content = f'''<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
-<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="4" orient="auto"><path d="M0 0 L9 4 L0 8 Z" fill="#000"/></marker></defs>{STYLE}{body}</svg>'''
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="4" orient="auto"><path d="M0 0 L9 4 L0 8 Z" fill="#000"/></marker></defs><rect width="100%" height="100%" fill="#fff"/>{STYLE}{body}</svg>'''
     target = SVG / f"{name}.svg"
     target.write_text(content, encoding="utf-8")
     drawing = svg2rlg(str(target))
@@ -56,7 +56,8 @@ def text_lines(x: int, y: int, lines: list[str], cls: str = "body", anchor: str 
 
 
 def panel(x: int, y: int, w: int, h: int, title: str, lines: list[str], kind: str = "box") -> str:
-    fill = {"blue": "#e8eef2", "gray": "#f2f2f2", "warm": "#f4eee5", "dash": "#fff"}.get(kind, "#fff")
+    # Keep report derivatives readable after black-and-white printing.
+    fill = {"blue": "#e8e8e8", "gray": "#f2f2f2", "warm": "#dcdcdc", "dash": "#fff"}.get(kind, "#fff")
     stroke = "dash" if kind == "dash" else "box"
     body = f'<rect x="{x}" y="{y}" width="{w}" height="{h}" class="{stroke}" style="fill:{fill}"/>'
     body += text_lines(x + w // 2, y + 24, [title], "head")
@@ -371,7 +372,7 @@ def routing() -> None:
     body += panel(1145, 300, 380, 92, "Separate optional behavior", ["active-event penalties / explicit exclusions", "recommended route around known events"], "warm")
     body += arrow(1335, 252, 1335, 300)
     body += text_lines(1335, 460, ["No claim that the MLP directly learns route cost."], "small")
-    svg("fig_4_11_routing", 1600, 570, body)
+    svg("fig_4_11_directed_shortest_path", 1600, 570, body)
 
 
 def live_ingestion() -> None:
@@ -392,7 +393,7 @@ def live_ingestion() -> None:
     body += panel(1145, 160, 380, 92, "PostgreSQL + PostGIS", ["gps_pings | live_ingestion", "historical_memory | predictions", "events | segments"], "warm")
     body += panel(1145, 315, 380, 92, "API snapshot", ["map geometry + vehicles", "traffic state + predictions", "event and route state"], "blue")
     body += arrow(1335, 252, 1335, 315)
-    svg("fig_5_1_live_ingestion", 1600, 570, body)
+    svg("fig_5_1_live_gps_ingestion", 1600, 570, body)
 
 
 def deployment() -> None:
@@ -413,7 +414,7 @@ def deployment() -> None:
     body += panel(850, 335, 570, 86, "Shared local contract", ["network version + 23-feature order + model metadata", "artifact validation fails closed for mismatch"], "gray")
     body += arrow(1180, 255, 1180, 335)
     body += text_lines(800, 475, ["No cloud infrastructure, formal privacy mechanism, or unattended safety-critical deployment is implied."], "small")
-    svg("fig_7_1_deployment", 1600, 550, body)
+    svg("fig_7_1_local_deployment", 1600, 550, body)
 
 
 overall()
