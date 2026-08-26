@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Figure 5 — AdaptiveFedAvg Workflow · FedRouteAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="index.html" class="brand"><span class="brand-mark"></span>FedRouteAI</a>
+    <span class="crumb">/ <b>Figure 5 — AdaptiveFedAvg Workflow</b></span>
+  </div>
+  <div class="topbar-right">
+    <button class="btn" onclick="toggleTheme()">Theme</button>
+    <button class="btn primary" onclick="downloadSVG('fig5-svg','fig5_adaptivefedavg.svg')">Export SVG</button>
+  </div>
+</div>
+
+<div class="page">
+  <div class="fig-header">
+    <div class="fig-eyebrow">Figure 5 · AdaptiveFedAvg Client Weighting</div>
+    <h1 class="fig-title">From Local Metrics to a Global Aggregation Weight</h1>
+    <p class="fig-desc"><span class="databadge verified">FORMULAS VERIFIED AGAINST adaptive_fedavg.py — confirmed unchanged in the current codebase</span> &nbsp; <span class="databadge unverified">Algorithm 1 in the manuscript still states different formulas</span></p>
+    <p class="fig-desc" style="margin-top:8px;">This diagram intentionally uses the three formulas confirmed running in <span class="f5-mono">adaptive_fedavg.py</span> — a floored macro-F1 quality term, a linear rarity bonus, and an EMA-threshold reliability gate. The manuscript's Algorithm&nbsp;1 currently states <span class="f5-mono">q_k = e^{-L_k}</span>, <span class="f5-mono">ρ_k = 1/√F_normal</span>, and a <span class="f5-mono">V_k</span>-threshold gate — none of which match this code. Resolve which version is authoritative before finalizing either the paper or this figure.</p>
+  </div>
+
+  <div class="databadge" style="display:flex;gap:8px;align-items:center;padding:10px 14px;border-radius:8px;background:var(--bg-soft);border:1px solid var(--border);margin-bottom:18px;font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text-mid);">
+    <span style="color:#2563EB;">●</span> Describes the CURRENT REPORTED system (produced Table IV's numbers) &nbsp;|&nbsp; <a href="geo_v2_features.html" style="color:#374151;text-decoration:none;">See Figures 11–12 for Geo V2 →</a>
+  </div>
+
+  <div class="canvas">
+    <svg id="fig5-svg" viewBox="0 0 1220 700" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>
+          .f5-l { font-family: 'Space Grotesk', sans-serif; font-weight: 600; }
+          .f5-m { font-family: 'Inter', sans-serif; font-weight: 500; }
+          .f5-s { font-family: 'Inter', sans-serif; font-weight: 400; }
+          .f5-mono { font-family: 'JetBrains Mono', monospace; }
+        </style>
+        <marker id="f5-arrow" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#2563EB"/>
+        </marker>
+      </defs>
+
+      <!-- CLIENT SIDE (left column) -->
+      <rect x="20" y="20" width="330" height="640" rx="14" fill="#EFF4FF" opacity="0.45" stroke="#2563EB" stroke-width="1.1" stroke-dasharray="2 4"/>
+      <text x="185" y="46" text-anchor="middle" class="f5-l" font-size="12.5" fill="#2563EB" letter-spacing="0.04em">CLIENT k — AFTER LOCAL TRAINING</text>
+
+      <rect x="45" y="66" width="280" height="56" rx="8" fill="#ffffff" stroke="#2563EB" stroke-width="1.4"/>
+      <text x="185" y="90" text-anchor="middle" class="f5-l" font-size="12" fill="#12151C">5 Local Epochs (Adam, lr 0.001)</text>
+      <text x="185" y="107" text-anchor="middle" class="f5-mono" font-size="10" fill="#4B5361">→ updated local weights w_k</text>
+
+      <path class="f5-arrow" stroke="#2563EB" stroke-width="1.5" fill="none" marker-end="url(#f5-arrow)" d="M185,122 L185,148"/>
+
+      <rect x="45" y="150" width="280" height="90" rx="8" fill="#ffffff" stroke="#2563EB" stroke-width="1.4"/>
+      <text x="185" y="172" text-anchor="middle" class="f5-l" font-size="12" fill="#12151C">Compute Local Metrics</text>
+      <text x="65" y="192" class="f5-mono" font-size="10.5" fill="#4B5361">n_k &nbsp;— dataset size</text>
+      <text x="65" y="208" class="f5-mono" font-size="10.5" fill="#4B5361">F1_k — val. macro F1</text>
+      <text x="65" y="224" class="f5-mono" font-size="10.5" fill="#4B5361">rare_k — rare-class fraction</text>
+
+      <path class="f5-arrow" stroke="#2563EB" stroke-width="1.5" fill="none" marker-end="url(#f5-arrow)" d="M185,240 L185,266"/>
+
+      <rect x="45" y="268" width="280" height="60" rx="8" fill="#ffffff" stroke="#2563EB" stroke-width="1.4"/>
+      <text x="185" y="292" text-anchor="middle" class="f5-l" font-size="12" fill="#12151C">Update EMA(F1_k)</text>
+      <text x="185" y="310" text-anchor="middle" class="f5-mono" font-size="10" fill="#4B5361">tracked across all prior rounds</text>
+
+      <path class="f5-arrow" stroke="#2563EB" stroke-width="1.5" fill="none" marker-end="url(#f5-arrow)" d="M185,328 L185,354"/>
+
+      <rect x="45" y="356" width="280" height="60" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.6"/>
+      <text x="185" y="380" text-anchor="middle" class="f5-l" font-size="12" fill="#12151C">Upload to Server</text>
+      <text x="185" y="398" text-anchor="middle" class="f5-mono" font-size="10" fill="#2563EB" font-weight="700">{w_k, n_k, F1_k, EMA_k, rare_k}</text>
+
+      <!-- crossing arrow to server -->
+      <path class="f5-arrow" stroke="#2563EB" stroke-width="1.8" fill="none" marker-end="url(#f5-arrow)" d="M325,386 L392,386"/>
+
+      <!-- SERVER SIDE (right column) -->
+      <rect x="400" y="20" width="800" height="640" rx="14" fill="#EFF4FF" opacity="0.4" stroke="#2563EB" stroke-width="1.1" stroke-dasharray="2 4"/>
+      <text x="800" y="46" text-anchor="middle" class="f5-l" font-size="12.5" fill="#2563EB" letter-spacing="0.04em">CENTRAL SERVER — AdaptiveFedAvg.aggregate_fit()</text>
+
+      <!-- three factor boxes side by side -->
+      <rect x="425" y="66" width="240" height="120" rx="9" fill="#ffffff" stroke="#2563EB" stroke-width="1.5"/>
+      <text x="545" y="90" text-anchor="middle" class="f5-l" font-size="12.5" fill="#12151C">Quality  q_k</text>
+      <text x="545" y="112" text-anchor="middle" class="f5-mono" font-size="10.5" fill="#2563EB" font-weight="700">max(q_floor, F1_k)</text>
+      <text x="545" y="132" text-anchor="middle" class="f5-s" font-size="9.5" fill="#4B5361">floored macro-F1 —</text>
+      <text x="545" y="146" text-anchor="middle" class="f5-s" font-size="9.5" fill="#4B5361">catastrophic local collapse</text>
+      <text x="545" y="160" text-anchor="middle" class="f5-s" font-size="9.5" fill="#4B5361">contributes minimally, never zero</text>
+
+      <rect x="680" y="66" width="240" height="120" rx="9" fill="#ffffff" stroke="#2563EB" stroke-width="1.5"/>
+      <text x="800" y="90" text-anchor="middle" class="f5-l" font-size="12.5" fill="#12151C">Rarity Bonus  ρ_k</text>
+      <text x="800" y="112" text-anchor="middle" class="f5-mono" font-size="10.5" fill="#2563EB" font-weight="700">1 + β · rare_k</text>
+      <text x="800" y="132" text-anchor="middle" class="f5-s" font-size="9.5" fill="#4B5361">linear boost proportional to</text>
+      <text x="800" y="146" text-anchor="middle" class="f5-s" font-size="9.5" fill="#4B5361">the fraction of globally-rare</text>
+      <text x="800" y="160" text-anchor="middle" class="f5-s" font-size="9.5" fill="#4B5361">classes in this client's data</text>
+
+      <rect x="935" y="66" width="240" height="120" rx="9" fill="#ffffff" stroke="#2563EB" stroke-width="1.5"/>
+      <text x="1055" y="90" text-anchor="middle" class="f5-l" font-size="12.5" fill="#12151C">Reliability Gate  g_k</text>
+      <text x="1055" y="112" text-anchor="middle" class="f5-mono" font-size="9.5" fill="#2563EB" font-weight="700">EMA≥thresh → 1.0</text>
+      <text x="1055" y="126" text-anchor="middle" class="f5-mono" font-size="9.5" fill="#2563EB" font-weight="700">else interpolate to g_min</text>
+      <text x="1055" y="146" text-anchor="middle" class="f5-s" font-size="9.5" fill="#4B5361">penalizes chronic instability,</text>
+      <text x="1055" y="160" text-anchor="middle" class="f5-s" font-size="9.5" fill="#4B5361">not a single bad round</text>
+
+      <!-- converge to weight formula -->
+      <path stroke="#2563EB" stroke-width="1.5" fill="none" d="M545,186 L545,220 L800,220"/>
+      <path stroke="#2563EB" stroke-width="1.5" fill="none" d="M800,186 L800,220"/>
+      <path class="f5-arrow" stroke="#2563EB" stroke-width="1.5" fill="none" marker-end="url(#f5-arrow)" d="M1055,186 L1055,220 L800,220 L800,240"/>
+
+      <rect x="620" y="242" width="360" height="66" rx="9" fill="#2563EB" opacity="0.08" stroke="#2563EB" stroke-width="1.8"/>
+      <text x="800" y="270" text-anchor="middle" class="f5-mono" font-size="15" fill="#0F5132" font-weight="700">w_k = n_k · q_k · ρ_k · g_k</text>
+      <text x="800" y="290" text-anchor="middle" class="f5-s" font-size="10" fill="#4B5361">Equation 1 — client aggregation weight</text>
+
+      <path class="f5-arrow" stroke="#2563EB" stroke-width="1.6" fill="none" marker-end="url(#f5-arrow)" d="M800,308 L800,336"/>
+
+      <rect x="650" y="338" width="300" height="52" rx="9" fill="#ffffff" stroke="#2563EB" stroke-width="1.5"/>
+      <text x="800" y="360" text-anchor="middle" class="f5-l" font-size="12" fill="#12151C">Normalize Across All 8 Clients</text>
+      <text x="800" y="377" text-anchor="middle" class="f5-mono" font-size="10" fill="#4B5361">ŵ_k = w_k / Σⱼ w_j</text>
+
+      <path class="f5-arrow" stroke="#2563EB" stroke-width="1.6" fill="none" marker-end="url(#f5-arrow)" d="M800,390 L800,418"/>
+
+      <rect x="650" y="420" width="300" height="52" rx="9" fill="#ffffff" stroke="#2563EB" stroke-width="1.5"/>
+      <text x="800" y="442" text-anchor="middle" class="f5-l" font-size="12" fill="#12151C">Weighted Aggregate</text>
+      <text x="800" y="459" text-anchor="middle" class="f5-mono" font-size="10" fill="#4B5361">w_global = Σₖ ŵ_k · w_k</text>
+
+      <path class="f5-arrow" stroke="#2563EB" stroke-width="1.6" fill="none" marker-end="url(#f5-arrow)" d="M800,472 L800,500"/>
+
+      <rect x="650" y="502" width="300" height="52" rx="9" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.7"/>
+      <text x="800" y="524" text-anchor="middle" class="f5-l" font-size="12.5" fill="#12151C">Updated Global Model</text>
+      <text x="800" y="542" text-anchor="middle" class="f5-mono" font-size="10" fill="#2563EB" font-weight="700">broadcast to all 8 clients (Fig. 6)</text>
+
+      <!-- real worked example, round 15 -->
+      <text x="425" y="596" class="f5-l" font-size="12" fill="#12151C">Real Round-15 Data — adaptive_weights.csv</text>
+      <text x="425" y="613" class="f5-mono" font-size="9.5" fill="#7C8494">REGION_03: n=3483, F1=0.575, rarity=1.029, gate=1.0 → normalized weight 0.1609 (highest)</text>
+      <text x="425" y="628" class="f5-mono" font-size="9.5" fill="#7C8494">REGION_06: n=1762, F1=0.676, rarity=1.048, gate=1.0 → normalized weight 0.0974</text>
+      <text x="425" y="643" class="f5-mono" font-size="9.5" fill="#7C8494">REGION_08: n=1996, F1=0.569, rarity=1.055 (highest), gate=1.0 → normalized weight 0.0935 (lowest)</text>
+      <text x="425" y="660" class="f5-s" font-size="9.5" fill="#7C8494">At round 15, dataset size still dominates final weight — REGION_08's higher rarity bonus isn't enough to overtake REGION_03's 2× larger n_k.</text>
+      <text x="425" y="676" class="f5-s" font-size="9.5" fill="#7C8494">Gate = 1.0 for all clients this round: no client's EMA has dropped below threshold across the whole run (see analysis_report.md).</text>
+    </svg>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="legend-swatch" style="background:#2563EB"></span>Client-side (per region, local data only)</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#2563EB"></span>Server-side (weights only, no raw data)</div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h3><span class="dot" style="background:#2563EB"></span>Why These Three Factors</h3>
+      <ul class="step-list">
+        <li><b>Quality</b> answers "did this update actually learn something" — floored so one noisy round never zeroes a client out entirely.</li>
+        <li><b>Rarity</b> directly counters the confirmed non-IID problem: without it, a client that happens to see a rare event this round gets diluted exactly when its signal matters most.</li>
+        <li><b>Reliability</b> is a <em>gate</em>, not a second continuous quality multiplier — it answers "has this client been chronically bad," a different question from this round's quality score.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3><span class="dot" style="background:#374151"></span>Required Before Submission</h3>
+      <p style="font-size:13px;color:var(--text-mid);line-height:1.65;">Algorithm 1 and this figure must state the <em>same</em> formulas as whatever code actually produced Table IV's numbers. Right now there are two candidate formula sets and no confirmed link between either and the reported 82.21%/0.6401 result. Resolve this before anything else in the paper — it's the single most reviewer-checkable claim in the manuscript.</p>
+    </div>
+  </div>
+
+  <div class="pagenav">
+    <a href="ood_pipeline.html"><span class="nav-label">← Previous — Figure 4</span><span class="nav-title">Deployment-Aware Inference</span></a>
+    <a href="communication.html" class="next"><span class="nav-label">Next — Figure 6</span><span class="nav-title">Federated Communication →</span></a>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

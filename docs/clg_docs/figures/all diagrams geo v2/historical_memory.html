@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Figure 2 — Historical Memory Workflow · FedRouteAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="index.html" class="brand"><span class="brand-mark"></span>FedRouteAI</a>
+    <span class="crumb">/ <b>Figure 2 — Historical Memory Workflow</b></span>
+  </div>
+  <div class="topbar-right">
+    <button class="btn" onclick="toggleTheme()">Theme</button>
+    <button class="btn primary" onclick="downloadSVG('fig2-svg','fig2_historical_memory.svg')">Export SVG</button>
+  </div>
+</div>
+
+<div class="page">
+  <div class="fig-header">
+    <div class="fig-eyebrow">Figure 2 · Historical Memory Workflow</div>
+    <h1 class="fig-title">Zone Baseline Retrieval &amp; Normalization</h1>
+    <p class="fig-desc">Every classification depends on comparing a vehicle's current telemetry against what's <em>normal</em> for its specific zone and time window — a highway at rush hour and a residential street at midnight have completely different baselines. This module is what makes the rest of the pipeline privacy-preserving: it stores aggregated statistics, never individual vehicle records.</p>
+  </div>
+
+  <div class="databadge" style="display:flex;gap:8px;align-items:center;padding:10px 14px;border-radius:8px;background:var(--bg-soft);border:1px solid var(--border);margin-bottom:18px;font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text-mid);">
+    <span style="color:#2563EB;">●</span> Describes the CURRENT REPORTED system (produced Table IV's numbers) &nbsp;|&nbsp; <a href="geo_v2_features.html" style="color:#374151;text-decoration:none;">See Figures 11–12 for Geo V2 →</a>
+  </div>
+
+  <div class="canvas">
+    <svg id="fig2-svg" viewBox="0 0 1100 420" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>
+          .f2-l  { font-family: 'Space Grotesk', sans-serif; font-weight: 600; }
+          .f2-m  { font-family: 'Inter', sans-serif; font-weight: 500; }
+          .f2-s  { font-family: 'Inter', sans-serif; font-weight: 400; }
+          .f2-mono { font-family: 'JetBrains Mono', monospace; }
+        </style>
+        <marker id="f2-arrow" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#374151"/>
+        </marker>
+      </defs>
+
+      <!-- step chain, left to right -->
+      <!-- 1 -->
+      <rect x="30" y="150" width="150" height="90" rx="10" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.6"/>
+      <text x="105" y="188" text-anchor="middle" class="f2-l" font-size="13" fill="#12151C">Incoming Vehicle</text>
+      <text x="105" y="206" text-anchor="middle" class="f2-s" font-size="10.5" fill="#4B5361">Telemetry Ping</text>
+      <text x="105" y="222" text-anchor="middle" class="f2-mono" font-size="9.5" fill="#7C8494">v, d, zone_id, t</text>
+
+      <path class="f2-arrow" marker-end="url(#f2-arrow)" stroke="#374151" stroke-width="1.8" fill="none" d="M180,195 L216,195"/>
+
+      <!-- 2 -->
+      <rect x="218" y="150" width="150" height="90" rx="10" fill="#F3F4F6" stroke="#374151" stroke-width="1.6"/>
+      <text x="293" y="188" text-anchor="middle" class="f2-l" font-size="13" fill="#12151C">Resolve Zone</text>
+      <text x="293" y="206" text-anchor="middle" class="f2-s" font-size="10.5" fill="#4B5361">+ Time Window</text>
+      <text x="293" y="222" text-anchor="middle" class="f2-mono" font-size="9.5" fill="#7C8494">zone_id, hour_bin</text>
+
+      <path class="f2-arrow" marker-end="url(#f2-arrow)" stroke="#374151" stroke-width="1.8" fill="none" d="M368,195 L404,195"/>
+
+      <!-- 3 -->
+      <rect x="406" y="130" width="180" height="130" rx="10" fill="#F3F4F6" stroke="#374151" stroke-width="1.6"/>
+      <text x="496" y="160" text-anchor="middle" class="f2-l" font-size="13" fill="#12151C">PostgreSQL Query</text>
+      <text x="496" y="180" text-anchor="middle" class="f2-s" font-size="10.5" fill="#4B5361">Historical Store</text>
+      <line x1="426" y1="192" x2="566" y2="192" stroke="#374151" stroke-width="0.8" opacity="0.4"/>
+      <text x="496" y="210" text-anchor="middle" class="f2-mono" font-size="10.5" fill="#374151" font-weight="700">avg_speed (v̄)</text>
+      <text x="496" y="228" text-anchor="middle" class="f2-mono" font-size="10.5" fill="#374151" font-weight="700">avg_density (d̄)</text>
+      <text x="496" y="246" text-anchor="middle" class="f2-s" font-size="9.5" fill="#7C8494">decoupled from vehicle ID</text>
+
+      <path class="f2-arrow" marker-end="url(#f2-arrow)" stroke="#374151" stroke-width="1.8" fill="none" d="M586,195 L622,195"/>
+
+      <!-- 4 -->
+      <rect x="624" y="150" width="180" height="90" rx="10" fill="#F3F4F6" stroke="#374151" stroke-width="1.6"/>
+      <text x="714" y="180" text-anchor="middle" class="f2-l" font-size="13" fill="#12151C">Relative Ratio Engine</text>
+      <text x="714" y="200" text-anchor="middle" class="f2-mono" font-size="11" fill="#374151" font-weight="700">v_ratio = v / v̄</text>
+      <text x="714" y="218" text-anchor="middle" class="f2-mono" font-size="11" fill="#374151" font-weight="700">d_ratio = d / d̄</text>
+
+      <path class="f2-arrow" marker-end="url(#f2-arrow)" stroke="#374151" stroke-width="1.8" fill="none" d="M804,195 L840,195"/>
+
+      <!-- 5 -->
+      <rect x="842" y="150" width="200" height="90" rx="10" fill="#F3F4F6" stroke="#374151" stroke-width="1.6"/>
+      <text x="942" y="182" text-anchor="middle" class="f2-l" font-size="13" fill="#12151C">Normalized Features</text>
+      <text x="942" y="202" text-anchor="middle" class="f2-s" font-size="10.5" fill="#4B5361">Returned to Feature</text>
+      <text x="942" y="218" text-anchor="middle" class="f2-s" font-size="10.5" fill="#4B5361">Engineering (Fig. 3) →</text>
+
+      <!-- annotation: why zone+time, not just zone -->
+      <path d="M293,240 C 293,300 550,320 496,260" fill="none" stroke="#7C8494" stroke-width="1" stroke-dasharray="3 3"/>
+      <text x="330" y="330" class="f2-s" font-size="10.5" fill="#7C8494">same zone, different hour →</text>
+      <text x="330" y="346" class="f2-s" font-size="10.5" fill="#7C8494">different baseline (rush hour ≠ midnight)</text>
+    </svg>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="legend-swatch" style="background:#2563EB"></span>Incoming telemetry</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#374151"></span>Historical Memory (PostgreSQL)</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#374151"></span>Hands off to Feature Engineering</div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h3><span class="dot" style="background:#374151"></span>Formulas</h3>
+      <div class="formula-row">
+        <div class="formula-name">Speed ratio</div>
+        <div class="formula-math tex">$$v_{ratio} = \dfrac{v_{current}}{\bar{v}_{zone,\,t}}$$</div>
+        <div class="formula-note">Ratio &gt; 1 means faster than this zone's own historical norm for this time window — not faster than some global average, which would be meaningless comparing a highway to a residential street.</div>
+      </div>
+      <div class="formula-row">
+        <div class="formula-name">Density ratio</div>
+        <div class="formula-math tex">$$d_{ratio} = \dfrac{d_{current}}{\bar{d}_{zone,\,t}}$$</div>
+        <div class="formula-note">Same normalization logic applied to local traffic density.</div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3><span class="dot" style="background:#2563EB"></span>Why This Step Exists</h3>
+      <p style="font-size:13px;color:var(--text-mid);line-height:1.65;">Classifying <em>absolute</em> speed or density would force the model to separately learn what "normal" looks like for every road type — a hopeless generalization problem with limited data. By normalizing to each zone's own time-windowed baseline first, the exact same downstream MLP can reason about a highway and a residential lane using the same feature scale. This is also the privacy-relevant step: the database stores aggregated zone statistics, never a queryable history tied to an individual vehicle.</p>
+    </div>
+  </div>
+
+  <div class="pagenav">
+    <a href="architecture.html"><span class="nav-label">← Previous — Figure 1</span><span class="nav-title">System Architecture</span></a>
+    <a href="feature_engineering.html" class="next"><span class="nav-label">Next — Figure 3</span><span class="nav-title">Feature Engineering Pipeline →</span></a>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

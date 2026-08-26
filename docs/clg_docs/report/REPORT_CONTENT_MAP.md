@@ -1,6 +1,6 @@
 # FedRouteAI Report Content Map
 
-Target: `FedRouteAI_Major_Project_Report_FINAL.docx`
+Target: `FedRouteAI_Major_Project_Report.docx`
 
 ## Chapter Map
 
@@ -12,10 +12,10 @@ Target: `FedRouteAI_Major_Project_Report_FINAL.docx`
 | 4. System Design and Architecture | Layering, dataset separation, federated architecture, Geo V2 contract, temporal/history/spatial features, OSM/PostGIS, backend, frontend, ingestion, prediction, routing, demonstration | System architecture and exact 23-feature contract |
 | 5. Implementation | Dataset generation, regional partitioning, MLP, local training, FedAvg, adaptive aggregation, artifact handling, ingestion, aggregation, inference, persistence, map, routing, demonstrations, APIs, frontend, validation | Module-level implementation description |
 | 6. Testing and Validation | Unit, backend, API, database, Geo V2, artifact, federated, routing, ingestion, frontend, map, demonstration, build, runtime, performance, limitations | 117 backend tests, 17 focused frontend tests, build and artifact evidence, frozen metrics |
-| 7. Deployment, Security and Performance | Local deployment, configuration, security, validation, artifact integrity, data separation, privacy limitations, performance, browser and scalability concerns | Measured versus unmeasured operational claims |
-| 8. Conclusion and Future Enhancements | Conclusion, achieved objectives, contributions, experimental findings, limitations, future enhancements, final remarks | Final project assessment and next research steps |
-| 9. Appendices | Reproduction, evidence register, figure register, model configuration, network statistics, testing, telemetry, API, database, federated training, metrics, routing, demonstrations, frontend, operations, reproducibility, limitations, and submission review | Reproducibility and review material |
-| 10. References | Research and technical sources | Bibliography |
+| 7. Results and Discussion | Model interpretation, controlled demonstrations, local deployment, security, artifact integrity, data separation, privacy limitations, performance, browser and scalability concerns | Measured results versus unmeasured operational claims |
+| 8. Summary and Conclusions | Conclusion, achieved objectives, contributions, experimental findings, limitations, future enhancements, final remarks | Final project assessment and next research steps |
+| Appendices | Reproduction, evidence register, figure register, model configuration, network statistics, testing, telemetry, API, database, federated training, metrics, routing, demonstrations, frontend, operations, reproducibility, limitations, and submission review | Reproducibility and review material |
+| References | At least 30 research and technical sources, alphabetically arranged | Bibliography |
 
 ## Figure Map
 
@@ -23,22 +23,22 @@ Target: `FedRouteAI_Major_Project_Report_FINAL.docx`
 |---|---|---|
 | 4.1 | Overall system architecture | Embedded grayscale figure |
 | 4.2 | Federated learning architecture | Embedded grayscale figure |
-| 4.3 | Regional client and server interaction | Embedded grayscale figure |
-| 4.4 | End-to-end data pipeline | Embedded grayscale figure |
+| 4.3 | Regional client and server interaction | Embedded technical figure |
+| 4.4 | End-to-end data pipeline | Embedded technical figure |
 | 4.5 | Geo V2 feature construction pipeline | Embedded grayscale figure |
-| 4.6 | Historical traffic memory and causal windows | Embedded grayscale figure |
-| 4.7 | OSM/PostGIS network import | Embedded grayscale figure |
-| 4.8 | Directed road network and transitions | Embedded grayscale figure |
-| 4.9 | Backend service and repository layers | Embedded grayscale figure |
-| 4.10 | Frontend map and API interaction | Embedded grayscale figure |
+| 4.6 | Historical memory and causal windows | Embedded technical figure |
+| 4.7 | OSM/PostGIS network import | Embedded technical figure |
+| 4.8 | Directed road network and transitions | Embedded technical figure |
+| 4.9 | Backend service and repository layers | Embedded technical figure |
+| 4.10 | Frontend map and API interaction | Embedded technical figure |
 | 4.11 | Directed shortest-path routing | Embedded grayscale figure |
 | 5.1 | Live GPS ingestion pipeline | Embedded grayscale figure |
-| 5.2 | Frozen Geo V2 MLP inference | Embedded grayscale figure |
-| 5.3 | Dynamic traffic map | Placeholder; real screenshot unavailable |
-| 5.4 | Moving vehicle visualization | Placeholder; real screenshot unavailable |
-| 5.5 | Route-bound demonstration flow | Placeholder; real screenshot unavailable |
-| 5.6 | Normal traffic demonstration | Placeholder; real screenshot unavailable |
-| 5.7 | Congestion and Accident demonstrations | Placeholder; real screenshot unavailable |
+| 5.2 | Dynamic traffic map | Reserved for reviewed live-project screenshot |
+| 5.3 | Moving vehicle visualization | Reserved for reviewed live-project screenshot |
+| 5.4 | Route-bound demonstration flow | Reserved for reviewed live-project screenshot |
+| 5.5 | Normal traffic demonstration | Reserved for reviewed live-project screenshot |
+| 5.6 | Congestion demonstration | Reserved for reviewed live-project screenshot |
+| 5.7 | Accident demonstration | Reserved for reviewed live-project screenshot |
 | 6.1 | Model validation results | Embedded grayscale figure |
 | 6.2 | Model confusion matrix | Embedded from frozen artifact data |
 | 6.3 | Backend and frontend test evidence | Embedded grayscale figure |
@@ -65,10 +65,10 @@ Editable SVG masters and PNG/PDF derivatives are stored under `docs/clg_docs/fig
 | 6.1 | Test categories |
 | 6.2 | Additional validation evidence |
 | 7.1 | Deployment and performance evidence |
-| 9.1 | Database and network evidence |
-| 9.2 | Evidence register |
+| A2.1 | Evidence register |
+| A5.1 | Database and network evidence |
 
-The generated DOCX contains 12 table objects; some planned table topics are combined into larger tables in the final document to avoid unnecessary fragmentation.
+The generated DOCX contains 13 table objects; some planned table topics are combined into larger tables in the final document to avoid unnecessary fragmentation.
 
 ## Evidence Boundaries
 
@@ -82,10 +82,12 @@ The generated DOCX contains 12 table objects; some planned table topics are comb
 
 - Every chapter uses a dedicated centered separator page.
 - Chapter content begins on the page following its separator.
+- Normal technical content is grouped under broad headings in approximately three substantial paragraphs per page.
+- Technical figures are interleaved with related prose; six UI/demo screenshot spaces are explicitly reserved.
 - Front matter uses lower-case Roman numbering.
 - Chapter 1 restarts page numbering with Arabic numeral 1.
 - Page numbers are centered at the bottom.
 - Formal front-matter order follows the college rule: cover/title, certificate,
   declaration, acknowledgement, abstract, contents, list of tables, list of
   figures, and abbreviations.
-- The final Microsoft Word rendering is 75 pages.
+- The current Microsoft Word rendering is 92 physical pages. Chapter 1 begins after its separator on physical page 16, References begin on physical page 91, and the counted typed matter is 77 displayed Arabic pages.

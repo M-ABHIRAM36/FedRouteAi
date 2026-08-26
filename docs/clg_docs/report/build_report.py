@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
+import zipfile
 from docx import Document
 from docx.enum.section import WD_SECTION
 from docx.enum.table import WD_TABLE_ALIGNMENT, WD_CELL_VERTICAL_ALIGNMENT
@@ -8,11 +10,11 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK, WD_LINE_SPACING
 from docx.enum.style import WD_STYLE_TYPE
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.shared import Inches, Pt, RGBColor
+from docx.shared import Cm, Inches, Pt, RGBColor
 
 
 ROOT = Path(__file__).resolve().parent
-OUT = ROOT / "FedRouteAI_Major_Project_Report_FINAL.docx"
+OUT = ROOT / "FedRouteAI_Major_Project_Report.docx"
 
 TITLE = "FedRouteAI: Adaptive Federated Learning for Resilient Edge-Based Traffic Anomaly Detection"
 STUDENTS = [("MOGULOJU ABHIRAM", "23211A6774"), ("RAJULAPUDI ROHITH", "23211A67A0")]
@@ -20,18 +22,9 @@ GUIDE = "Mrs. S. Jyothsna"
 DEPARTMENT = "Computer Science and Engineering (Data Science)"
 COLLEGE = "B V RAJU INSTITUTE OF TECHNOLOGY"
 ADDRESS = "Vishnupur, Narsapur, Medak, Telangana, India 502313"
-MAIN_PAGE_STARTS: dict[int, int] = {
-    1: 1,
-    2: 4,
-    3: 8,
-    4: 12,
-    5: 18,
-    6: 26,
-    7: 31,
-    8: 35,
-    9: 37,
-    10: 55,
-}
+# Chapter separator pages are intentionally unnumbered and do not consume the
+# displayed Arabic sequence. Values are measured from the current Word layout.
+MAIN_PAGE_STARTS: dict[int, int] = {1: 1, 2: 5, 3: 11, 4: 16, 5: 23, 6: 34, 7: 41, 8: 46}
 FIGURE_IMAGES = {
     "4.1": "fig_4_1_overall_architecture.png",
     "4.2": "fig_4_2_federated_learning.png",
@@ -45,12 +38,12 @@ FIGURE_IMAGES = {
     "4.10": "fig_4_10_frontend_architecture.png",
     "4.11": "fig_4_11_routing.png",
     "5.1": "fig_5_1_live_ingestion.png",
-    "5.2": "fig_5_2_frozen_mlp.png",
     "6.1": "fig_6_1_model_validation.png",
     "6.2": "fig_6_2_confusion_matrix.png",
     "6.3": "fig_6_3_test_evidence.png",
     "7.1": "fig_7_1_deployment.png",
 }
+RESERVED_SCREENSHOT_FIGURES = {"5.2", "5.3", "5.4", "5.5", "5.6", "5.7"}
 
 
 def set_cell_shading(cell, fill: str) -> None:
@@ -95,10 +88,10 @@ def add_page_number(paragraph, initial: str = "1") -> None:
 def configure_section(section, *, fmt: str, start: int | None, show_number: bool) -> None:
     section.page_width = Inches(8.27)
     section.page_height = Inches(11.69)
-    section.top_margin = Inches(1)
-    section.bottom_margin = Inches(1)
-    section.left_margin = Inches(1)
-    section.right_margin = Inches(1)
+    section.top_margin = Cm(2.5)
+    section.bottom_margin = Cm(2.5)
+    section.left_margin = Cm(3.25)
+    section.right_margin = Cm(2.5)
     section.header_distance = Inches(0.5)
     section.footer_distance = Inches(0.5)
     section.footer.is_linked_to_previous = False
@@ -140,10 +133,10 @@ def configure_document(doc: Document) -> None:
     for section in doc.sections:
         section.page_width = Inches(8.27)
         section.page_height = Inches(11.69)
-        section.top_margin = Inches(1)
-        section.bottom_margin = Inches(1)
-        section.left_margin = Inches(1)
-        section.right_margin = Inches(1)
+        section.top_margin = Cm(2.5)
+        section.bottom_margin = Cm(2.5)
+        section.left_margin = Cm(3.25)
+        section.right_margin = Cm(2.5)
         section.header_distance = Inches(0.5)
         section.footer_distance = Inches(0.5)
         section.footer.is_linked_to_previous = False
@@ -162,7 +155,7 @@ def configure_document(doc: Document) -> None:
     normal.paragraph_format.first_line_indent = Inches(0.3)
     normal.font.color.rgb = RGBColor(0, 0, 0)
 
-    for name, size in (("Heading 1", 16), ("Heading 2", 13), ("Heading 3", 12)):
+    for name, size in (("Heading 1", 14), ("Heading 2", 13), ("Heading 3", 13)):
         style = doc.styles[name]
         style.font.name = "Times New Roman"
         style.font.size = Pt(size)
@@ -180,6 +173,16 @@ def configure_document(doc: Document) -> None:
         style.paragraph_format.line_spacing = 1.0
         style.paragraph_format.space_after = Pt(0)
         style.font.color.rgb = RGBColor(0, 0, 0)
+
+    for name in ("Figure Caption", "Table Caption"):
+        if name not in [s.name for s in doc.styles]:
+            style = doc.styles.add_style(name, WD_STYLE_TYPE.PARAGRAPH)
+            style.font.name = "Times New Roman"
+            style.font.size = Pt(11)
+            style.font.color.rgb = RGBColor(0, 0, 0)
+            style.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            style.paragraph_format.line_spacing = 1.0
+            style.paragraph_format.space_after = Pt(6)
 
     # Remove theme-dependent colors from the styles that Word may apply when
     # opening a generated document with a different template.
@@ -223,6 +226,8 @@ def heading(doc: Document, text: str, level: int = 2) -> None:
 
 def table(doc: Document, caption: str, headers: list[str], rows: list[list[str]]) -> None:
     caption_para = p(doc, caption, align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=6, bold=True, size=11)
+    caption_para.style = doc.styles["Table Caption"]
+    add_field(caption_para, f'TC "{caption}" \\f T')
     caption_para.paragraph_format.line_spacing = 1.0
     t = doc.add_table(rows=1, cols=len(headers))
     t.style = "Table Grid"
@@ -244,14 +249,18 @@ def figure(doc: Document, number: str, caption: str, height: float = 1.45) -> No
     box.paragraph_format.space_before = Pt(6)
     box.paragraph_format.space_after = Pt(4)
     box.paragraph_format.line_spacing = 1.0
-    image = ROOT.parent / "figures" / "png" / FIGURE_IMAGES[number] if number in FIGURE_IMAGES else None
+    image = ROOT.parent / "figures" / "png" / FIGURE_IMAGES[number] if number in FIGURE_IMAGES and number not in RESERVED_SCREENSHOT_FIGURES else None
     if image is not None and image.exists():
         run = box.add_run()
-        run.add_picture(str(image), width=Inches(6.2))
+        run.add_picture(str(image), width=Inches(5.5))
     else:
-        run = box.add_run(f"[INSERT FIGURE {number} HERE]\n\n\n\n\n\n\n\n\nFIGURE SPACE RESERVED")
+        run = box.add_run(
+            f"[RESERVED SCREENSHOT SPACE: FIGURE {number}]\n\n"
+            "Insert one verified live-project screenshot here.\n"
+            "Do not include credentials, keys, or unverified claims."
+        )
         run.font.name = "Times New Roman"
-        run.font.size = Pt(11)
+        run.font.size = Pt(10)
         run.font.color.rgb = RGBColor(0, 0, 0)
         boxPr = OxmlElement("w:pBdr")
         for edge in ("top", "left", "bottom", "right"):
@@ -262,9 +271,13 @@ def figure(doc: Document, number: str, caption: str, height: float = 1.45) -> No
             el.set(qn("w:color"), "000000")
             boxPr.append(el)
         box._p.get_or_add_pPr().append(boxPr)
+        box.paragraph_format.space_after = Pt(8)
+        box.paragraph_format.keep_together = True
     box.paragraph_format.line_spacing = 1.5
     box.paragraph_format.keep_with_next = True
-    caption_para = p(doc, f"Figure {number}: {caption}", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=8, size=11)
+    caption_para = p(doc, f"Figure {number} {caption}", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=8, size=11)
+    caption_para.style = doc.styles["Figure Caption"]
+    add_field(caption_para, f'TC "Figure {number} {caption}" \\f F')
     caption_para.paragraph_format.line_spacing = 1.0
 
 
@@ -323,27 +336,29 @@ def front_matter(doc: Document) -> None:
 def lists(doc: Document) -> None:
     doc.add_page_break()
     p(doc, "CONTENTS", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=14, bold=True, size=14)
-    contents = [
-        ("ABSTRACT", "v"), ("LIST OF FIGURES", "viii"), ("LIST OF TABLES", "ix"), ("LIST OF ABBREVIATIONS / SYMBOLS", "x"),
-        ("1. INTRODUCTION", "01"), ("2. LITERATURE SURVEY", "08"), ("3. REQUIREMENT ANALYSIS AND FEASIBILITY STUDY", "15"),
-        ("4. SYSTEM DESIGN AND ARCHITECTURE", "23"), ("5. IMPLEMENTATION", "37"), ("6. TESTING AND VALIDATION", "55"),
-        ("7. DEPLOYMENT, SECURITY AND PERFORMANCE", "67"), ("8. CONCLUSION AND FUTURE ENHANCEMENTS", "76"), ("9. APPENDICES", "82"), ("10. REFERENCES", "94"),
-    ]
-    for item, page in contents:
-        p(doc, f"{item:<62}{page}", indent=False, after=4, size=11)
+    p(doc, "The contents below is generated from the report heading structure. Refresh Word fields after the final pagination review.", indent=False, after=8, size=10)
+    toc = doc.add_paragraph()
+    toc.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    toc.paragraph_format.line_spacing = 1.5
+    add_field(toc, 'TOC \\o "1-2" \\h \\z \\u')
+    p(doc, "ABSTRACT", indent=False, after=3, size=11)
+    p(doc, "DECLARATION", indent=False, after=3, size=11)
+    p(doc, "LIST OF TABLES", indent=False, after=3, size=11)
+    p(doc, "LIST OF FIGURES", indent=False, after=3, size=11)
+    p(doc, "LIST OF SYMBOLS, ABBREVIATIONS AND NOMENCLATURE", indent=False, after=3, size=11)
     doc.add_page_break()
     p(doc, "LIST OF TABLES", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=14, bold=True, size=14)
-    tables = ["2.1 Related Approaches and FedRouteAI Position", "3.1 Functional Requirements", "3.2 Requirement Traceability", "3.3 Software and Hardware Requirements", "3.4 Additional Requirement Evidence", "4.1 Exact 23-Feature Geo V2 Contract", "4.2 Dataset and Runtime Data Separation", "4.3 Database and Network Statistics", "5.1 Major Software Modules", "5.2 Model Configuration", "5.3 Demonstration Controls", "5.4 Additional Implementation Evidence", "6.1 Test Categories", "6.2 Additional Validation Evidence", "7.1 Deployment and Performance Evidence", "9.1 Database and Network Evidence", "9.2 Evidence Register"]
-    for item in tables: p(doc, f"Table {item}", indent=False, after=4, size=11)
+    table_list = doc.add_paragraph()
+    table_list.paragraph_format.line_spacing = 1.5
+    add_field(table_list, 'TOC \\f T \\h \\z')
     doc.add_page_break()
     p(doc, "LIST OF FIGURES", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=14, bold=True, size=14)
-    figs = [
-        "4.1 Overall System Architecture of FedRouteAI", "4.2 Federated Learning Architecture", "4.3 Regional Client Architecture", "4.4 End-to-End Data Pipeline", "4.5 Geo V2 Feature Pipeline", "4.6 Historical Traffic Memory", "4.7 OSM/PostGIS Road-Network Architecture", "4.8 Directed Road Network and Transitions", "4.9 Backend Service Architecture", "4.10 Frontend Architecture", "4.11 Directed Shortest-Path Routing", "5.1 Live GPS Ingestion Pipeline", "5.2 Dynamic Traffic Map", "5.3 Moving Vehicle Visualization", "5.4 Route-Bound Demonstration Flow", "5.5 Normal Traffic Demonstration", "5.6 Congestion Demonstration", "5.7 Accident Demonstration", "6.1 Model Validation Results", "6.2 Confusion Matrix", "6.3 Testing Evidence", "7.1 Local Deployment Architecture",
-    ]
-    for i, item in enumerate(figs, 1): p(doc, f"Figure {item:<55}{'—'}", indent=False, after=3, size=11)
+    figure_list = doc.add_paragraph()
+    figure_list.paragraph_format.line_spacing = 1.5
+    add_field(figure_list, 'TOC \\f F \\h \\z')
     doc.add_page_break()
-    p(doc, "LIST OF ABBREVIATIONS / SYMBOLS", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=14, bold=True, size=14)
-    table(doc, "", ["Abbreviation / Symbol", "Meaning"], [["AI", "Artificial Intelligence"], ["API", "Application Programming Interface"], ["FL", "Federated Learning"], ["FedAvg", "Federated Averaging"], ["GPS", "Global Positioning System"], ["MLP", "Multilayer Perceptron"], ["OSM", "OpenStreetMap"], ["PostGIS", "PostgreSQL spatial database extension"], ["REST", "Representational State Transfer"], ["GIS", "Geographic Information System"], ["FPR", "False Positive Rate"], ["F1", "Harmonic mean of precision and recall"], ["V1 / V2", "Version 1 / Geo V2 system contracts"], ["km/h", "Kilometres per hour"], ["m", "Metres"]])
+    p(doc, "LIST OF SYMBOLS, ABBREVIATIONS AND NOMENCLATURE", align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=14, bold=True, size=14)
+    table(doc, "Table 0.1: Symbols and abbreviations", ["Symbol / abbreviation", "Meaning"], [["AI", "Artificial Intelligence"], ["API", "Application Programming Interface"], ["CPU", "Central Processing Unit"], ["F1", "Harmonic mean of precision and recall"], ["FL", "Federated Learning"], ["FedAvg", "Federated Averaging"], ["FPR", "False Positive Rate"], ["GPS", "Global Positioning System"], ["GIS", "Geographic Information System"], ["JSON", "JavaScript Object Notation"], ["MLP", "Multilayer Perceptron"], ["OSM", "OpenStreetMap"], ["PostGIS", "PostgreSQL spatial database extension"], ["REST", "Representational State Transfer"], ["SRID", "Spatial Reference Identifier"], ["V1 / V2", "Version 1 / Geo V2 system contracts"], ["km/h", "Kilometres per hour"], ["m", "Metres"]])
 
 
 def start_main_numbering(doc: Document) -> None:
@@ -355,196 +370,251 @@ def add_paragraphs(doc: Document, paragraphs: list[str]) -> None:
         p(doc, text)
 
 
+def equation(doc: Document, number: str, expression: str, explanation: str) -> None:
+    para = p(doc, expression, align=WD_ALIGN_PARAGRAPH.CENTER, indent=False, after=3, size=12)
+    para.paragraph_format.keep_with_next = True
+    label = p(doc, f"({number})", align=WD_ALIGN_PARAGRAPH.RIGHT, indent=False, after=4, size=11)
+    label.paragraph_format.keep_with_next = True
+    p(doc, explanation)
+
+
+def appendix_heading(doc: Document, title: str) -> None:
+    doc.add_page_break()
+    heading(doc, title, level=2)
+
+
+def appendix_numbered_title(title: str) -> str:
+    letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    if not title.startswith("APPENDIX "):
+        return title
+    letter = title[9:10]
+    if letter in letters:
+        return title.replace(f"APPENDIX {letter}", f"APPENDIX {letters.index(letter) + 1}", 1)
+    return title
+
+
+def grouped_sections(
+    doc: Document,
+    sections: list[tuple[str, str]],
+    *,
+    figures_after: dict[str, list[tuple[str, str]]] | None = None,
+    figure_interpretations: dict[str, str] | None = None,
+) -> None:
+    """Render independent sections and attach figures to their introducing section."""
+    previous_heading: str | None = None
+    for section_heading, text in sections:
+        if section_heading != previous_heading:
+            heading(doc, section_heading)
+            previous_heading = section_heading
+        p(doc, text)
+        for number, caption in (figures_after or {}).get(section_heading, []):
+            figure(doc, number, caption)
+            interpretation = (figure_interpretations or {}).get(number)
+            if interpretation:
+                p(doc, interpretation)
+
+
 def chapter1_expansion(doc: Document) -> None:
-    heading(doc, "1.2 Background")
-    add_paragraphs(doc, [
-        "Traffic intelligence begins with the observation that a road segment is not static. Its average speed, dispersion of speeds, vehicle count, occupancy, flow, and stopped fraction vary with time of day, road type, weather, nearby activity, and the behavior of adjacent segments. A useful system therefore needs a reference for normal operation and a method for comparing the current state with that reference. FedRouteAI models the road segment as the unit of analysis because segment-level state can be joined to road geometry, historical memory, spatial neighbors, and route topology.",
-        "GPS telemetry is attractive for this purpose because it can be produced by mobile devices, fleet systems, or controlled vehicle simulators. Raw positions alone are not sufficient for event classification. They must be associated with a canonical segment, aggregated into a consistent time interval, and interpreted with road metadata. The project follows this sequence and keeps the original telemetry, derived segment state, model features, predictions, and demonstration metadata conceptually separate.",
-        "The current project contains two related but distinct data paths. The training and evaluation path uses geographically grounded synthetic data with event labels available for dataset construction and evaluation. The runtime path uses label-free telemetry and constructs only the features permitted by the frozen model contract. A controlled demonstration can intentionally change vehicle behavior, but its selected scenario is not passed as a model input and is not automatically treated as a prediction.",
-    ])
-    heading(doc, "1.3 Need for the Proposed System")
-    add_paragraphs(doc, [
-        "A simple map of GPS points does not tell an operator whether a slow road is experiencing an accident, recurring peak-hour congestion, or a normal low-speed residential condition. The distinction requires historical context and spatial reasoning. FedRouteAI addresses this need by comparing current traffic aggregates with normal baselines, recent prior windows, and neighboring road behavior while also incorporating road type, lanes, and maximum speed.",
-        "A second need is organizational rather than purely algorithmic. Mobility records can be distributed across regions, companies, or administrative boundaries. Sending all raw trajectories to one training database may be undesirable even when the final model is centrally served. The regional-client design lets the project study model aggregation while preserving the conceptual boundary between local observations and global parameters. This is a system design decision, not a claim that the current prototype provides formal privacy guarantees.",
-    ])
-    heading(doc, "1.4 Contributions")
-    add_paragraphs(doc, [
-        "The first contribution is an end-to-end engineering pipeline. The project does not stop at a trained classifier; it connects network import, PostGIS persistence, live ingestion, segment state, causal feature construction, frozen inference, prediction persistence, API responses, map layers, and routing. This makes the system inspectable at each stage and enables integration testing across boundaries.",
-        "The second contribution is the Geo V2 feature contract. It makes current traffic, historical baselines, temporal position, prior-window behavior, and directed-neighbor evidence explicit. The contract is ordered and versioned, and the runtime model store validates it before inference. This reduces the risk that a model artifact is loaded with an incompatible feature order.",
-        "The third contribution is an honest demonstration workflow. A user selects a route, chooses a controlled traffic behavior, and observes telemetry and model outputs independently. The interface reports route coverage and abnormal predictions only where predictions exist. This allows the system to demonstrate a realistic pipeline without claiming that a clicked Accident scenario is proof of accident classification.",
-    ])
-    heading(doc, "1.5 Scope")
-    add_paragraphs(doc, [
-        "The scope includes GPS-based road-event classification, regional MLP training, model aggregation, causal feature engineering, OSM/PostGIS network representation, live and controlled telemetry, dynamic map visualization, and directed shortest-path inspection. The scope does not include an external navigation service, a production cloud deployment, a CCTV pipeline, a learned graph neural network, or a formal privacy protocol.",
-    ])
-    heading(doc, "1.6 Limitations")
-    add_paragraphs(doc, [
-        "The principal limitation is data realism. The documented Geo V2 experiments use geographically grounded synthetic traffic rather than a continuously collected measured traffic feed. This is appropriate for controlled validation of the pipeline but does not establish city-wide operational accuracy. The class distribution also makes overall accuracy less informative than event-balanced metrics, per-class recall, and false-positive analysis.",
-        "The routing subsystem calculates directed shortest paths and supports explicit inspection or exclusions; it should not be described as a learned traffic-aware optimizer. Likewise, federated training demonstrates regional parameter aggregation but does not by itself guarantee privacy. These boundaries are retained in the report so that the project claims remain aligned with the implementation.",
-    ])
-    heading(doc, "1.7 Organization of the Report")
-    p(doc, "Chapter 1 establishes the problem and scope. Chapter 2 surveys related technical areas. Chapter 3 records requirements and feasibility. Chapter 4 explains the architecture and exact feature contract. Chapter 5 describes implementation behavior. Chapter 6 presents testing and model evidence. Chapter 7 discusses deployment, security, performance, and limitations. Chapter 8 summarizes achievements and future work. Chapter 9 provides reproducibility and evidence appendices, and Chapter 10 lists the references used in the report.")
+    sections = [
+        ("1.2 Background", "Traffic intelligence begins with the observation that a road segment is not static. Its average speed, dispersion of speeds, vehicle count, occupancy, flow, and stopped fraction vary with time of day, road type, weather, nearby activity, and the behavior of adjacent segments. A useful system therefore needs a reference for normal operation and a method for comparing the current state with that reference. FedRouteAI models the road segment as the unit of analysis because segment-level state can be joined to road geometry, historical memory, spatial neighbors, and route topology."),
+        ("1.2 Background", "GPS telemetry is attractive for this purpose because it can be produced by mobile devices, fleet systems, or controlled vehicle simulators. Raw positions alone are not sufficient for event classification. They must be associated with a canonical segment, aggregated into a consistent time interval, and interpreted with road metadata. The project follows this sequence and keeps the original telemetry, derived segment state, model features, predictions, and demonstration metadata conceptually separate."),
+        ("1.2 Background", "The current project contains two related but distinct data paths. The training and evaluation path uses geographically grounded synthetic data with event labels available for dataset construction and evaluation. The runtime path uses label-free telemetry and constructs only the features permitted by the frozen model contract. A controlled demonstration can intentionally change vehicle behavior, but its selected scenario is not passed as a model input and is not automatically treated as a prediction."),
+        ("1.3 Motivation", "The project is motivated by the need to observe temporary road-state changes without treating every slow road as the same condition. Historical context, recent behavior, road attributes, and neighboring segments provide the evidence needed to distinguish ordinary variation from an unusual local pattern. Federated training is studied because traffic examples are naturally partitioned by region and raw regional records need not be assembled into one training table."),
+        ("1.4 Problem Statement", "The problem is to build and validate an end-to-end system that transforms GPS-derived observations into segment-level traffic state, constructs causal and label-free features, applies a federatedly trained classifier, serves predictions on a live map, and supports directed route inspection. The system must preserve explicit boundaries among training labels, runtime telemetry, model predictions, controlled scenarios, and routing decisions."),
+        ("1.5 Need for the Proposed System", "A simple map of GPS points does not tell an operator whether a slow road is experiencing an accident-like disturbance, recurring congestion, or normal low-speed operation. FedRouteAI addresses this need by comparing current traffic aggregates with normal baselines, strictly prior windows, road metadata, and directed-neighbor behavior. Its integrated services also make each transformation inspectable from ingestion to the map."),
+        ("1.5 Need for the Proposed System", "A second need is organizational. Mobility records can be distributed across geographic or administrative boundaries. The eight-client training design studies parameter aggregation while retaining regional partitions. This is a practical architecture for the experiment, but it is not presented as proof of differential privacy, secure aggregation, or a formal privacy guarantee."),
+        ("1.6 Objectives", "The objectives are to construct the current Geo V2 dataset and exact feature contract, train an eight-client federated MLP, import a canonical OSM/PostGIS network, implement live ingestion and frozen inference, display traffic and prediction state through React-Leaflet, calculate legal directed routes, and validate the complete workflow through focused tests and controlled demonstrations."),
+        ("1.7 Scope of the Project", "The scope includes GPS-based road-event classification, regional MLP training, adaptive model aggregation, causal feature engineering, OSM/PostGIS network representation, live and controlled telemetry, dynamic map visualization, and directed shortest-path inspection. It excludes production cloud orchestration, formal privacy protocols, CCTV analytics, learned traffic-aware route costs, and unattended safety-critical operation."),
+        ("1.8 Contributions", "The first contribution is an end-to-end engineering pipeline connecting network import, PostGIS persistence, live ingestion, segment aggregation, causal feature construction, frozen inference, prediction persistence, API responses, map layers, and routing. The second is the versioned and ordered history_spatial_strong contract, which reduces the risk of loading a model against incompatible feature semantics."),
+        ("1.8 Contributions", "A further contribution is the explicit separation of demonstration behavior from model evidence. A user can select a route and controlled traffic behavior while independent prediction coverage remains visible. The workflow demonstrates orchestration without claiming that selecting Accident, Congestion, or Normal proves that the model emitted the corresponding class."),
+        ("1.9 Limitations", "The documented Geo V2 experiment uses geographically grounded synthetic traffic rather than a continuously measured city feed. Class imbalance makes overall accuracy less informative than event-balanced metrics and per-class recall. Routing is directed and distance-based by default, and federated parameter aggregation does not itself provide a formal privacy guarantee."),
+        ("1.10 Organization of the Report", "Chapter 2 reviews the related literature, Chapter 3 defines requirements and feasibility, Chapter 4 presents the design, Chapter 5 explains implementation and operation, Chapter 6 records testing and results, Chapter 7 evaluates the evidence, and Chapter 8 concludes the work. Reproduction, artifact, network, testing, and review material is retained in the appendices, followed by the references."),
+    ]
+    grouped_sections(doc, sections)
 
 
 def chapter2_expansion(doc: Document) -> None:
-    for title, text in [
-        ("2.2 GPS-Based Traffic Analysis", "GPS-based traffic analysis transforms individual position and speed observations into road-level measurements. The transformation usually requires map matching, timestamp normalization, aggregation, and a treatment for missing observations. FedRouteAI uses this general pattern but adds a distinction between raw GPS observations, segment-level current state, and model-ready features. The MLP does not consume latitude, longitude, or vehicle identity directly; those fields are used upstream for association and aggregation."),
-        ("2.3 Traffic Anomaly Detection", "Traffic anomaly detection can be formulated as deviation from a baseline, classification into event types, or detection of an out-of-distribution state. Baseline methods are interpretable but depend on a reliable definition of normal. Classification methods can separate multiple event types but are sensitive to class imbalance and dataset shift. The project combines both ideas: normal-only historical references provide context, while the supervised federated MLP provides the learned classification path."),
-        ("2.4 Traffic Event Classification", "Temporary events have different behavioral signatures. Congestion may reduce speed while increasing vehicle count; an accident-like disturbance may create a sharper local disruption; construction or a closure may produce persistent or highly asymmetric effects. A model must learn these patterns without receiving the event name as an input. The Geo V2 feature builder explicitly rejects event and scenario tokens, which keeps the inference contract causal and label-free."),
-        ("2.5 Federated Learning", "Federated learning is relevant when observations are naturally distributed. In a traffic setting, a regional client may represent a geographic area, a fleet operator, or an edge installation. The client can build local examples and train a local MLP, while the server receives model updates. The resulting global model can benefit from multiple regions without requiring one raw table containing every trajectory. The project uses this as an architectural and experimental principle."),
-        ("2.6 FedAvg", "FedAvg provides the basic aggregation mechanism by combining client parameter updates according to local sample participation. Its main advantage for this project is compatibility with a neural network represented by continuous tensors. Tree structures would require a different federated procedure, whereas the MLP can retain a stable get-parameters and set-parameters contract. The final report treats FedAvg as the aggregation family and distinguishes the adaptive weighting workflow from the basic algorithm."),
-        ("2.7 Adaptive Federated Aggregation", "Traffic regions do not necessarily have equal data quality, event prevalence, recency, or relevance to the global deployment population. Adaptive aggregation is therefore useful as an extension to sample-count weighting. The repository's strategy records factors including data quality, event confidence, historical similarity, temporal recency, and regional relevance. The project does not claim that this weighting solves non-IID data in general; it documents the factors as an implemented aggregation design."),
-        ("2.8 Neural Networks for Traffic Classification", "The Geo V2 runtime model is a PyTorch MLP with a variable input width and eight output classes. The network contains linear layers, batch normalization, ReLU activations, dropout during training, and a log-softmax output. Its input is a fixed ordered feature vector. This makes the model suitable for tabular state classification while keeping the runtime independent from the training script."),
-        ("2.9 Historical Traffic Modeling", "Historical memory is more than a stored average. The current system uses normal baseline speed, speed variation, and vehicle count, then creates current-to-baseline ratios, prior-window means, trends, and low-speed persistence. The history slots are shifted and use earlier observations only. This causal arrangement prevents a current abnormal value from being copied into the feature that is supposed to explain it."),
-        ("2.10 OpenStreetMap and Road Networks", "OpenStreetMap contributes road geometry and descriptive tags. The project normalizes the cached source into canonical segments, road types, lane information, maximum speed, and direction metadata. The normalized network is the spatial frame used by both map rendering and route calculation. It is not the ML training dataset; it supplies road structure and metadata used by the feature builder and services."),
-        ("2.11 PostGIS and Spatial Data", "PostGIS stores geometry in PostgreSQL and supports spatial indexing and queries. In FedRouteAI, the database contains network rows and live derived state in addition to other system records. Keeping geometry in a spatial database allows the API to serve the same canonical road identity used by ingestion and routing. This reduces ambiguity that would arise if the frontend displayed a separate, unversioned road drawing."),
-        ("2.12 Map Matching", "Map matching is the association between a noisy GPS position and a road segment. The earlier V1 pipeline uses geometric projection and trajectory continuity; the Geo V2 network also provides canonical IDs and geometry for trusted simulator observations. The report therefore treats association as a required preprocessing step and does not describe raw coordinate proximity as a complete traffic classifier."),
-        ("2.13 Shortest Path Algorithms", "The route service models legal movement as directed transitions between canonical segments. It snaps endpoints, obtains an ordered segment sequence, constructs route geometry, and reports distance and estimated duration. Dijkstra is the dependable shortest-path method used by the routing layer; an alternative path can be inspected when explicit exclusions are requested. The route cost is not silently replaced by a model prediction."),
-        ("2.14 Research Gap", "Many individual methods address one part of the problem: traffic prediction, anomaly detection, federated learning, map matching, spatial databases, or routing. The engineering gap addressed here is the integration of these responsibilities under explicit data boundaries. The system must make it possible to trace one observed road state from telemetry through feature construction and prediction to the map, while preserving a different path for route calculation."),
-        ("2.15 Project Contribution", "FedRouteAI contributes a reproducible college-scale implementation of this integrated path. Its strongest result is not a claim of universal traffic accuracy; it is the demonstrable connection among an eight-client federated MLP, a versioned 23-feature contract, an OSM/PostGIS directed network, live ingestion, a dynamic map, and a controlled route demonstration. This positioning guides the evaluation and the limitations reported later."),
-    ]:
-        heading(doc, title)
-        p(doc, text)
+    sections = [
+        ("2.2 Intelligent Transportation Systems", "Intelligent Transportation Systems combine sensing, communication, computation, and decision support to improve road operations. GPS-derived mobility observations provide broad coverage, while databases and road graphs give those observations a stable geographic meaning. FedRouteAI operates within this field as a segment-level event-classification and route-inspection prototype rather than as a complete traffic-control platform."),
+        ("2.3 GPS-Based Traffic Analysis", "GPS-based traffic analysis transforms individual position and speed observations into road-level measurements. The transformation requires segment association, timestamp normalization, aggregation, and treatment of missing observations. FedRouteAI keeps raw observations, segment-level current state, and model-ready features distinct; latitude, longitude, and vehicle identity are not direct MLP inputs."),
+        ("2.4 Traffic Anomaly Detection", "Traffic anomaly detection can be formulated as deviation from a baseline, classification into event types, or detection of an out-of-distribution state. Baseline methods are interpretable but depend on a reliable definition of normal, while classifiers are sensitive to imbalance and shift. FedRouteAI combines normal-history context with supervised classification."),
+        ("2.5 Traffic Event Classification", "Temporary events have different behavioral signatures. Congestion may reduce speed while increasing vehicle count; an accident-like disturbance may create a sharper local disruption; construction or closure can create persistent effects. The classifier must learn such differences without receiving the event name, and the Geo V2 builder therefore rejects event and scenario tokens."),
+        ("2.6 Federated Learning", "Federated learning is relevant when examples are naturally distributed. A regional client can train a local MLP while the server receives parameter updates instead of raw GPS rows. The global model can therefore learn from eight geographic partitions without treating all trajectories as one centrally assembled client dataset [12], [17]."),
+        ("2.7 Federated Averaging", "Federated Averaging combines client parameter updates according to local participation. It is compatible with the continuous weight tensors of the MLP, unlike tree structures that require a different federation procedure. FedRouteAI retains a stable parameter interface for round initialization, local updates, aggregation, checkpoint comparison, and artifact promotion [17]."),
+        ("2.8 Adaptive Federated Aggregation", "Traffic regions can differ in data quality, event prevalence, recency, and relevance. Adaptive aggregation extends sample-count weighting with bounded quality and relevance factors. The current workflow records these factors but does not claim that they solve non-IID learning in general [16], [26]."),
+        ("2.9 Neural Networks for Traffic Classification", "The current runtime model is a PyTorch multilayer perceptron with a 23 -> 64 -> 32 -> 8 structure. Linear layers, batch normalization, ReLU, dropout during training, and LogSoftmax transform the fixed ordered feature vector into eight class scores. This tabular architecture is compatible with federated parameter averaging [9], [18]."),
+        ("2.10 Historical Traffic Modeling", "Historical traffic memory provides a reference rather than a single stored average. Baseline speed, speed variation, and vehicle count support current-to-normal ratios, while shifted prior means, trends, and persistence describe recent behavior. Strictly earlier slots prevent the current observation from leaking into its own explanatory history."),
+        ("2.11 Spatial Traffic Modeling", "Road conditions are spatially related because disruption on one segment can differ from or propagate toward connected roads. FedRouteAI uses persisted directed topology rather than arbitrary geometric proximity. The promoted feature contract retains a directed-neighbor speed contrast, giving the model a compact representation of local spatial disagreement."),
+        ("2.12 OpenStreetMap and Road Networks", "OpenStreetMap contributes road geometry and descriptive tags. The cached source is normalized into canonical segments, road types, lane information, maximum speed, and direction metadata. This network is the spatial frame for map rendering and routing, not the labeled ML dataset [30]."),
+        ("2.13 PostGIS and Spatial Data", "PostGIS stores geometry in PostgreSQL and supports spatial indexing and queries. The API serves the same canonical identity used by ingestion, prediction, and routing, avoiding a separate unversioned road drawing in the browser [31]."),
+        ("2.14 Map Matching", "Map matching associates a noisy GPS position with a road segment. The preserved V1 path uses geometric projection and trajectory continuity, while trusted Geo V2 simulator observations supply a canonical ID that is still validated. Association is therefore an upstream preprocessing responsibility, not a classification shortcut."),
+        ("2.15 Shortest Path Algorithms", "The route service models legal movement as directed transitions between canonical segments. It snaps endpoints, returns an ordered segment sequence and geometry, and reports distance and estimated duration. The dependable default is directed distance-weighted Dijkstra; prediction inspection and explicit exclusions remain separate [5]."),
+        ("2.16 Research Gap", "Many studies address traffic prediction, anomaly detection, federated learning, spatial databases, or routing separately. The engineering gap addressed here is their integration under explicit data boundaries, allowing one road state to be traced from telemetry through causal features and independent prediction to the map."),
+        ("2.17 FedRouteAI Positioning", "FedRouteAI is positioned as a reproducible college-scale integration of an eight-client federated MLP, a versioned 23-feature contract, an OSM/PostGIS directed network, live ingestion, a dynamic map, and controlled route-bound behavior. Its contribution is the inspectable complete path, not a claim of universal traffic accuracy."),
+        ("2.18 Summary", "The reviewed work supports the selection of segment-level GPS aggregation, causal history, directed spatial context, federated MLP training, spatial persistence, and shortest-path routing. The following chapter converts these concepts into explicit functional, data, model, network, and operational requirements."),
+    ]
+    grouped_sections(doc, sections)
+    equation(doc, "2.1", r"w_global = sum_i (n_i / sum_j n_j) w_i", "In the basic FedAvg formulation, n_i is the number of local training examples and w_i is the parameter vector returned by client i [1]. The adaptive workflow used by this project adds bounded quality and relevance factors around this sample-weighted starting point.")
     table(doc, "Table 2.1: Related Approaches and FedRouteAI Position", ["Area", "Typical focus", "FedRouteAI implementation"], [["Traffic analysis", "Speed, flow, and occupancy patterns", "Current segment aggregates with historical comparison"], ["Anomaly detection", "Deviation or event classification", "Frozen MLP with normal-history context"], ["Federated learning", "Distributed local training", "Eight regional MLP clients and parameter aggregation"], ["Spatial modeling", "Road geometry and neighboring roads", "OSM/PostGIS canonical directed topology"], ["Routing", "Shortest or alternative path", "Directed distance-based route inspection"], ["Visualization", "Map and operational dashboard", "React and Leaflet live traffic map"]])
 
 
 def chapter3_expansion(doc: Document) -> None:
     sections = [
-        ("3.2 User Roles", "The traffic operator uses the map to inspect current segment state, model predictions, route information, and live freshness. The regional client represents a local training participant and is responsible for local data preparation and model update generation. The model administrator manages the selected artifact and checks metadata compatibility. The project evaluator needs reproducible commands, test evidence, and a clear explanation of which values are measured and which are synthetic."),
-        ("3.3 Dataset Requirements", "The training dataset must contain segment identity, region identity, timestamp, traffic aggregates, road metadata, historical baselines, and labels only for supervised training or evaluation. The runtime feature builder must be able to operate without a target column. The current Geo V2 manifest records five hours, 1,000 vehicles, 30,000 telemetry rows, three scenario rows, and 16,338 feature windows. These numbers describe the generated research dataset and are not a claim about the live database."),
-        ("3.4 Model Requirements", "The model must accept exactly the ordered feature schema expected by the selected artifact, output eight class probabilities, and fail closed when the feature version or network metadata is incompatible. The runtime must preserve the difference between a null prediction caused by insufficient evidence and a normal prediction produced by the classifier. Artifact validation is therefore a functional requirement rather than an optional administration task."),
-        ("3.5 Database Requirements", "The database must support PostgreSQL tables, PostGIS geometry, historical memory, live ingestion receipts, current segment projections, predictions, and network transitions. Geometry and transition data must carry a network source and version so a model or route cannot silently operate against an unrelated network. Database initialization and import are separate from application startup."),
-        ("3.6 Network Requirements", "The network must contain canonical segment IDs, geometry, direction metadata, legal transitions, road type, lane count, and maximum speed. A route-bound demo additionally requires an ordered route that follows persisted directed transitions and meets the minimum distance. These checks protect the demonstration from generating vehicle paths that look plausible on a map but violate the stored network topology."),
-        ("3.7 Technical Feasibility", "The project is technically feasible because each major requirement is supported by an established library or a local service: FastAPI for HTTP endpoints, SQLAlchemy and PostGIS for persistence, PyTorch for the MLP, Flower-compatible training components for federation, NetworkX for graph operations, and React-Leaflet for map rendering. The implementation also includes testable pure functions for feature and routing behavior."),
-        ("3.8 Operational Feasibility", "A local operator can start the database, apply migrations, import the Geo V2 network, start the backend and frontend, and use the map without manually constructing a model input. The route-bound demonstration supplies a repeatable way to exercise ingestion and inference. Operational feasibility is limited to a bounded local or project demonstration; it is not evidence of unattended production operation."),
-        ("3.9 Economic Feasibility", "The software stack is primarily open source and can run on a local workstation for development and demonstration. A larger training run may benefit from a GPU, but the report does not treat an unmeasured hardware configuration as a performance result. Database storage, model artifacts, and generated telemetry are the principal local resource requirements."),
-        ("3.10 Ethical and Data Considerations", "Mobility traces can reveal movement patterns, so the project separates regional learning concepts from central raw-data collection and excludes vehicle identity from model features. The controlled scenario labels are not presented as ground truth predictions. The project also explicitly avoids claiming differential privacy or secure aggregation because those mechanisms are not implemented in the current artifact."),
-        ("3.11 System Constraints", "The system is constrained by synthetic-data realism, class imbalance, the fixed frozen artifact, exact 120-second history cadence, local-process deployment, finite browser rendering, and distance-based default routing. These constraints are not hidden implementation details; they define the conditions under which the reported results and demonstrations are meaningful."),
+        ("3.5 User Roles", "The traffic operator inspects current segment state, model predictions, route information, and freshness. Regional clients prepare local examples and model updates. The model administrator manages artifact compatibility, while the evaluator needs reproducible commands, evidence, and a clear distinction between measured and synthetic values."),
+        ("3.6 Data Requirements", "Training data must contain segment and region identity, timestamp, traffic aggregates, road metadata, historical baselines, and targets used only for supervised training or evaluation. Runtime construction must operate without a target column. The manifest counts describe generated research data and not the live database."),
+        ("3.7 Model Requirements", "The model must accept exactly the ordered feature schema, output eight class probabilities, and fail closed when feature, network, scaler, or tensor metadata is incompatible. A null output caused by insufficient evidence remains distinct from a confident Normal result."),
+        ("3.8 Database Requirements", "The database supports PostGIS geometry, historical memory, ingestion receipts, append-only observations, current segment projections, predictions, and network transitions. Network source and version prevent unrelated geometry and artifacts from being combined silently."),
+        ("3.9 Road-Network Requirements", "The network contains canonical segment IDs, geometry, direction metadata, legal transitions, road type, lane count, and maximum speed. Route-bound demonstrations require a valid ordered route that follows transitions and meets the minimum distance."),
+        ("3.10 Software Requirements", "The software stack requires Python 3.12+, FastAPI, SQLAlchemy, Alembic, PyTorch, and Flower-compatible components for the backend and ML workflow. The frontend requires Node.js, React, Vite, React Query, and Leaflet. PostgreSQL with PostGIS provides spatial persistence."),
+        ("3.11 Hardware Requirements", "CPU inference is supported for the frozen artifact, while model training benefits from a GPU. Local operation requires sufficient memory for PostgreSQL/PostGIS, the backend, frontend development server, model artifacts, and generated traffic data."),
+        ("3.12 Operational Feasibility", "A local operator can start PostgreSQL/PostGIS, apply migrations, import the Geo V2 network, start the backend and frontend, and use the map without manually constructing model input. This supports bounded academic operation, not unattended production deployment."),
+        ("3.13 Technical Feasibility", "FastAPI, SQLAlchemy, PostGIS, PyTorch, Flower-compatible components, graph services, React, and Leaflet support the major requirements. Pure feature and routing functions remain testable without a live database where possible."),
+        ("3.14 Privacy and Security Considerations", "Mobility records can reveal movement patterns, so vehicle identity is excluded from model features and regional learning remains conceptually separated. Scenario controls are not prediction labels. Differential privacy and secure aggregation are not implemented and are not claimed."),
+        ("3.15 System Constraints", "Synthetic-data realism, class imbalance, the fixed artifact, exact 120-second history cadence, local-process execution, finite browser rendering, and distance-based default routing define the conditions under which results are meaningful."),
     ]
-    for title, text in sections:
-        heading(doc, title)
-        p(doc, text)
+    grouped_sections(doc, sections)
     table(doc, "Table 3.4: Requirement Traceability", ["Requirement group", "Primary implementation evidence"], [["Data", "Geo V2 manifest, feature builder, and dataset partitions"], ["Model", "Feature schema, model store, frozen artifact metadata"], ["Network", "Cached OSM JSON, network normalizer, PostGIS import"], ["Runtime", "Live ingestion, snapshot, prediction persistence"], ["User interface", "Traffic Map tests, route planner, scenario controls"], ["Validation", "Backend suite, frontend suite, build, compile, and smoke evidence"]])
 
 
 def chapter4_expansion(doc: Document) -> None:
     sections = [
-        ("4.2 Design Overview", "The design is organized around immutable identities and explicit transformations. A network version identifies the road structure; a source and run identify a telemetry stream; a timestamp identifies a traffic state; a feature version identifies the model input contract; and an artifact name identifies the selected model. This metadata allows the service to reject incompatible combinations instead of allowing a visually plausible but technically invalid result."),
-        ("4.3 Dataset Architecture", "The ML dataset has a label-aware construction path and a label-free inference path. During training, event labels are available to create targets and evaluate predictions. During inference, the feature builder receives current state, normal baselines, earlier state, and network-derived neighbors, but not labels, event identifiers, scenario names, or vehicle IDs. This distinction is the central safeguard against target leakage in the project design."),
-        ("4.4 Geo V2 Architecture", "Geo V2 extends current traffic observations with history and spatial context. The current-only block contains speed, dispersion, vehicle count, occupancy, flow, stopped fraction, time-of-day encodings, and road metadata. The history block adds normal baselines, deviation ratios, prior-window means, trends, and low-speed persistence. The promoted history-spatial-strong variant adds directed same-timestamp neighbor_speed_delta. Together these form the exact 23 ordered values loaded by the runtime model."),
-        ("4.5 Temporal Feature Construction", "The feature builder requires an exact 120-second cadence between observations for each segment. It computes hour_sin and hour_cos from the timestamp so the daily cycle is represented without a discontinuity at midnight. Prior means use shifted rolling windows, and persistence is calculated from earlier low-speed states. Missing history is filled from normal prehistory rather than from a future or current target state."),
-        ("4.6 Spatial Feature Construction", "Spatial context is based on directed persisted topology. At a timestamp, the builder joins a segment to observed outgoing neighbors and calculates neighbor speed, vehicle count, occupancy, and observed-neighbor count. The selected promoted contract retains neighbor_speed_delta, which compares the focal segment's current average speed with its directed neighbor speed context. This is narrower and more auditable than treating every nearby coordinate as a neighbor."),
-        ("4.7 PostGIS Architecture", "The OSM import process reads the cached road source, normalizes ways into canonical segments, derives legal directed transitions, and replaces the selected network version in the Geo V2 repository. PostGIS stores LineString geometry and uses spatial database capabilities for retrieval and association. The frontend consumes the same persisted identity that the backend uses for prediction and routing."),
-        ("4.8 Backend Architecture", "The backend keeps endpoint code thin. Services coordinate feature construction, simulation, ingestion, prediction, and routing. Repositories contain database access. Pydantic schemas define request and response contracts separately from SQLAlchemy models. The arrangement prevents a map endpoint from quietly implementing model logic or a service from bypassing the repository layer."),
-        ("4.9 Live Ingestion Architecture", "A live batch carries source and run identity, observations, timestamps, and traffic measurements. The ingestion service validates and persists the batch, updates the current segment projection, and triggers the prediction path. Idempotent receipt handling prevents a retried batch from creating duplicate history. The map then reads a scoped snapshot so a demonstration run does not accidentally replace the operator's intended live view."),
-        ("4.10 Prediction Pipeline", "Prediction begins only after sufficient current and prior state is available. The service builds the ordered feature vector, applies the artifact scaler where required, validates network and feature metadata, and calls the frozen MLP. The resulting class and confidence are stored as prediction state. A missing or malformed feature vector is not silently converted into an arbitrary event class."),
-        ("4.11 Traffic Map Architecture", "The map maintains separate layers for network geometry, telemetry styling, model predictions, events, vehicles, and route overlays. This separation matters during a controlled scenario: a moving vehicle or a scenario disturbance is observable behavior, while the predicted road state is an independent model output. The interface also displays freshness and coverage so users can identify missing predictions."),
-        ("4.12 Routing Architecture", "Routing accepts origin and destination coordinates, snaps them to the canonical network, and searches the directed graph. It returns actual route geometry, ordered segment IDs, distance, estimated duration, and prediction coverage when scoped prediction state exists. The default route calculation is distance-based; event or prediction information is inspected separately unless explicit exclusions are requested."),
-        ("4.13 Route-Bound Demonstration Architecture", "The demonstration service accepts only Normal, Congestion, and Accident scenarios. It requires the ordered route produced by the route planner, checks unknown IDs and directed transitions, and rejects routes shorter than 1.5 km. The simulator controls vehicle movement and disturbance scheduling, while the telemetry is scrubbed before it enters the label-free inference contract. The route impact panel counts only predictions actually returned for route segments."),
+        ("4.2 Overall System Architecture", "The overall design is organized around explicit transformations and immutable identities. The architecture connects offline regional training, the promoted frozen artifact, live telemetry ingestion, PostGIS persistence, causal feature construction, model inference, APIs, map visualization, and a separate routing branch. Network, run, feature, and model identities allow incompatible combinations to fail clearly."),
+        ("4.3 Federated Learning Architecture", "Eight regional clients train local copies of the 23 -> 64 -> 32 -> 8 MLP and return parameters plus training metadata. The server aggregates participating updates and distributes the next global state. Raw regional examples remain with the logical clients during this experiment; the current implementation does not add secure aggregation or differential privacy."),
+        ("4.4 Regional Client Architecture", "A regional client loads its partition, aligns the exact feature order, initializes from global parameters, performs local gradient updates, evaluates local behavior, and returns tensors and metrics. Replay and class-imbalance handling belong to local training, while checkpoint promotion remains a server-side experimental decision."),
+        ("4.5 End-to-End Data Flow", "The data flow begins with either labeled Geo V2 examples for training or label-free observations for runtime. Runtime observations become segment aggregates, join normal memory and shifted history, acquire directed-neighbor context, pass through the frozen scaler and MLP, and become persisted predictions. Routing consumes the canonical directed graph through a separate distance-based path."),
+        ("4.6 Geo V2 Feature Construction", "Geo V2 combines six current traffic values, cyclical time, three road attributes, three normal baselines, three deviation ratios, shifted prior means, trends, low-speed persistence, and one directed-neighbor speed delta. The promoted history_spatial_strong variant contains exactly 23 ordered values, and forbidden label or identity tokens are rejected."),
+        ("4.7 Historical Traffic Memory", "Historical memory stores normal baseline speed, speed variation, and vehicle count. The feature builder requires an exact 120-second cadence, shifts earlier windows before rolling operations, and computes trends and persistence from prior state only. Normal prehistory handles initial missing slots without copying a future or current target value."),
+        ("4.8 OSM/PostGIS Road-Network Architecture", "The cached OSM source is normalized into versioned canonical segments and legal directed transitions. PostGIS stores LineString geometry and road metadata so ingestion, feature construction, map rendering, and routing use the same segment identity. The active network contains 2,968 canonical segments and 11,259 transitions."),
+        ("4.9 Directed Road Network and Transitions", "The road graph represents each canonical segment and the legal movement relationships between segments. Direction is preserved when constructing neighbors and routes, preventing visually adjacent but illegal movements from being treated as valid. The same topology supports spatial feature context and route-bound simulation."),
+        ("4.10 Backend Service Architecture", "FastAPI endpoints parse requests and call services; services implement ingestion, feature, inference, simulation, and routing workflows; repositories own database access; and SQLAlchemy models represent persisted records. Pydantic API schemas remain separate from database models, preserving the one-directional project layering."),
+        ("4.11 Frontend Architecture", "The React application uses typed API clients and React Query for network and live state. Leaflet renders separate geometry, telemetry, prediction, event, vehicle, and route layers. The browser does not reproduce backend inference or shortest-path logic, and scoped query identities prevent stale demonstration data from appearing as the active run."),
+        ("4.12 Directed Shortest-Path Routing", "Routing snaps origin and destination coordinates to the canonical network and searches legal directed transitions using distance as the default cost. The response contains ordered segment IDs, actual geometry, distance, estimated duration, and prediction coverage where available. Predictions do not silently modify the default route cost."),
+        ("4.13 Database Design", "The database separates canonical network rows, directed transitions, append-only GPS observations, ingestion receipts, current segment projections, historical memory, and prediction persistence. Source, run, network, segment, and timestamp fields preserve provenance across these records and support scoped live-map retrieval."),
+        ("4.14 API Design", "The API exposes health, network, live ingestion, snapshot, prediction, routing, and demonstration operations through validated schemas. Endpoints remain thin, while services own route validity, run lifecycle, feature availability, artifact compatibility, and other business rules."),
+        ("4.15 Label-Free Inference Design", "Runtime inference receives the exact 23 traffic and context values but not event labels, scenario names, event IDs, vehicle IDs, or ground-truth severity. The frozen scaler standardizes the ordered vector, the MLP produces probabilities, and invalid metadata or missing evidence results in an unavailable state rather than a fabricated class."),
+        ("4.16 Training and Runtime Data Separation", "Training examples contain targets for supervised optimization and evaluation. Runtime telemetry, controlled demonstration metadata, the OSM network, and persisted predictions remain distinct stores joined by explicit identities. A selected scenario can change traffic behavior, but it is neither a runtime feature nor an automatic model result."),
+        ("4.17 Summary", "The design connects federated training and label-free runtime inference through a frozen, versioned artifact. Historical and spatial context is grounded in one canonical directed network, backend and frontend responsibilities remain separated, and routing is an independent distance-based service. Chapter 5 explains how these designs are implemented."),
     ]
-    for title, text in sections:
-        heading(doc, title)
-        p(doc, text)
+    grouped_sections(
+        doc,
+        sections,
+        figures_after={
+            "4.2 Overall System Architecture": [("4.1", "Overall System Architecture of FedRouteAI")],
+            "4.3 Federated Learning Architecture": [("4.2", "Federated Learning Architecture")],
+            "4.4 Regional Client Architecture": [("4.3", "Regional Client Architecture")],
+            "4.5 End-to-End Data Flow": [("4.4", "End-to-End Data Pipeline")],
+            "4.6 Geo V2 Feature Construction": [("4.5", "Geo V2 Feature Pipeline")],
+            "4.7 Historical Traffic Memory": [("4.6", "Historical Traffic Memory")],
+            "4.8 OSM/PostGIS Road-Network Architecture": [("4.7", "OSM/PostGIS Road-Network Architecture")],
+            "4.9 Directed Road Network and Transitions": [("4.8", "Directed Road Network and Transitions")],
+            "4.10 Backend Service Architecture": [("4.9", "Backend Service Architecture")],
+            "4.11 Frontend Architecture": [("4.10", "Frontend Architecture")],
+            "4.12 Directed Shortest-Path Routing": [("4.11", "Directed Shortest-Path Routing")],
+        },
+    )
+    equation(doc, "4.1", r"r_speed = avg_speed_kmph / max(baseline_speed_kmph, epsilon)", "The speed-to-baseline ratio expresses current movement relative to normal history. Protected denominators prevent an absent or near-zero baseline from creating an undefined model input [4].")
     table(doc, "Table 4.3: Dataset and Runtime Data Separation", ["Data source", "Purpose", "Labels available?"], [["ML training/evaluation data", "Train, validate, and test the classifier", "Yes for target construction/evaluation"], ["OSM/PostGIS network", "Geometry, road metadata, topology, and routing", "No"], ["Live GPS telemetry", "Current runtime observations", "No scenario labels in inference"], ["Controlled demonstration telemetry", "Repeatable route-bound behavior", "Scenario truth kept outside features"], ["Prediction persistence", "Serve independent model outputs", "Predicted class and confidence"]])
 
 
 def chapter5_expansion(doc: Document) -> None:
     sections = [
-        ("5.2 Dataset Generation", "The Geo V2 dataset generator creates traffic states over the canonical network and writes a manifest describing the run. The recorded manifest identifies a five-hour period beginning at 2026-07-07 06:00:00, a 600-second tick interval, 1,000 vehicles, 30,000 telemetry rows, three scenario rows, 16,338 feature windows, and network version beeramguda-osm-20260506. The scenario table is separate from the telemetry features and is not used as an inference input."),
-        ("5.3 Regional Data Partitioning", "The regional partition is based on REGION_01 through REGION_08. A regional split allows local training and validation behavior to be examined without flattening all records into one client. It also reflects the system's intended deployment concept: different geographic regions can have different traffic distributions, event frequencies, and history quality. The aggregation process must therefore handle non-identical local data rather than assuming identical samples."),
-        ("5.4 MLP Model", "The GeoV2MLP accepts a variable input width but requires eight output classes. Its sequential network uses a first linear layer, batch normalization, ReLU, dropout, a narrower hidden layer, another normalization and ReLU stage, and a final linear classifier. The forward pass returns log-softmax values and the probability method exponentiates them. This runtime definition is kept separate from training orchestration so the application can load the artifact without importing the training loop."),
-        ("5.5 Local Client Training", "A local client prepares its regional examples, uses the current global parameters as its starting point, performs local optimization, evaluates the result, and returns updated parameters with sample metadata. The client does not send raw GPS rows as the model update. Local training behavior can be affected by regional class imbalance and history quality, which is why regional metrics and aggregation metadata are retained."),
-        ("5.6 FedAvg", "FedAvg combines participating model parameters after a local training step. In practical terms, the server receives arrays representing the MLP weights and biases, associates each update with its local example count and metrics, and computes a global parameter set. The stable parameter interface is important because the same mechanism can be used for initialization, rounds, checkpoint comparison, and deployment artifact creation."),
-        ("5.7 AdaptiveFedAvg", "Adaptive aggregation extends the basic parameter average with quality and relevance information. The current workflow records client-level factors and applies bounded projection in the selected robust run. The report describes this as adaptive aggregation, not as a guarantee that every region is equally represented or that all rare events are solved. The final artifact metadata records the selected aggregation configuration so the runtime model can be traced to a documented experiment."),
-        ("5.8 Global Model Selection", "The promoted checkpoint was selected using validation evidence before the one-time test access. The recorded selection is round 45 of a maximum 50-round run. This separation matters because using the test set repeatedly for checkpoint selection would make the reported test result optimistic. The artifact directory retains validation selection, training history, client metrics, and test receipt files to support review."),
-        ("5.9 Model Artifact Management", "Model loading validates feature version, ordered features, network version, model identity, scaler metadata, and tensor compatibility. The selected artifact is frozen for the current application demonstration. The application does not retrain on startup, alter the artifact in response to a scenario button, or substitute scenario truth for a missing model output. These rules protect the meaning of a live prediction."),
-        ("5.10 Live GPS Ingestion", "The live ingestion service accepts trusted multi-vehicle observations with source, run, batch, and observation identity. It records an ingestion receipt, persists append-only GPS history, and updates a current-state projection. The append-only history supports later inspection, whereas the projection makes the latest map state inexpensive to serve. Retried batches are checked for identity and payload consistency."),
-        ("5.11 Segment Association", "For map-matched V1 ingestion, candidate segments are selected spatially and a geometric matcher uses projection and trajectory continuity. For Geo V2 trusted simulator observations, the canonical segment ID is supplied by the controlled network path and still validated against the persisted network. In both cases, segment identity is the bridge between telemetry and every downstream feature, prediction, map, and route operation."),
-        ("5.12 Traffic Aggregation", "The service aggregates observations by segment and tick into average speed, speed standard deviation, vehicle count, occupancy, flow rate, and stopped fraction. These are current state fields rather than labels. The aggregation deliberately removes identity-level information from the feature vector while preserving the traffic quantities needed for classification."),
-        ("5.13 Historical Memory", "Historical memory is computed from normal prehistory and is used as the comparison frame for runtime state. The service keeps baseline speed, baseline variation, and baseline vehicle count. Current-to-baseline ratios and trend values are computed later by the Geo V2 feature builder. This separation prevents the database baseline row from being confused with a prediction or with scenario truth."),
-        ("5.14 Geo V2 Feature Construction", "The feature builder verifies required columns, exact cadence, baseline coverage, and forbidden target-related tokens. It derives temporal encodings, baseline ratios, shifted prior means, trends, persistence, and directed-neighbor context. It returns only metadata and the selected feature variant in a deterministic ordering. The promoted variant is history_spatial_strong with 23 values."),
-        ("5.15 Label-Free Inference", "At runtime, the model receives the 23 feature values and no event label, scenario name, event ID, vehicle ID, or ground-truth severity. If a controlled scenario causes traffic to change, the model sees only the resulting aggregate behavior. The prediction can remain normal, become an abnormal class, or be unavailable. That outcome is independent of the scenario control selected by the user."),
-        ("5.16 Prediction Persistence", "Prediction persistence records the segment, timestamp, model identity, feature version, predicted event, confidence, and related deviations. The live snapshot returns these values alongside current traffic state. This allows the frontend to color road segments and display inspection details without recomputing the model in the browser."),
-        ("5.17 Dynamic Traffic Map", "The React map requests network geometry and live snapshots through typed API clients. It presents a live status indicator, network source and version, vehicle counts, prediction counts, route summary, and selected road details. Map layers can be toggled independently so a reviewer can inspect telemetry without confusing it with prediction styling."),
-        ("5.18 Vehicle Animation", "The backend remains authoritative for vehicle positions and counts. The frontend animates between received positions to avoid visually discontinuous jumps, but the interpolated frame is not inserted into the telemetry history. A rendered marker cap limits browser work for large demonstrations while the displayed active count continues to refer to backend state."),
-        ("5.19 Route Calculation", "The route planner sends origin, destination, network identity, and optional scoped live-run identity to the shortest-route endpoint. The backend snaps both endpoints, searches directed transitions, and returns a route geometry and ordered segment list. Prediction coverage is calculated from available route segment state rather than assuming every network segment has a current model output."),
-        ("5.20 Alternative Route and Route Inspection", "The normal route is calculated using the configured distance-based cost. When the user explicitly requests an alternative around abnormal segments, those segment IDs are passed as exclusions and a new directed route is calculated. This is an explicit user action and should not be described as the model autonomously changing the default route cost."),
-        ("5.21 Route-Bound Demonstrations", "The route-bound service validates the exact ordered route supplied by the frontend. It checks unknown segments, directed transitions, minimum route distance, and scenario enum values. Controlled vehicle routes remain within the selected corridor, and scenario metadata is scrubbed before model input. The map reports route prediction coverage and abnormal counts without fabricating missing predictions."),
-        ("5.22 API Implementation", "FastAPI endpoints provide health, network, ingestion, live-map, prediction, route, and demo interfaces. Pydantic schemas enforce field types and bounds, including the minimum route distance and accepted scenario values. The service layer owns state transitions and business rules, while repository methods own database queries. This keeps API behavior predictable and testable."),
-        ("5.23 Frontend Implementation", "The frontend uses React, React Query, typed API clients, and Leaflet. The Traffic Map page manages route selection, live sessions, scoped snapshots, scenario controls, map layers, vehicle selection, road inspection, and reset behavior. The UI distinguishes model prediction from scenario behavior in its wording and data presentation."),
-        ("5.24 Error Handling", "Invalid route topology, short routes, unknown segment IDs, mismatched model/network versions, unavailable snapshots, expired demo runs, and failed inference requests produce explicit errors or unavailable states. The system does not silently turn missing data into abnormal events. The frontend preserves useful state where possible, such as retaining the calculated route after a demo reset."),
-        ("5.25 Configuration Management", "Database settings, model paths, network identities, cadence, and service URLs are loaded through project configuration rather than scattered literals. The report does not reproduce secret values. A local operator must configure PostgreSQL/PostGIS and any ingestion key through environment settings before running database-backed demonstrations."),
+        ("5.2 Development Environment", "The project uses Python 3.12 or the configured Python environment for the FastAPI, data, and ML services, PostgreSQL with PostGIS for persistence, and Node.js with React, Vite, React Query, and Leaflet for the frontend. PyTorch provides the MLP runtime and training components. Local development keeps database, backend, frontend, and optional replay processes independently observable."),
+        ("5.3 Project Structure", "The repository separates API endpoints, services, repositories, schemas, models, ML features, training, frontend pages, and Geo V2 scripts. This structure follows the project's one-directional layering rule. The important implementation boundary is which layer owns each transformation."),
+        ("5.4 Dataset Preparation", "The Geo V2 dataset generator creates traffic states over the canonical network and writes a manifest describing the run. The recorded manifest identifies a five-hour period beginning at 2026-07-07 06:00:00, a 600-second tick interval, 1,000 vehicles, 30,000 telemetry rows, three scenario rows, 16,338 feature windows, and network version beeramguda-osm-20260506. The scenario table is separate from telemetry features and is not used as an inference input."),
+        ("5.5 Regional Data Partitioning", "The regional partition is based on REGION_01 through REGION_08. Different regions can have different traffic distributions, event frequencies, and history quality, so the aggregation process must handle non-identical local data rather than assuming identical samples."),
+        ("5.6 Road-Segment Association", "For map-matched V1 ingestion, candidate segments are selected spatially and a geometric matcher uses projection and trajectory continuity. For trusted Geo V2 observations, the canonical segment ID is supplied by the controlled network path and validated against the persisted network. Segment identity bridges telemetry, features, predictions, maps, and routes."),
+        ("5.7 Traffic Aggregation", "The service aggregates observations by segment and tick into average speed, speed standard deviation, vehicle count, occupancy, flow rate, and stopped fraction. These are current-state fields rather than labels, and identity-level information is excluded from the model vector."),
+        ("5.8 Historical Traffic Memory Implementation", "Historical memory is computed from normal prehistory and stores baseline speed, variation, and vehicle count. Current-to-baseline ratios and trends are computed later, keeping a database baseline row distinct from a prediction or scenario truth."),
+        ("5.9 Geo V2 Feature Construction", "The feature builder verifies required columns, exact cadence, baseline coverage, and forbidden target-related tokens. It derives temporal encodings, baseline ratios, shifted prior means, trends, persistence, and directed-neighbor context in deterministic order."),
+        ("5.10 Exact 23-Feature Contract", "The promoted history_spatial_strong variant contains 23 ordered values: current traffic, cyclical time, road metadata, normal baselines, ratios, prior means, trends, low-speed persistence, and neighbor_speed_delta. The model store validates this contract before inference."),
+        ("5.11 Model Implementation", "The GeoV2MLP uses linear layers, normalization, ReLU, dropout, and a final eight-class classifier. Its runtime definition is separate from training orchestration so the application can load the frozen artifact without retraining."),
+        ("5.12 Local Client Training", "A client aligns its regional examples, starts from global parameters, performs local optimization, evaluates its update, and returns tensors with sample metadata. It does not send raw GPS rows as the model update."),
+        ("5.13 Federated Model Aggregation", "FedAvg combines MLP weights and biases from participating clients, while the current robust workflow records adaptive quality and relevance factors and bounded projection. The aggregation configuration is retained in artifact metadata."),
+        ("5.14 Global Model Selection", "Validation evidence selected round 45 from a maximum of 50 rounds before one-time test access. Training history, client metrics, validation selection, and test receipt files support review of this decision."),
+        ("5.15 Frozen Model Deployment", "The model store validates feature version, ordered features, network version, model identity, scaler metadata, and tensor compatibility. The application loads the selected artifact in evaluation mode and does not change it when a scenario starts."),
+        ("5.16 Label-Free Runtime Inference", "At runtime the model receives the 23 feature values and no event label, scenario name, event ID, vehicle ID, or ground-truth severity. Missing evidence remains unavailable rather than being converted into an arbitrary class."),
+        ("5.17 Live GPS Ingestion", "The service accepts trusted observations with source, run, batch, and observation identity, records receipts, persists append-only history, updates current state, and triggers the prediction path. Retried batches are checked for identity and payload consistency."),
+        ("5.18 Prediction Persistence", "Prediction rows retain segment, timestamp, model identity, feature version, class, confidence, and related deviations. The live snapshot serves these values alongside current traffic state so the browser does not recompute inference."),
+        ("5.19 Dynamic Traffic Map", "The React map requests network geometry and live snapshots through typed clients and presents freshness, network identity, vehicles, predictions, routes, and selected-road details. Independent layers prevent telemetry and prediction styling from being confused."),
+        ("5.20 Moving Vehicle Visualization", "The backend remains authoritative for positions and counts. The frontend interpolates received positions for continuity without writing interpolated frames to telemetry, and a rendering cap limits browser marker work."),
+        ("5.21 Route Calculation", "The route planner sends origin, destination, network identity, and optional scoped run identity. The backend snaps endpoints, searches directed transitions, and returns geometry, ordered segments, duration, distance, and prediction coverage."),
+        ("5.22 Alternate Route Inspection", "The default route uses distance. When the user explicitly requests an alternative, selected segment IDs are passed as exclusions and a new directed route is calculated. The model does not autonomously change the default route cost."),
+        ("5.23 Route-Bound Demonstration", "The service validates the ordered route, unknown IDs, transitions, minimum distance, and scenario enum. Controlled vehicles remain within the corridor, and scenario metadata is scrubbed before model input."),
+        ("5.24 Normal Traffic Demonstration", "Normal is a controlled baseline behavior along the selected route. It is a demonstration control and not a claim that the model has established a ground-truth Normal label."),
+        ("5.25 Congestion Demonstration", "Congestion is a controlled congestion-like route behavior. Its telemetry enters the ordinary aggregation and inference path, but the selected scenario is not itself a model input or proof of classification."),
+        ("5.26 Accident Demonstration", "Accident is a controlled accident-like route disturbance. The correct interpretation is traffic behavior only, not ground truth; returned predictions remain independent and may be normal, abnormal, or unavailable."),
+        ("5.27 API Integration", "FastAPI provides health, network, ingestion, live-map, prediction, route, and demonstration interfaces. Pydantic schemas enforce field types, enum values, bounds, and route prerequisites while services own business rules."),
+        ("5.28 Frontend-Backend Integration", "React Query, typed API clients, scoped snapshots, and Leaflet connect the browser to backend-owned state. The UI preserves route and run identity, shows freshness, and distinguishes scenario controls from model outputs."),
+        ("5.29 Implementation Summary", "The implementation joins dataset preparation, regional learning, artifact management, label-free inference, ingestion, persistence, visualization, routing, and controlled operation without collapsing their data responsibilities."),
     ]
-    for title, text in sections:
-        heading(doc, title)
-        p(doc, text)
+    grouped_sections(
+        doc,
+        sections,
+        figures_after={
+            "5.17 Live GPS Ingestion": [("5.1", "Live GPS Ingestion Pipeline")],
+        },
+    )
+    heading(doc, "5.30 Output Screens")
+    p(doc, "Verified application screenshots are not available in the current workspace, so this section reserves only the canonical application-output positions. When captured from the running project, each screenshot must be explained as an application output and must preserve the distinction between controlled scenario behavior and model prediction.")
+    for number, caption in [("5.2", "Dynamic Traffic Map"), ("5.3", "Moving Vehicle Visualization"), ("5.4", "Route-Bound Demonstration Flow"), ("5.5", "Normal Traffic Demonstration"), ("5.6", "Congestion Demonstration"), ("5.7", "Accident Demonstration")]:
+        figure(doc, number, caption)
     table(doc, "Table 5.3: Model Configuration", ["Property", "Verified value"], [["Runtime model", "GeoV2MLP"], ["Output classes", "8"], ["Input feature count", "23"], ["Feature version", "geo-v2-history_spatial_strong-23-v2"], ["Training rounds", "50 maximum; checkpoint round 45"], ["Local epochs", "2"], ["Dropout", "0.2 in runtime architecture"], ["Inference mode", "Label-free feature input"]])
     table(doc, "Table 5.4: Demonstration Controls", ["Control", "Behavior"], [["Normal", "Baseline route-bound traffic behavior"], ["Congestion", "Controlled congestion-like route behavior"], ["Accident", "Controlled accident-like route disturbance"], ["Minimum route", "Approximately 1.5 km"], ["Route binding", "Ordered directed segment IDs supplied by route calculation"], ["Truth handling", "Scenario metadata excluded from model features"]])
 
 
 def chapter6_expansion(doc: Document) -> None:
     sections = [
-        ("6.2 Unit Testing", "Pure tests cover map matching decisions, event signature behavior, historical aggregation, adaptive weighting, graph reasoning, feature construction, and route logic. These tests are intentionally small because the mathematical and state-transition rules should be diagnosable without a running PostgreSQL server. They protect the transformations that later appear inside the API flow."),
-        ("6.3 Backend Testing", "The backend test suite exercises FastAPI import, health behavior, ingestion, prediction, live snapshots, route calculation, Geo V2 network handling, and controlled demonstrations. The current verified suite contains 117 passing tests. The count is a repository verification result, not a claim that every possible network or model condition has been exhausted."),
-        ("6.4 API Contract Testing", "Schema tests verify required fields, enum restrictions, route minimum distance, prediction metadata, telemetry scrubbing, and response shape. Route-bound demo creation must receive ordered segment IDs and distance from the frontend route result. This prevents the UI and backend from silently drifting into separate assumptions about the selected route."),
-        ("6.5 Database Testing", "Database-facing tests use the project's configured test approach and small isolated fixtures where appropriate. They verify persistence and retrieval relationships such as current segment state, prediction rows, network metadata, and demonstration receipts. A full local production database is not required for every pure service test, which keeps the feedback cycle fast."),
-        ("6.6 Geo V2 Feature Testing", "Feature tests verify the exact input columns, ordered feature version, cadence requirement, shifted history, normal prehistory fallback, directed neighbor construction, and forbidden target-token rejection. These checks are essential because a model can produce numerically valid output even when the semantic feature order is wrong."),
-        ("6.7 Model Artifact Testing", "Artifact checks load the selected MLP, verify the 23-feature schema, confirm the network and model metadata, inspect scaler ordering, and reject incompatible files. The final report states the artifact's recorded metrics and limitations rather than recalculating or retraining it during documentation generation."),
+        ("6.4 Functional Testing", "Pure tests cover map matching decisions, event signature behavior, historical aggregation, adaptive weighting, graph reasoning, feature construction, route logic, API behavior, ingestion, prediction, and controlled demonstrations. These tests protect transformations without requiring every test to start a live database."),
+        ("6.5 Data Validation Testing", "The backend suite exercises accepted observations, health behavior, ingestion receipts, live snapshots, network metadata, and controlled demonstration state. The current verified suite contains 117 passing tests; this is repository evidence, not proof that every possible condition has been exhausted."),
+        ("6.6 Feature Contract Testing", "Feature tests verify exact input columns, ordered feature version, cadence, shifted history, normal prehistory fallback, directed-neighbor construction, and forbidden target-token rejection. A numerically valid output is not sufficient when feature semantics are wrong."),
+        ("6.7 Model Artifact Validation", "Artifact checks load the selected MLP, verify the 23-feature schema, confirm network and model metadata, inspect scaler ordering, and reject incompatible files. The report states recorded metrics rather than retraining during documentation generation."),
         ("6.8 Federated Learning Validation", "Federated validation compares regional participation, round history, client metrics, aggregation weights, and validation selection. The chosen run records eight clients, a maximum of 50 rounds, two local epochs, and a selected checkpoint at round 45. The test set is accessed only after selection in the recorded experiment, as stated by the artifact report."),
-        ("6.9 Routing Testing", "Routing tests use directed segment transitions and verify that a route follows legal topology, returns ordered segment IDs, and reports distance and geometry. Explicit exclusions are tested separately from default routing. This distinction protects the claim that the current default route is distance-based rather than model-optimized."),
-        ("6.10 Live Ingestion Testing", "Live-ingestion tests verify accepted batches, idempotent receipts, current-state projection, scoped source and run identity, model inference, and persistence of prediction fields. Tests also check that telemetry does not carry scenario labels or event IDs into the inference input path."),
-        ("6.11 Frontend Testing", "The frontend suite checks initial loading, live start and pause, polling, stale and offline status, map layers, region filtering, road selection, vehicle selection, route calculation, route clearing, and prediction metadata. The current Traffic Map focused suite contains 17 passing tests and the production TypeScript/Vite build passes."),
-        ("6.12 Traffic Map Testing", "Map tests use deterministic road and snapshot fixtures to verify that the correct segment count, route line, prediction state, and vehicle information are rendered. Layer independence is important: hiding predictions must not hide telemetry, and a route overlay must remain tied to the calculated geometry rather than to a scenario marker."),
-        ("6.13 Vehicle Motion Testing", "Vehicle motion tests verify cleanup, marker limits, selection behavior, and updates from subsequent authoritative snapshots. The visual interpolation layer is tested as a rendering concern. It does not change the persisted observation count or create a second stream of synthetic backend GPS points."),
-        ("6.14 Controlled Demonstration Testing", "Demonstration tests validate Normal, Congestion, and Accident enum handling, route length rejection, unknown segment rejection, directed transition validation, deterministic route binding, scoped snapshots, expiry cleanup, label scrubbing, and reset behavior. They also verify that route-impact summaries count only available predictions."),
-        ("6.15 Build Validation", "Python modules are compiled without errors, the FastAPI application imports cleanly, the frontend TypeScript compiler completes, and Vite produces a production bundle. These checks detect syntax, import, and contract errors that unit tests alone may miss."),
-        ("6.16 Runtime Validation", "The verified smoke workflow uses a live backend and canonical network identity, creates or receives observations, checks scoped prediction persistence, and resets the demonstration. Runtime evidence is interpreted with the database and artifact configuration active at the time of the run; it is not generalized into a production capacity claim."),
-        ("6.17 Performance Testing", "The recorded model artifact report measures warmed single-row CPU inference at approximately 0.414 ms across 1,000 calls, equivalent to approximately 2,416 calls per second under that setup. This is a model-call measurement, not an end-to-end ingestion or browser throughput measurement. End-to-end latency, PostgreSQL load capacity, and memory pressure under a production workload were not measured in the current implementation."),
-        ("6.18 Limitations of Validation", "Synthetic data limits external validity, class imbalance affects aggregate metrics, and local demonstrations do not represent a city-wide deployment. The report also avoids treating the 1,000-vehicle configuration as 1,000 independent predictions because model outputs are generated at observed segment or batch granularity. These limitations are part of the validation conclusion."),
+        ("6.9 Inference Testing", "Inference tests verify artifact compatibility, feature ordering, label-free input, persisted class and confidence, unavailable states, and scoped prediction retrieval. They do not treat a controlled scenario name as a prediction label."),
+        ("6.10 API Testing", "Schema tests verify required fields, enum restrictions, route minimum distance, prediction metadata, telemetry scrubbing, and response shape. Route-bound creation must receive ordered segment IDs and distance from the frontend result."),
+        ("6.11 Database Testing", "Database-facing tests verify current segment state, prediction rows, network metadata, receipts, historical relationships, and demonstration lifecycle using the configured test approach and isolated fixtures where appropriate."),
+        ("6.12 Routing Testing", "Routing tests verify legal directed topology, ordered segment IDs, distance, geometry, and explicit exclusions separately from default distance-based routing."),
+        ("6.13 Frontend Testing", "The frontend suite checks loading, live state, polling, stale/offline status, layers, region and road selection, vehicles, route calculation, route clearing, prediction metadata, and demonstration controls. The focused Traffic Map suite contains 17 passing tests and the production build passes."),
+        ("6.13 Frontend Testing", "Map and vehicle tests verify that hiding predictions does not hide telemetry, route geometry remains independent from scenario markers, interpolated markers do not create backend observations, and the browser marker cap does not change the authoritative count."),
+        ("6.14 Performance Testing", "The recorded artifact report measures warmed single-row CPU inference at approximately 0.414 ms across 1,000 calls. This is a model-call measurement, not end-to-end ingestion, database, browser, memory, or production throughput evidence."),
     ]
-    for title, text in sections:
-        heading(doc, title)
-        p(doc, text)
+    grouped_sections(
+        doc,
+        sections,
+        figures_after={},
+    )
     table(doc, "Table 6.3: Test Categories", ["Category", "Scope", "Result / status"], [["Unit and service", "Pure functions and service rules", "Covered by backend suite"], ["API contracts", "Pydantic request/response behavior", "Covered by focused tests"], ["Geo V2", "Feature ordering, cadence, history, neighbors", "Covered by model and feature tests"], ["Artifact", "Model, scaler, metadata, compatibility", "Passed for frozen artifact"], ["Routing", "Directed path, exclusions, route metadata", "Covered by routing tests"], ["Live ingestion", "Batch, persistence, prediction snapshot", "Covered by integration tests"], ["Frontend", "Map, route, demo, live controls", "17 focused tests passed"], ["Build", "Compile, import, production bundle", "Passed"]])
+    equation(doc, "6.1", r"F1 = 2 * precision * recall / (precision + recall)", "Macro F1 averages class-wise F1 values and is therefore more informative than accuracy when Normal dominates the test distribution [17].")
 
 
 def chapter7_expansion(doc: Document) -> None:
     sections = [
-        ("7.2 Local Deployment", "The local deployment consists of PostgreSQL/PostGIS, the FastAPI backend, the Vite development server, and optional simulator or replay processes. Database migration and Geo V2 network import happen before the application is used for database-backed map and routing features. The root launcher can coordinate backend and frontend processes, while manual startup is useful when logs need to remain separate."),
-        ("7.3 Backend Configuration", "Backend configuration selects the database connection, artifact location, Geo V2 baseline source, network source and version, cadence, and ingestion behavior. These values are loaded through the application's configuration layer. The report intentionally does not expose local passwords or keys. A deployment operator must provide valid local values before running the full database-backed workflow."),
-        ("7.4 Frontend Configuration", "The frontend uses a configurable API base URL and a development proxy for local operation. Its query keys include live session and scoped demonstration identity so an old snapshot does not become the current run by accident. The browser receives normalized snapshots rather than reaching directly into database tables."),
-        ("7.5 Database Configuration", "PostgreSQL stores relational application state and PostGIS stores road geometry. The Geo V2 import is versioned and additive with respect to the preserved V1 network. The database schema includes network, live ingestion, prediction, historical, and supporting records as defined by the current models and migrations."),
-        ("7.6 Environment Variables", "Environment variables are used for database credentials, API keys where configured, frontend API base URL, and model or baseline paths. Secrets belong in local environment files or deployment secret stores and should not be copied into a submitted report. The report records configuration categories, not secret values."),
-        ("7.7 API Security", "The live ingestion workflow can require a configured API key and validates request identity and batch payload. The demonstration endpoints apply bounded run lifecycle rules and scoped source/run identity. The current project does not claim a complete authentication and authorization system for every endpoint; this is a prototype limitation."),
-        ("7.8 Input Validation", "Pydantic schemas validate data types and enumerations. Geo V2 services validate network identity, segment existence, directed transitions, minimum route distance, and feature availability. Input validation is especially important for route-bound demonstrations because an invalid ordered path could otherwise create a visually plausible but topologically false result."),
-        ("7.9 Model Artifact Integrity", "The model store checks the artifact's expected feature version, ordered feature names, network version, model identity, scaler, and tensor structure. The model is loaded in evaluation mode for inference. If metadata does not match the active data contract, the system fails closed rather than making a prediction whose semantics cannot be verified."),
-        ("7.10 Data Separation", "The deployment keeps ML training/evaluation records, OSM/PostGIS network data, live GPS telemetry, controlled demonstration telemetry, and prediction persistence as distinct conceptual stores. They are joined through explicit IDs and timestamps, not treated as one interchangeable dataset. This separation is required for honest interpretation of model results."),
-        ("7.11 Privacy Considerations", "Federated learning reduces the need to centralize raw regional training data in the intended architecture, and runtime features omit vehicle identity and scenario truth. Nevertheless, the current implementation does not provide differential privacy, secure aggregation, or a formal privacy budget. These are future security enhancements, not present capabilities."),
-        ("7.12 Runtime Performance", "The available performance evidence is limited but concrete: warmed CPU single-row inference averages approximately 0.414 ms across 1,000 calls in the artifact report. The complete path also includes database access, feature construction, batch processing, and network communication, which were not represented by that isolated model-call number."),
-        ("7.13 Memory Usage", "A complete memory profile for the backend, database, model, and browser at the 1,000-vehicle scale was not measured in the current implementation. The system does include bounded run registries, expiry cleanup, batched inference, and a frontend vehicle rendering cap. These controls reduce avoidable growth but should not be reported as a measured memory guarantee."),
-        ("7.14 Browser Rendering Considerations", "The map can contain thousands of network segments and large vehicle populations. Static road geometry is loaded separately from live snapshots, vehicle markers are capped for rendering, and React Query controls refresh behavior. The map distinguishes visible markers from backend active count so a rendering optimization is not mistaken for data loss."),
-        ("7.15 Scalability", "The federated topology can add regional clients, and the repository/service layering can move database work behind a queue or worker in future. Current ingestion uses local process behavior and is appropriate for Phase 1 demonstration scope. Horizontal scaling, broker-backed ingestion, distributed caching, and cloud deployment were not implemented or measured."),
-        ("7.16 Current Limitations", "The deployment remains a research and academic prototype. Its model has minority-class limitations, its data is synthetic for the documented Geo V2 run, its routing is distance-based by default, and formal privacy mechanisms are absent. These facts define the correct operating envelope and should accompany any demonstration of the system."),
+        ("7.11 Deployment Evaluation", "The local deployment consists of PostgreSQL/PostGIS, FastAPI, Vite, and optional simulator or replay processes. Migration and Geo V2 network import happen before database-backed map and routing operation. Production orchestration and queue-backed ingestion remain outside the measured scope."),
+        ("7.11 Deployment Evaluation", "Backend and frontend configuration select database connection, artifact path, network identity, cadence, API base URL, and optional ingestion behavior through configuration. Secrets are kept in local environment settings and are not reproduced in the report."),
+        ("7.13 Security and Privacy Discussion", "The live ingestion workflow can require a configured API key and validates batch identity. Demonstration endpoints apply bounded lifecycle and scoped source/run rules. The project does not claim complete authentication for every endpoint, differential privacy, secure aggregation, or a formal privacy budget."),
+        ("7.14 Limitations", "The model store validates feature, network, scaler, artifact, and tensor metadata and fails closed when they do not agree. Training/evaluation records, OSM/PostGIS data, live telemetry, controlled telemetry, and prediction persistence remain distinct stores joined by explicit identities."),
+        ("7.12 Performance Discussion", "Warmed CPU single-row inference averages approximately 0.414 ms across 1,000 calls in the artifact report. The complete path includes database access, feature construction, batch processing, and network communication, which are not represented by that isolated measurement."),
+        ("7.12 Performance Discussion", "A complete memory profile for backend, database, model, and browser at the 1,000-vehicle scale was not measured. Bounded run registries, expiry cleanup, batched inference, and a frontend rendering cap reduce avoidable growth but are not measured memory guarantees."),
+        ("7.8 Live Map Evaluation", "The map can contain thousands of road segments and large vehicle populations. Static geometry is loaded separately, marker rendering is capped, and the backend active count remains authoritative even when fewer markers are displayed."),
+        ("7.11 Deployment Evaluation", "The federated topology can add regional clients and the repository/service layering can move database work behind a queue. Horizontal scaling, broker-backed ingestion, distributed caching, and cloud deployment were not implemented or measured."),
+        ("7.14 Limitations", "The project remains a research and academic prototype with minority-class limitations, synthetic data, distance-based default routing, absent formal privacy mechanisms, and unmeasured production capacity. These facts define the correct operating envelope."),
     ]
-    for title, text in sections:
-        heading(doc, title)
-        p(doc, text)
+    grouped_sections(doc, sections)
 
 
 def appendices_expansion(doc: Document) -> None:
-    heading(doc, "APPENDIX D: Model Configuration", level=2)
+    appendix_heading(doc, "APPENDIX 4: Model Configuration")
     p(doc, "The promoted artifact is identified as fedrouteai-geo-v2-robust-robust-v2-hs1-prior2-unweighted-bw3-22-50r2e-seed42-r45. Its feature version is geo-v2-history_spatial_strong-23-v2, its network version is beeramguda-osm-20260506, and its selected checkpoint is round 45. The model has eight output classes and uses the ordered 23-feature schema listed in Chapter 4. These values are reproduced from the frozen artifact metadata and are not regenerated by this documentation task.")
-    heading(doc, "APPENDIX E: Database and Network Statistics", level=2)
-    table(doc, "Table 9.1: Database and Network Evidence", ["Evidence item", "Value / interpretation"], [["Geo V2 network", "2,968 canonical segments"], ["Directed topology", "11,259 persisted transitions"], ["Regions", "8 regional IDs"], ["Network version", "beeramguda-osm-20260506"], ["Network source", "osm_geo_v2"], ["Geometry", "PostGIS LineString representation"], ["Route identity", "Ordered directed segment IDs"]])
-    heading(doc, "APPENDIX F: Testing Evidence", level=2)
+    appendix_heading(doc, "APPENDIX 5: Database and Network Statistics")
+    table(doc, "Table A5.1: Database and Network Evidence", ["Evidence item", "Value / interpretation"], [["Geo V2 network", "2,968 canonical segments"], ["Directed topology", "11,259 persisted transitions"], ["Regions", "8 regional IDs"], ["Network version", "beeramguda-osm-20260506"], ["Network source", "osm_geo_v2"], ["Geometry", "PostGIS LineString representation"], ["Route identity", "Ordered directed segment IDs"]])
+    appendix_heading(doc, "APPENDIX 6: Testing Evidence")
     p(doc, "The current evidence register includes 117 passing backend tests, 17 passing Traffic Map frontend tests, a successful frontend production build, successful Python compilation, successful FastAPI import, model artifact validation, and normalized network counts. A future submitted version may insert screenshots or terminal excerpts into the reserved figure spaces after they are reviewed for sensitive configuration values.")
-    heading(doc, "APPENDIX G: Sample Telemetry Semantics", level=2)
+    appendix_heading(doc, "APPENDIX 7: Sample Telemetry Semantics")
     p(doc, "A runtime observation represents traffic state associated with a canonical segment and timestamp. It may contain speed, vehicle count, occupancy, flow, stopped fraction, and road metadata after aggregation. The model feature vector does not include latitude, longitude, vehicle identity, device identity, scenario name, event ID, or ground-truth label. Controlled telemetry may be generated to change the traffic pattern, but it remains an observation source rather than a label source.")
-    heading(doc, "APPENDIX H: Prediction Response Semantics", level=2)
+    appendix_heading(doc, "APPENDIX 8: Prediction Response Semantics")
     p(doc, "A prediction response is associated with a segment, timestamp, model version, feature version, predicted class, confidence, and current deviation information where available. A null or unavailable output means that the runtime did not have a valid prediction for that state; it is not equivalent to a confident normal classification. The Traffic Map displays this distinction through coverage and prediction status.")
-    heading(doc, "APPENDIX I: Routing Response Semantics", level=2)
+    appendix_heading(doc, "APPENDIX 9: Routing Response Semantics")
     p(doc, "A shortest-route response contains network identity, snapped endpoints, distance, estimated duration, segment count, ordered segment IDs, and route geometry. Prediction fields, when available, summarize only the route segments covered by current persisted predictions. A route can therefore be valid even when prediction coverage is incomplete.")
-    heading(doc, "APPENDIX J: Project Screenshot Register", level=2)
+    appendix_heading(doc, "APPENDIX 10: Project Screenshot Register")
     p(doc, "The screenshot register is intentionally left as an insertion plan. Future black-and-white figures may show the title and map, the dynamic Traffic Map, route selection, live status, moving vehicles, prediction inspection, model evidence, and controlled Normal, Congestion, and Accident behavior. Scenario labels must remain visibly distinct from model prediction labels in every inserted screenshot.")
     evidence_pages = [
         ("APPENDIX K: Geo V2 Feature Data Dictionary", "The Geo V2 contract begins with current traffic state: avg_speed_kmph, speed_std_kmph, vehicle_count, occupancy, flow_rate_vph, and stopped_fraction. These values describe the focal segment at the current two-minute tick. hour_sin and hour_cos encode the time of day without a midnight discontinuity. road_type_code, lane_count, and max_speed_kmph provide structural context from the canonical network rather than from the event label.", "The remaining values describe normal reference and temporal context. baseline_speed_kmph, baseline_speed_std_kmph, and baseline_vehicle_count are normal-history values. speed_to_baseline, count_to_baseline, and std_to_baseline express current deviation. prior_speed_mean_3, prior_count_mean_3, speed_trend, count_trend, and low_speed_persistence_3 are shifted historical features. neighbor_speed_delta is derived from directed same-time neighbor evidence. No label, scenario, vehicle identity, or device identity appears in this dictionary."),
@@ -562,10 +632,13 @@ def appendices_expansion(doc: Document) -> None:
         ("APPENDIX W: Submission Review Checklist", "Before submission, confirm that the cover and title pages use the approved identity, the certificate and declaration contain the correct student and guide details, the acknowledgement remains within one page, and the abstract is followed by keywords. Confirm that the contents, list of tables, list of figures, and abbreviations appear in the required order and that their captions match the report.", "Confirm that every chapter starts with a centered separator page, that content begins on the next page, that section headings are left aligned, that captions are single spaced, and that references are single spaced and left justified. Refresh Word fields after the final visual edit, inspect page numbers, replace reviewed figure placeholders, and ensure all final printing remains black and white where required."),
         ("APPENDIX X: Model Artifact Governance", "A deployable model artifact is more than a tensor checkpoint. Its review package must identify the model class, output labels, input feature version, exact feature order, scaler metadata, network source and version, selected round, training seed, aggregation configuration, and evaluation receipt. These fields allow the runtime to determine whether a checkpoint can interpret the current feature rows. A filename alone is not sufficient evidence of compatibility.", "Promotion should occur only after validation selection and one-time test evaluation are recorded. The application loads the promoted artifact in evaluation mode and does not retrain or mutate it when the demonstration starts. A future artifact should receive a new immutable identity and should retain its own metric report. This governance prevents scenario behavior, local experimentation, or an accidental schema change from silently altering the model presented in the final project demonstration."),
         ("APPENDIX Y: Live Operations Review", "A live-operations review checks database health, network identity, artifact readiness, ingestion freshness, current segment count, prediction coverage, active vehicle count, and route scope. A stale snapshot must remain visibly different from a fresh one. Missing predictions must remain unavailable rather than being converted to normal. The source and run fields should be inspected whenever a controlled demonstration is active so its state is not confused with another live feed.", "Stopping or resetting a run should clean bounded demonstration state while preserving the canonical network and any route the user still needs to inspect. Logs should identify validation failures without exposing secrets. Operational incidents such as database unavailability, malformed batches, incompatible artifacts, or expired runs should produce explicit user-facing states. Production alerting, service-level objectives, and distributed failover were not measured in the current implementation and remain future deployment work."),
+        ("APPENDIX Z: Model Input Traceability", "A model-input trace begins with a scoped live observation and its canonical segment identity. The current-state projection aggregates speed and traffic quantities for the relevant timestamp, normal memory supplies baseline values, and shifted earlier windows supply causal history. Directed topology contributes observed-neighbor context. The resulting values are ordered according to the frozen 23-feature schema before scaling and inference. Each stage can therefore be inspected without exposing a scenario label to the classifier.", "Traceability also requires negative evidence. A reviewer should confirm that latitude, longitude, vehicle identity, device identity, event ID, scenario name, severity, and ground-truth fields are absent from the emitted feature names. Model identity, feature version, network version, source, run, segment, and timestamp remain metadata around the prediction rather than learned input values. This distinction allows a prediction to be reproduced while preserving the label-free runtime contract."),
+        ("APPENDIX AA: Failure-State Handling", "The runtime distinguishes an invalid request, unavailable evidence, normal prediction, abnormal prediction, and stale snapshot. Invalid routes or unknown segments are rejected before simulation. Missing history or incompatible artifact metadata prevents a valid inference rather than producing a guessed class. A stale snapshot remains visible as stale, and an expired demonstration run cannot silently continue to populate the active view. These states make operational uncertainty observable to the user.", "Failure handling is tested across service and interface boundaries. Repository or database errors remain backend failures; schema violations remain request errors; insufficient prediction coverage remains an availability condition; and a controlled scenario remains demonstration metadata. The frontend should preserve useful independent state, such as a calculated route, when a demonstration is reset. Production retry policies, distributed failover, and service-level objectives are not verified in the current repository and must not be inferred from these local safeguards."),
+        ("APPENDIX AB: Evaluation Evidence Checklist", "The frozen-model evaluation review should begin with the immutable artifact identity, selected round, feature schema, network version, split manifest, and one-time test receipt. Aggregate accuracy must be read with macro F1, event-balanced macro F1, anomaly precision, anomaly recall, normal false-positive rate, and the per-class confusion matrix. The dominant Normal class explains why high accuracy does not establish reliable detection of every temporary event.", "System evidence is reviewed separately from classifier quality. Backend and frontend tests demonstrate implemented contracts, the production build demonstrates compile-time compatibility, network statistics demonstrate imported topology, and the warmed CPU measurement describes only an isolated model call. None of these establishes measured city-wide accuracy, database load capacity, browser memory limits, or safety-critical suitability. A final evaluation statement should therefore identify both the evidence source and the scope it supports."),
     ]
-    for title, first, second in evidence_pages:
+    for appendix_number, (title, first, second) in enumerate(evidence_pages, start=11):
         doc.add_page_break()
-        heading(doc, title, level=2)
+        heading(doc, f"APPENDIX {appendix_number}: {title.split(': ', 1)[1]}", level=2)
         p(doc, first)
         p(doc, second)
 
@@ -650,13 +723,12 @@ def legacy_main_content(doc: Document) -> None:
     table(doc, "Table 5.2: Federated Client Configuration", ["Property", "Current implementation"], [["Clients", "8 regional clients: REGION_01 through REGION_08"], ["Model", "Geo V2 PyTorch MLP"], ["Aggregation", "FedAvg-family with adaptive weighting in the training workflow"], ["Feature version", "geo-v2-history_spatial_strong-23-v2"], ["Maximum rounds", "50"], ["Selected checkpoint", "Round 45"], ["Local epochs", "2"], ["Random seed", "42"]])
     heading(doc, "5.4 Dynamic Traffic Map")
     p(doc, "The Traffic Map presents OSM road geometry, current telemetry, moving vehicles, prediction states, live freshness, network identity, route overlays, origin and destination markers, and scenario controls. Vehicle positions are animated between authoritative backend snapshots for visual continuity; intermediate movement is not presented as additional GPS evidence. A rendering cap keeps the browser responsive while backend counts remain authoritative.")
-    figure(doc, "5.2", "Dynamic Traffic Map")
-    figure(doc, "5.3", "Moving Vehicle Visualization")
+    figure(doc, "5.3", "Dynamic Traffic Map")
+    figure(doc, "5.4", "Moving Vehicle Visualization")
     heading(doc, "5.5 Controlled Route-Bound Demonstration")
     p(doc, "The user selects an origin and destination, calculates a directed route, and must use a route of at least approximately 1.5 km. The selected ordered segment IDs are passed to the demonstration service. Vehicles follow that route and telemetry flows through the existing ingestion and frozen-model pipeline. The available scenarios are Normal, Congestion, and Accident. The UI separately reports route behavior and model prediction coverage. The correct interpretation is: Traffic behavior only. Not ground truth.")
-    figure(doc, "5.4", "Route-Bound Demonstration Flow")
-    figure(doc, "5.5", "Normal Traffic Demonstration")
-    figure(doc, "5.6", "Congestion Demonstration")
+    figure(doc, "5.5", "Route-Bound Demonstration Flow")
+    figure(doc, "5.6", "Normal and Congestion Demonstration")
     figure(doc, "5.7", "Accident Demonstration")
     heading(doc, "5.6 API Summary")
     table(doc, "Table 5.3: API and Data Flow Summary", ["Interface", "Purpose"], [["GET /health", "Service liveness"], ["GET /segments", "Canonical road geometry"], ["POST /ingest/live/batch", "Trusted pre-matched live observations"], ["GET /live-map/snapshot", "Current map state and metadata"], ["POST /routes/shortest", "Directed shortest route"], ["POST /demo/geo-v2/runs", "Create route-bound demonstration"], ["POST /demo/geo-v2/runs/{id}/step", "Advance demonstration"], ["DELETE /demo/geo-v2/runs/{id}", "Stop and clean up demonstration"]])
@@ -678,8 +750,8 @@ def legacy_main_content(doc: Document) -> None:
     heading(doc, "6.5 Limitations Revealed by Validation")
     p(doc, "The high overall accuracy is influenced by the dominant normal class and therefore is not sufficient by itself. Event precision and minority-class recall require careful interpretation. The system uses geographically grounded synthetic data for the documented demonstration, not measured city-scale traffic. A controlled scenario can exercise the pipeline but cannot establish real-world predictive validity.")
 
-    chapter(doc, 7, "Deployment, Security and Performance")
-    heading(doc, "7.1 Local Deployment Architecture")
+    chapter(doc, 7, "Results and Discussion")
+    heading(doc, "7.1 Results Interpretation")
     p(doc, "The application can be run as separate local processes: PostgreSQL/PostGIS, FastAPI, Vite, and optional simulator or Geo V2 replay processes. Alembic applies the schema, the network importer creates the additive Geo V2 network, and the frontend connects to the backend through its configured API base URL. Docker is useful for a disposable PostGIS container but is not the application deployment architecture itself.")
     figure(doc, "7.1", "Local Deployment Architecture")
     heading(doc, "7.2 Security and Privacy Position")
@@ -689,7 +761,7 @@ def legacy_main_content(doc: Document) -> None:
     table(doc, "Table 7.1: Runtime Performance Evidence", ["Measure", "Verified value / interpretation"], [["Single-row CPU inference", "0.414 ms average after warm-up"], ["Approximate inference throughput", "2,416 calls/second in the recorded setup"], ["Demonstration vehicles", "1,000 persistent vehicles"], ["Demonstration duration", "5 simulated hours"], ["Demonstration ticks", "150 ten-minute ticks in the intended replay configuration"], ["Prediction granularity", "Observed road segment/batch, not one prediction per vehicle"]])
     table(doc, "Table 7.2: Current Limitations", ["Area", "Limitation"], [["Data", "Geographically grounded synthetic telemetry is not measured traffic."], ["Model", "Minority event recall and anomaly precision remain limited."], ["Privacy", "Formal differential privacy and secure aggregation are not implemented."], ["Routing", "Default cost is distance-based, not learned traffic-aware routing."], ["Operations", "Background/in-process demonstration execution is a bounded prototype scope."], ["Events", "Event close-out and end-time lifecycle handling remain limited."], ["Deployment", "Production cloud orchestration and queue infrastructure are future work."]])
 
-    chapter(doc, 8, "Conclusion and Future Enhancements")
+    chapter(doc, 8, "Summary and Conclusions")
     heading(doc, "8.1 Conclusion")
     p(doc, "FedRouteAI demonstrates a complete traffic intelligence prototype that combines federated learning, a Geo V2 causal feature contract, historical traffic memory, OSM/PostGIS road topology, live GPS ingestion, frozen MLP inference, dynamic map visualization, and directed shortest-path routing. The system is organized around traceable contracts: the road network is distinct from the ML dataset, live telemetry is distinct from controlled demonstration behavior, and model features exclude scenario truth.")
     p(doc, "The implementation has been validated through backend and frontend tests, artifact checks, build checks, and network normalization evidence. It is suitable as a B.Tech major project demonstration and a foundation for further research. Its results are reported honestly: the model improves the preserved baseline according to its recorded metrics, but minority event performance, synthetic-data realism, formal privacy mechanisms, and production-scale operations remain open limitations.")
@@ -699,8 +771,7 @@ def legacy_main_content(doc: Document) -> None:
     for text in ["Collect and validate larger real-world GPS traffic datasets across seasons and cities.", "Improve event-specific sampling and class-balanced training for diversion, construction, and other minority classes.", "Evaluate stronger adaptive federated aggregation and larger client populations.", "Add formal differential privacy, secure aggregation, and auditable privacy accounting.", "Develop traffic-aware route costs after validating prediction reliability and operational safety.", "Move ingestion and replay work to queue-backed services for scale.", "Explore online learning, edge deployment, and energy-aware regional clients.", "Evaluate CCTV or video integration only as a separate future extension, not as part of the current system."]:
         p(doc, "- " + text, indent=False, after=3)
 
-    chapter(doc, 9, "Appendices")
-    heading(doc, "APPENDIX A: Project Run and Reproduction Guide", level=2)
+    appendix_heading(doc, "APPENDIX 1: Project Run and Reproduction Guide")
     p(doc, "The current project can be started by preparing Python and Node.js environments, starting PostgreSQL with PostGIS, applying Alembic migrations, importing the cached Geo V2 network, starting the FastAPI backend and Vite frontend, opening the Traffic Map, starting live mode, calculating a route, and selecting a route-bound demonstration. The exact operational commands are maintained in HOW_TO_RUN_PROJECT.md and README.md.")
     heading(doc, "APPENDIX B: Evidence and Artifact Register", level=2)
     table(doc, "", ["Evidence", "Role"], [["Geo V2 model report", "Frozen selection, metrics, limitations, and runtime contract"], ["Feature schema JSON", "Ordered 23-feature contract and version"], ["Network source JSON", "Cached OSM input for normalized segments and transitions"], ["Dataset manifest", "Five-hour data configuration and telemetry counts"], ["Backend test suite", "Service, API, model, ingestion, and routing validation"], ["Frontend test suite", "Traffic Map and interaction validation"]])
@@ -740,70 +811,105 @@ def main_content(doc: Document) -> None:
     p(doc, "FedRouteAI is an end-to-end traffic intelligence prototype that detects temporary road conditions from GPS-derived traffic behavior and supports route inspection. It combines an OSM/PostGIS directed network, live telemetry aggregation, historical traffic memory, a causal 23-feature Geo V2 contract, an eight-client federated MLP, and a React-Leaflet map. The system is designed for traceable academic evaluation: every important transformation has an explicit data boundary and the controlled demonstration is kept separate from model ground truth.")
     chapter1_expansion(doc)
     chapter(doc, 2, "Literature Survey")
-    heading(doc, "2.1 Survey Introduction")
+    heading(doc, "2.1 Introduction")
     p(doc, "This chapter places the project at the intersection of intelligent transportation systems, GPS traffic analysis, anomaly detection, federated learning, spatial databases, and routing. The review focuses on the design decisions that are implemented in the repository and on the gap addressed by integrating them into one inspectable pipeline.")
     chapter2_expansion(doc)
     chapter(doc, 3, "Requirement Analysis and Feasibility Study")
-    heading(doc, "3.1 Stakeholders and Core Requirements")
-    p(doc, "The principal stakeholders are traffic operators, regional learning clients, model administrators, researchers, end users, and project evaluators. Their needs span trustworthy traffic state, reproducible training, compatible artifacts, route inspection, and clear evidence boundaries.")
+    heading(doc, "3.1 Introduction")
+    p(doc, "This chapter translates the current implementation into requirements that can be verified through APIs, services, artifacts, tests, and controlled operation.")
+    heading(doc, "3.2 Problem Requirements")
+    p(doc, "The system must transform GPS-derived observations into segment traffic state, classify current road behavior through the frozen Geo V2 model, serve independent prediction state, and support legal directed route inspection without treating scenario controls as labels.")
+    heading(doc, "3.3 Functional Requirements")
     table(doc, "Table 3.1: Functional Requirements", ["ID", "Requirement", "Verification"], [["FR-01", "Ingest GPS or trusted live observations", "API and integration tests"], ["FR-02", "Associate observations with road segments", "Map-matching and network tests"], ["FR-03", "Construct historical and Geo V2 features", "Feature-contract checks"], ["FR-04", "Run frozen MLP inference", "Artifact and prediction tests"], ["FR-05", "Persist and serve prediction state", "Live map API tests"], ["FR-06", "Display roads, vehicles, events, and predictions", "Frontend tests and build"], ["FR-07", "Calculate directed shortest routes", "Routing tests"], ["FR-08", "Run route-bound demonstrations", "Demo validation tests"]])
+    heading(doc, "3.4 Non-Functional Requirements")
+    table(doc, "Table 3.2: Non-Functional Requirements", ["Property", "Requirement"], [["Correctness", "Inference follows the ordered feature contract and directed topology."], ["Traceability", "Model, network, feature, and run metadata are observable."], ["Honesty", "Scenario truth is not presented as model prediction."], ["Reliability", "Invalid routes, missing fields, and expired runs fail clearly."], ["Usability", "The map exposes live status, route information, and layer controls."], ["Maintainability", "API, service, repository, model, and schema layers remain separated."]])
     chapter3_expansion(doc)
+    heading(doc, "3.16 Requirement Traceability")
+    p(doc, "The requirement-to-evidence mapping connects data requirements to the Geo V2 manifest and feature builder, model requirements to the feature schema and artifact metadata, network requirements to the OSM importer and PostGIS records, runtime requirements to ingestion and prediction persistence, interface requirements to Traffic Map tests, and validation requirements to the backend, frontend, build, and smoke evidence.")
+    heading(doc, "3.17 Summary")
+    p(doc, "The requirements define a bounded academic prototype with explicit data, model, network, interface, and evidence contracts. Feasibility is supported by the current software stack and local deployment workflow.")
     chapter(doc, 4, "System Design and Architecture")
-    heading(doc, "4.1 High-Level Architecture")
+    heading(doc, "4.1 Introduction")
     p(doc, "FedRouteAI follows the one-directional project layering: API endpoints call services, services call repositories, and repositories access models. The ML subsystem is connected through explicit feature and artifact contracts. The frontend consumes API responses and does not reproduce backend inference or routing logic.")
-    figure(doc, "4.1", "Overall System Architecture of FedRouteAI")
     chapter4_expansion(doc)
-    for number, caption in [
-        ("4.2", "Federated Learning Architecture"),
-        ("4.3", "Regional Client and Server Interaction"),
-        ("4.4", "End-to-End Data Pipeline"),
-        ("4.5", "Geo V2 Feature Construction Pipeline"),
-        ("4.6", "Historical Traffic Memory and Causal Windows"),
-        ("4.7", "OSM/PostGIS Network Import"),
-        ("4.8", "Directed Road Network and Transitions"),
-        ("4.9", "Backend Service and Repository Layers"),
-        ("4.10", "Frontend Map and API Interaction"),
-        ("4.11", "Directed Shortest-Path Routing"),
-    ]:
-        figure(doc, number, caption)
     chapter(doc, 5, "Implementation")
-    heading(doc, "5.1 Project Module Mapping")
-    table(doc, "Table 5.1: Major Software Modules", ["Module", "Role"], [["app/api", "Thin HTTP endpoints and request validation"], ["app/services", "Business logic and workflow orchestration"], ["app/ml/geo_v2", "Features, model store, and inference contract"], ["app/repositories", "Database and PostGIS access"], ["frontend/src/pages/TrafficMap", "Map, route, live controls, and inspection"], ["scripts/geo_v2", "Network import, dataset generation, replay, and validation"]])
-    figure(doc, "5.1", "Live GPS Ingestion Pipeline")
+    heading(doc, "5.1 Introduction")
+    p(doc, "This chapter explains how the current design is implemented and operated, from the development environment and generated data through federated model deployment, live inference, map behavior, routing, and controlled demonstrations.")
     chapter5_expansion(doc)
-    for number, caption in [
-        ("5.2", "Frozen Geo V2 MLP Inference"),
-        ("5.3", "Dynamic Traffic Map"),
-        ("5.4", "Moving Vehicle Visualization"),
-        ("5.5", "Route-Bound Demonstration Flow"),
-        ("5.6", "Normal Traffic Demonstration"),
-        ("5.7", "Congestion and Accident Demonstrations"),
-    ]:
-        figure(doc, number, caption)
     chapter(doc, 6, "Testing and Validation")
-    heading(doc, "6.1 Testing Strategy")
+    heading(doc, "6.1 Introduction")
+    heading(doc, "6.2 Testing Objectives")
     p(doc, "Testing covers pure service logic, API contracts, model compatibility, database-backed workflows, frontend interaction, build behavior, and runtime smoke paths. Fixture-free tests are used where possible so feature and routing rules remain diagnosable without a live database.")
-    figure(doc, "6.1", "Model Validation Results")
+    heading(doc, "6.3 Test Environment")
+    p(doc, "The test environment uses the repository's Python test suite, focused frontend tests, artifact files, configured network metadata, and the production frontend build. Database-backed checks use the project's configured test approach; not every pure service test requires a live PostgreSQL instance.")
     chapter6_expansion(doc)
-    for number, caption in [("6.2", "Model Confusion Matrix"), ("6.3", "Backend and Frontend Test Evidence")]:
-        figure(doc, number, caption)
-    chapter(doc, 7, "Deployment, Security and Performance")
-    heading(doc, "7.1 Deployment Context")
-    p(doc, "The documented deployment is a local academic prototype consisting of PostgreSQL/PostGIS, FastAPI, the frontend development server, and optional replay or simulation processes. Production orchestration, queue-backed ingestion, and cloud capacity are outside the measured scope.")
+    heading(doc, "6.15 Model Validation Results")
+    p(doc, "The frozen artifact report records validation macro F1 of 0.3042, test accuracy of 0.9952, test macro F1 of 0.3200, event-balanced macro F1 of 0.4459, anomaly recall of 0.3444, anomaly precision of 0.2093, and normal false-positive rate of 0.0031. The dominant Normal class affects accuracy, while diversion and construction remain difficult minority classes.")
+    figure(doc, "6.1", "Model Validation Results")
+    heading(doc, "6.16 Confusion Matrix Analysis")
+    p(doc, "The confusion matrix must be read as class-specific evidence rather than as a decorative result. It shows the dominant Normal behavior alongside weak or absent recall for some minority events. This supports reporting macro and event-balanced metrics together with accuracy.")
+    figure(doc, "6.2", "Confusion Matrix")
+    heading(doc, "6.17 Prediction Testing")
+    p(doc, "Prediction tests verify artifact compatibility, feature ordering, label-free input, persisted class and confidence, unavailable states, and scoped prediction retrieval. They do not treat a controlled scenario name as a prediction label.")
+    heading(doc, "6.18 System Integration Testing")
+    p(doc, "Integration coverage follows the path from accepted observations through aggregation, feature construction, inference, persistence, live snapshot retrieval, map display, route inspection, and demonstration reset.")
+    heading(doc, "6.19 Test Case Design")
+    p(doc, "Test cases cover valid and invalid inputs, missing history, incompatible metadata, directed route errors, idempotent ingestion, stale snapshots, frontend layer independence, and controlled scenario lifecycle.")
+    heading(doc, "6.20 Testing Results")
+    table(doc, "Table 6.1: Verification Summary", ["Verification", "Result"], [["Backend tests", "117 collected/passing in the verified suite"], ["Frontend tests", "46 listed by constrained discovery; 17 focused Traffic Map tests in the prior report evidence"], ["Frontend production build", "Passed"], ["Python compilation and application import", "Passed"], ["Artifact metadata validation", "Passed"], ["Network normalization", "2,968 segments and 11,259 transitions"]])
+    figure(doc, "6.3", "Testing Evidence")
+    heading(doc, "6.21 Summary")
+    p(doc, "Testing demonstrates that the current contracts and workflows are implemented and inspectable. It does not convert synthetic data into measured city traffic or isolated model latency into a production capacity claim.")
+    chapter(doc, 7, "System Evaluation and Discussion")
+    heading(doc, "7.1 Introduction")
+    p(doc, "The recorded results show a technically complete pipeline with strong normal-class accuracy but limited minority-event performance. This chapter interprets those results alongside the controlled demonstrations, test evidence, routing behavior, and deployment constraints. The discussion separates measured model evidence from behavior observed in a simulation.")
+    heading(doc, "7.2 Model Performance")
+    p(doc, "The model's high accuracy is dominated by Normal traffic. Macro F1, anomaly recall and precision, event-balanced F1, and normal false-positive rate provide a more useful view of minority behavior. The result is a useful academic baseline with clear limitations rather than an unattended detector.")
+    heading(doc, "7.3 Federated Learning Evaluation")
+    p(doc, "The federated workflow successfully represents eight regional clients, local training, parameter aggregation, validation-based selection, and frozen artifact promotion. It demonstrates regional learning behavior but does not claim formal privacy mechanisms.")
+    heading(doc, "7.4 Geo V2 Evaluation")
+    p(doc, "The exact ordered 23-feature history_spatial_strong contract is validated at runtime and retains current, historical, temporal, road, and directed-neighbor context without labels or scenario metadata.")
+    heading(doc, "7.5 Historical Feature Evaluation")
+    p(doc, "Shifted prior windows, normal prehistory, ratios, trends, and persistence give the model causal context while avoiding current-value leakage.")
+    heading(doc, "7.6 Spatial Context Evaluation")
+    p(doc, "The directed neighbor contrast connects model context to the persisted legal network rather than to arbitrary coordinate proximity.")
+    heading(doc, "7.7 Runtime Inference Evaluation")
+    p(doc, "The frozen artifact loads only after feature, scaler, model, and network metadata checks. Invalid or insufficient evidence remains unavailable.")
+    heading(doc, "7.8 Live Map Evaluation")
+    p(doc, "The map exposes roads, vehicles, prediction state, freshness, route scope, and selected-road inspection through independent layers.")
+    heading(doc, "7.9 Routing Evaluation")
+    p(doc, "Directed distance-based routes are returned with ordered segment IDs and geometry; predictions are inspected separately unless explicit exclusions are requested.")
+    heading(doc, "7.10 Controlled Demonstration Evaluation")
+    p(doc, "Normal, Congestion, and Accident controls exercise repeatable traffic behavior and orchestration. They are not ground-truth model labels.")
+    heading(doc, "7.11 Deployment Evaluation")
+    p(doc, "The local deployment is appropriate for a bounded academic demonstration. Queue-backed ingestion, horizontal scaling, cloud orchestration, and production authentication remain outside the verified scope.")
+    heading(doc, "7.12 Performance Discussion")
+    p(doc, "Warmed single-row CPU inference averages approximately 0.414 ms over 1,000 calls in the recorded setup. This excludes HTTP, database, feature construction, browser, and end-to-end load behavior.")
+    heading(doc, "7.13 Security and Privacy Discussion")
+    p(doc, "Federated training reduces the intended need to centralize regional records, but differential privacy, secure aggregation, and a formal privacy budget are not implemented.")
+    heading(doc, "7.14 Limitations")
+    p(doc, "Synthetic data, imbalance, bounded local execution, distance-based routing, absent formal privacy controls, and unmeasured production capacity define the operating limits.")
+    heading(doc, "7.15 Objective-to-Result Mapping")
+    p(doc, "The project achieves the stated ingestion, feature, federated model, artifact, map, routing, demonstration, and validation objectives, while the evaluation records which objectives are demonstrated and which production extensions remain future work.")
+    heading(doc, "7.16 Summary")
+    p(doc, "The evaluation supports the project as a complete and traceable B.Tech prototype with meaningful current evidence and explicit boundaries on generalization and deployment.")
     figure(doc, "7.1", "Local Deployment Architecture")
-    chapter7_expansion(doc)
     chapter(doc, 8, "Conclusion and Future Enhancements")
-    heading(doc, "8.1 Conclusion")
+    heading(doc, "8.1 Introduction")
+    p(doc, "This chapter summarizes the completed implementation, findings, practical significance, limitations, and future research direction.")
+    heading(doc, "8.2 Summary of the Work")
     p(doc, "FedRouteAI demonstrates a complete and traceable traffic intelligence pipeline. Its contribution is the integration of federated tabular learning, causal traffic features, historical memory, a canonical directed road network, live ingestion, model persistence, dynamic mapping, and route-bound demonstrations. The documented metrics and limitations show that the prototype is suitable for academic evaluation but not unattended safety-critical operation.")
-    heading(doc, "8.2 Objectives Achieved")
+    heading(doc, "8.3 Objectives Achieved")
     p(doc, "The completed system ingests traffic observations, associates them with a canonical road network, constructs label-free Geo V2 features, runs a frozen federated MLP, persists predictions, presents live state on a React-Leaflet map, and calculates directed shortest routes. It also provides a route-bound demonstration that keeps controlled traffic behavior separate from model output.")
-    heading(doc, "8.3 Major Contributions")
+    heading(doc, "8.4 Major Contributions")
     p(doc, "The major contributions are the ordered 23-feature causal contract, eight-region federated training workflow, versioned OSM/PostGIS network with 2,968 segments and 11,259 directed transitions, integrated ingestion-to-map pipeline, and explicit evidence boundaries for demonstrations, predictions, and routing.")
-    heading(doc, "8.4 Experimental Findings")
+    heading(doc, "8.5 Experimental Findings")
     p(doc, "The frozen artifact records validation macro F1 of 0.3042, test macro F1 of 0.3200, event-balanced macro F1 of 0.4459, anomaly recall of 0.3444, anomaly precision of 0.2093, and normal false-positive rate of 0.0031. Overall accuracy is high because normal traffic dominates the dataset, while diversion and construction remain difficult minority classes.")
-    heading(doc, "8.5 Limitations")
+    heading(doc, "8.6 Practical Significance")
+    p(doc, "The project demonstrates how a current model artifact, spatial database, federated workflow, service architecture, live map, and route inspector can be brought together for academic evaluation without overstating the evidence. Its practical value is the traceable prototype and the foundation it provides for measured traffic data and stronger operational controls.")
+    heading(doc, "8.7 Current Limitations")
     p(doc, "The documented dataset is geographically grounded but synthetic, minority-event performance remains limited, and the system is not approved for unattended safety-critical operation. Formal differential privacy, secure aggregation, production queueing, cloud orchestration, and learned traffic-aware route costs are not implemented.")
-    heading(doc, "8.6 Future Enhancements")
+    heading(doc, "8.8 Future Enhancements")
     add_paragraphs(doc, [
         "Collect measured GPS traffic across seasons and cities and evaluate transfer beyond the current synthetic network.",
         "Improve minority-event sampling and event-specific calibration, especially for diversion and construction.",
@@ -812,17 +918,19 @@ def main_content(doc: Document) -> None:
         "Move ingestion and replay to queue-backed services and evaluate distributed deployment.",
         "Study graph neural networks as a future extension for learned spatial reasoning.",
     ])
-    heading(doc, "8.7 Final Remarks")
+    heading(doc, "8.9 Scope for Future Research")
+    p(doc, "Future research should evaluate measured traffic across seasons and cities, improve minority-event sampling and calibration, add formal privacy mechanisms, study traffic-aware route costs, move ingestion to queue-backed services, and investigate graph-based spatial models after the current baseline is preserved.")
+    heading(doc, "8.10 Final Conclusion")
     p(doc, "FedRouteAI is therefore best understood as a complete and academically honest local prototype: it demonstrates how federated learning, causal traffic features, spatial infrastructure, live services, and user-facing route inspection can be integrated while keeping unverified production and safety claims outside the project scope.")
-    chapter(doc, 9, "Appendices")
-    heading(doc, "APPENDIX A: Project Run and Reproduction Guide", level=2)
+    appendix_heading(doc, "APPENDIX 1: Project Run and Reproduction Guide")
     p(doc, "Prepare Python and Node.js environments, start PostgreSQL with PostGIS, apply Alembic migrations, import the cached Geo V2 network, start the FastAPI backend and Vite frontend, open the Traffic Map, start live mode, calculate a directed route, and select a route-bound demonstration. Exact commands are maintained in HOW_TO_RUN_PROJECT.md and README.md.")
-    heading(doc, "APPENDIX B: Evidence and Artifact Register", level=2)
-    table(doc, "Table 9.2: Evidence Register", ["Evidence", "Role"], [["Geo V2 model report", "Frozen selection, metrics, limitations, and runtime contract"], ["Feature schema JSON", "Ordered 23-feature contract and version"], ["Network source JSON", "Cached OSM input for normalized network"], ["Dataset manifest", "Generated data configuration and counts"], ["Backend test suite", "Service, API, model, ingestion, and routing validation"], ["Frontend test suite", "Traffic Map and interaction validation"]])
-    heading(doc, "APPENDIX C: Figure Insertion Register", level=2)
-    p(doc, "All figure spaces are intentional placeholders. Final black-and-white figures may be inserted after the report draft is reviewed. Scenario screenshots must visibly distinguish controlled traffic behavior from independent model prediction.")
+    appendix_heading(doc, "APPENDIX 2: Evidence and Artifact Register")
+    table(doc, "Table A2.1: Evidence Register", ["Evidence", "Role"], [["Geo V2 model report", "Frozen selection, metrics, limitations, and runtime contract"], ["Feature schema JSON", "Ordered 23-feature contract and version"], ["Network source JSON", "Cached OSM input for normalized network"], ["Dataset manifest", "Generated data configuration and counts"], ["Backend test suite", "Service, API, model, ingestion, and routing validation"], ["Frontend test suite", "Traffic Map and interaction validation"]])
+    appendix_heading(doc, "APPENDIX 3: Figure Insertion Register")
+    p(doc, "The report includes a focused set of verified technical figures generated from the current implementation. Unverified scenario screenshots are intentionally omitted; any future screenshot must visibly distinguish controlled traffic behavior from independent model prediction.")
     appendices_expansion(doc)
-    chapter(doc, 10, "References")
+    doc.add_page_break()
+    heading(doc, "REFERENCES", level=1)
     refs = [
         "[1] M. Abadi et al., \"Deep Learning with Differential Privacy,\" Proceedings of ACM CCS, pp. 308-318, 2016.",
         "[2] D. J. Beutel et al., \"Flower: A Friendly Federated Learning Research Framework,\" arXiv:2007.14390, 2020.",
@@ -874,9 +982,49 @@ def main() -> None:
     doc.core_properties.title = TITLE
     doc.core_properties.subject = "B.Tech Major Project Report"
     doc.core_properties.author = "Moguloju Abhiram and Rajulapudi Rohith"
-    doc.core_properties.comments = "Documentation draft with figure placeholders; no final figures inserted."
+    doc.core_properties.comments = "Current technical report with verified figures and grouped page-oriented prose."
     doc.save(OUT)
+    validate_report_package(OUT)
     print(OUT)
+
+
+def validate_report_package(path: Path) -> None:
+    """Fail generation when prohibited range headings or required figures drift."""
+    with zipfile.ZipFile(path) as package:
+        xml = package.read("word/document.xml").decode("utf-8")
+    text = re.sub(r"<[^>]+>", " ", xml)
+    text = re.sub(r"\s+", " ", text)
+    if re.search(r"\b\d+\.\d+-\d+\.\d+\b", text):
+        raise ValueError("Report contains a prohibited combined section heading")
+    required = [
+        "Figure 4.1 Overall System Architecture of FedRouteAI",
+        "Figure 4.2 Federated Learning Architecture",
+        "Figure 4.3 Regional Client Architecture",
+        "Figure 4.4 End-to-End Data Pipeline",
+        "Figure 4.5 Geo V2 Feature Pipeline",
+        "Figure 4.6 Historical Traffic Memory",
+        "Figure 4.7 OSM/PostGIS Road-Network Architecture",
+        "Figure 4.8 Directed Road Network and Transitions",
+        "Figure 4.9 Backend Service Architecture",
+        "Figure 4.10 Frontend Architecture",
+        "Figure 4.11 Directed Shortest-Path Routing",
+        "Figure 5.1 Live GPS Ingestion Pipeline",
+        "Figure 5.2 Dynamic Traffic Map",
+        "Figure 5.3 Moving Vehicle Visualization",
+        "Figure 5.4 Route-Bound Demonstration Flow",
+        "Figure 5.5 Normal Traffic Demonstration",
+        "Figure 5.6 Congestion Demonstration",
+        "Figure 5.7 Accident Demonstration",
+        "Figure 6.1 Model Validation Results",
+        "Figure 6.2 Confusion Matrix",
+        "Figure 6.3 Testing Evidence",
+        "Figure 7.1 Local Deployment Architecture",
+    ]
+    missing = [caption for caption in required if caption not in text]
+    if missing:
+        raise ValueError(f"Missing canonical figure captions: {missing}")
+    if text.count("RESERVED SCREENSHOT SPACE") != len(RESERVED_SCREENSHOT_FIGURES):
+        raise ValueError("Unexpected application screenshot reservation count")
 
 
 if __name__ == "__main__":

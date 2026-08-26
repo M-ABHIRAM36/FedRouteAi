@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Figure 12 — Geo V2 Model &amp; Robust Training · FedRouteAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="index.html" class="brand"><span class="brand-mark"></span>FedRouteAI</a>
+    <span class="crumb">/ <b>Figure 12 — Geo V2 Model &amp; Robust Training</b></span>
+  </div>
+  <div class="topbar-right">
+    <button class="btn" onclick="toggleTheme()">Theme</button>
+    <button class="btn primary" onclick="downloadSVG('fig12-svg','fig12_geo_v2_model.svg')">Export SVG</button>
+  </div>
+</div>
+
+<div class="page">
+  <div class="fig-header">
+    <div class="fig-eyebrow">Figure 12 · Geo V2 — Model, Robust Training &amp; Selection</div>
+    <h1 class="fig-title">GeoV2EventClassifierMLP + Hard-Gated Model Selection</h1>
+    <p class="fig-desc">Verified against <span class="f12-mono">training.py</span> and <span class="f12-mono">robust_training.py</span>. The model itself is a modest upgrade (BatchNorm, dropout); the real methodological advance is the selection rule — a documented, hard-gated policy that <em>rejects</em> a trained model outright if it collapses to predicting only the majority class, rather than hoping macro F1 alone catches it.</p>
+  </div>
+
+  <div class="databadge" style="display:flex;gap:8px;align-items:center;padding:10px 14px;border-radius:8px;background:var(--bg-soft);border:1px solid var(--border);margin-bottom:18px;font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text-mid);">
+    <span style="color:#B91C1C;">●</span> New architecture — real code, no trained checkpoint or reported metrics yet
+  </div>
+
+  <div class="canvas">
+    <svg id="fig12-svg" viewBox="0 0 1180 1080" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>
+          .f12-l { font-family: 'Space Grotesk', sans-serif; font-weight: 600; }
+          .f12-m { font-family: 'Inter', sans-serif; font-weight: 500; }
+          .f12-s { font-family: 'Inter', sans-serif; font-weight: 400; }
+          .f12-mono { font-family: 'JetBrains Mono', monospace; }
+        </style>
+        <marker id="f12-arrow" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#374151"/>
+        </marker>
+        <marker id="f12-arrow-r" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#B91C1C"/>
+        </marker>
+      </defs>
+
+      <!-- ============ SECTION A: MODEL ARCHITECTURE ============ -->
+      <text x="20" y="26" class="f12-l" font-size="14" fill="#12151C">A · GeoV2EventClassifierMLP Architecture</text>
+
+      <rect x="20" y="42" width="200" height="56" rx="8" fill="#F3F4F6" stroke="#374151" stroke-width="1.4"/>
+      <text x="120" y="66" text-anchor="middle" class="f12-l" font-size="12" fill="#12151C">Input Layer</text>
+      <text x="120" y="84" text-anchor="middle" class="f12-mono" font-size="10.5" fill="#4B5361">x ∈ ℝ²⁸ (Fig. 11)</text>
+
+      <path class="f12-arrow" stroke="#374151" stroke-width="1.6" fill="none" marker-end="url(#f12-arrow)" d="M222,70 L256,70"/>
+
+      <rect x="258" y="42" width="220" height="56" rx="8" fill="#ffffff" stroke="#374151" stroke-width="1.4"/>
+      <text x="368" y="62" text-anchor="middle" class="f12-l" font-size="11.5" fill="#12151C">Linear(28→64)</text>
+      <text x="368" y="78" text-anchor="middle" class="f12-mono" font-size="10" fill="#4B5361">BatchNorm1d → ReLU → Dropout(0.2)</text>
+      <text x="368" y="92" text-anchor="middle" class="f12-s" font-size="9" fill="#7C8494">1,856 + 128 params</text>
+
+      <path class="f12-arrow" stroke="#374151" stroke-width="1.6" fill="none" marker-end="url(#f12-arrow)" d="M480,70 L514,70"/>
+
+      <rect x="516" y="42" width="220" height="56" rx="8" fill="#ffffff" stroke="#374151" stroke-width="1.4"/>
+      <text x="626" y="62" text-anchor="middle" class="f12-l" font-size="11.5" fill="#12151C">Linear(64→32)</text>
+      <text x="626" y="78" text-anchor="middle" class="f12-mono" font-size="10" fill="#4B5361">BatchNorm1d → ReLU</text>
+      <text x="626" y="92" text-anchor="middle" class="f12-s" font-size="9" fill="#7C8494">2,080 + 64 params</text>
+
+      <path class="f12-arrow" stroke="#374151" stroke-width="1.6" fill="none" marker-end="url(#f12-arrow)" d="M738,70 L772,70"/>
+
+      <rect x="774" y="42" width="200" height="56" rx="8" fill="#F3F4F6" stroke="#374151" stroke-width="1.4"/>
+      <text x="874" y="62" text-anchor="middle" class="f12-l" font-size="11.5" fill="#12151C">Linear(32→8)</text>
+      <text x="874" y="78" text-anchor="middle" class="f12-mono" font-size="10" fill="#4B5361">LogSoftmax</text>
+      <text x="874" y="92" text-anchor="middle" class="f12-s" font-size="9" fill="#7C8494">264 params</text>
+
+      <rect x="994" y="42" width="166" height="56" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.6"/>
+      <text x="1077" y="64" text-anchor="middle" class="f12-l" font-size="12" fill="#12151C">4,392 params</text>
+      <text x="1077" y="82" text-anchor="middle" class="f12-s" font-size="9.5" fill="#4B5361">total trainable</text>
+      <path class="f12-arrow" stroke="#374151" stroke-width="1.6" fill="none" marker-end="url(#f12-arrow)" d="M976,70 L992,70"/>
+
+      <text x="20" y="128" class="f12-s" font-size="10.5" fill="#7C8494">BatchNorm1d is now real in this architecture — it's what makes the manuscript's abstract claim about OOD inputs "triggering</text>
+      <text x="20" y="144" class="f12-s" font-size="10.5" fill="#7C8494">mathematical saturation within batch normalization layers" technically grounded, which it was not for the old (Fig. 4) model.</text>
+
+      <!-- ============ SECTION B: TRAINING CONFIG ============ -->
+      <text x="20" y="184" class="f12-l" font-size="14" fill="#12151C">B · Robust Training Configuration — Verified Values</text>
+
+      <rect x="20" y="200" width="560" height="210" rx="9" fill="#ffffff" stroke="#374151" stroke-width="1.4"/>
+      <text x="36" y="222" class="f12-l" font-size="12" fill="#12151C">Federation Schedule</text>
+      <text x="36" y="242" class="f12-mono" font-size="10.5" fill="#12151C">rounds = 30 · local_epochs = 2</text>
+      <text x="36" y="258" class="f12-s" font-size="9.5" fill="#7C8494">More frequent sync than the old 30×5 schedule — directly addresses the</text>
+      <text x="36" y="272" class="f12-s" font-size="9.5" fill="#7C8494">weight-averaging divergence documented in the earlier design review.</text>
+      <text x="36" y="298" class="f12-mono" font-size="10.5" fill="#12151C">patience = 6 · minimum_rounds = 12</text>
+      <text x="36" y="314" class="f12-s" font-size="9.5" fill="#7C8494">Early stopping, with a floor so it can't stop implausibly early.</text>
+
+      <text x="36" y="344" class="f12-l" font-size="12" fill="#12151C">AdaptiveFedAvg Bounds — new since Figure 5</text>
+      <text x="36" y="364" class="f12-mono" font-size="10.5" fill="#12151C">alpha = 0.3 · beta = 0.3 · q_floor = 0.10</text>
+      <text x="36" y="382" class="f12-mono" font-size="10.5" fill="#12151C">g_threshold = 0.15 · g_min = 0.50 · rare_threshold = 0.05</text>
+      <text x="36" y="400" class="f12-mono" font-size="10.5" fill="#B91C1C" font-weight="700">minimum_client_weight = 0.03 · maximum_client_weight = 0.22</text>
+
+      <rect x="600" y="200" width="560" height="210" rx="9" fill="#ffffff" stroke="#374151" stroke-width="1.4"/>
+      <text x="616" y="222" class="f12-l" font-size="12" fill="#12151C">Class Imbalance Handling — two mechanisms now</text>
+      <text x="616" y="244" class="f12-mono" font-size="10.5" fill="#12151C">class_weight_power = 0.5 · class_weight_cap = 10.0</text>
+      <text x="616" y="260" class="f12-s" font-size="9.5" fill="#7C8494">Dampened (√-like) inverse-frequency weighting, capped — more stable</text>
+      <text x="616" y="274" class="f12-s" font-size="9.5" fill="#7C8494">than raw inverse-frequency, which can overweight a 2-sample class wildly.</text>
+      <text x="616" y="298" class="f12-mono" font-size="10.5" fill="#12151C">target_local_anomaly_fraction = 0.02</text>
+      <text x="616" y="314" class="f12-s" font-size="9.5" fill="#7C8494">Local oversampling floor — a second, data-level mechanism alongside</text>
+      <text x="616" y="328" class="f12-s" font-size="9.5" fill="#7C8494">the aggregation-level rarity bonus (Fig. 5).</text>
+      <text x="616" y="354" class="f12-l" font-size="12" fill="#12151C">Optimizer</text>
+      <text x="616" y="374" class="f12-mono" font-size="10.5" fill="#12151C">AdamW · lr = 1e-3 · weight_decay = 1e-4</text>
+      <text x="616" y="390" class="f12-s" font-size="9.5" fill="#7C8494">Decoupled weight decay — a more principled regularizer than plain Adam.</text>
+
+      <!-- ============ SECTION C: SELECTION RULE ============ -->
+      <text x="20" y="452" class="f12-l" font-size="14" fill="#12151C">C · Hard-Gated Model Selection — verified in robust_training.py</text>
+
+      <rect x="20" y="468" width="1140" height="200" rx="10" fill="#FEECEC" stroke="#B91C1C" stroke-width="1.8"/>
+      <text x="40" y="494" class="f12-l" font-size="13" fill="#B91C1C">SELECTION_RULE</text>
+      <text x="40" y="516" class="f12-mono" font-size="11" fill="#12151C">primary metric: deployment_validation_macro_f1</text>
+
+      <text x="40" y="546" class="f12-l" font-size="11.5" fill="#12151C">Hard Constraints — a candidate model is REJECTED outright if any fail:</text>
+      <text x="60" y="568" class="f12-mono" font-size="10.5" fill="#12151C">normal_false_positive_rate_max = 0.05</text>
+      <text x="60" y="586" class="f12-mono" font-size="10.5" fill="#12151C">anomaly_recall_min = 0.20</text>
+      <text x="60" y="604" class="f12-mono" font-size="10.5" fill="#12151C">event_balanced_macro_f1_min = 0.30</text>
+
+      <text x="600" y="546" class="f12-l" font-size="11.5" fill="#12151C">Tie-breakers (in order):</text>
+      <text x="620" y="568" class="f12-mono" font-size="10.5" fill="#12151C">1. event_balanced_macro_f1</text>
+      <text x="620" y="586" class="f12-mono" font-size="10.5" fill="#12151C">2. anomaly_recall</text>
+      <text x="620" y="604" class="f12-mono" font-size="10.5" fill="#12151C">3. normal_specificity</text>
+
+      <text x="40" y="636" class="f12-s" font-size="10.5" font-style="italic" fill="#7C1D1D">Documented reason, verbatim from the code:</text>
+      <text x="40" y="654" class="f12-s" font-size="10.5" font-style="italic" fill="#7C1D1D">"Macro F1 protects all classes; hard gates reject normal-only and event-heavy collapse."</text>
+
+      <text x="20" y="694" class="f12-s" font-size="10.5" fill="#7C8494">This is the formal, code-level fix for the exact failure mode diagnosed empirically in the earlier design review: a federated</text>
+      <text x="20" y="710" class="f12-s" font-size="10.5" fill="#7C8494">model that scored well on accuracy by collapsing to "always predict normal." That model would now fail the anomaly_recall_min gate and be rejected.</text>
+
+      <!-- ============ SECTION D: AUDIT ============ -->
+      <text x="20" y="754" class="f12-l" font-size="14" fill="#12151C">D · Pre-Training Leakage Audit — verified in audit.py</text>
+      <rect x="20" y="770" width="1140" height="90" rx="9" fill="#ffffff" stroke="#374151" stroke-width="1.4"/>
+      <text x="36" y="794" class="f12-mono" font-size="10.5" fill="#12151C">Checks BEFORE training starts: train/val/test episode overlap · forbidden (label-derived) columns</text>
+      <text x="36" y="812" class="f12-mono" font-size="10.5" fill="#12151C">missing labels · duplicate rows · non-finite values</text>
+      <text x="36" y="836" class="f12-s" font-size="9.5" fill="#7C8494">Directly answers the kind of question a careful reviewer asks about any split-based evaluation: "how do you know your</text>
+      <text x="36" y="850" class="f12-s" font-size="9.5" fill="#7C8494">test set doesn't leak information from training?" — this is now a real, automated, code-level check, not an assumption.</text>
+
+      <!-- ============ SECTION E: WORKFLOW SUMMARY ============ -->
+      <text x="20" y="900" class="f12-l" font-size="14" fill="#12151C">E · How A–D Fit Together</text>
+      <rect x="20" y="916" width="220" height="50" rx="8" fill="#F3F4F6" stroke="#374151" stroke-width="1.3"/>
+      <text x="130" y="946" text-anchor="middle" class="f12-l" font-size="11" fill="#12151C">D. Audit dataset</text>
+      <path class="f12-arrow" stroke="#374151" stroke-width="1.5" fill="none" marker-end="url(#f12-arrow)" d="M242,941 L272,941"/>
+
+      <rect x="274" y="916" width="220" height="50" rx="8" fill="#F3F4F6" stroke="#374151" stroke-width="1.3"/>
+      <text x="384" y="946" text-anchor="middle" class="f12-l" font-size="11" fill="#12151C">B. Train (AdaptiveFedAvg)</text>
+      <path class="f12-arrow" stroke="#374151" stroke-width="1.5" fill="none" marker-end="url(#f12-arrow)" d="M496,941 L526,941"/>
+
+      <rect x="528" y="916" width="220" height="50" rx="8" fill="#F3F4F6" stroke="#374151" stroke-width="1.3"/>
+      <text x="638" y="946" text-anchor="middle" class="f12-l" font-size="11" fill="#12151C">A. GeoV2MLP (per round)</text>
+      <path class="f12-arrow-r" stroke="#B91C1C" stroke-width="1.6" fill="none" marker-end="url(#f12-arrow-r)" d="M750,941 L780,941"/>
+
+      <rect x="782" y="916" width="240" height="50" rx="8" fill="#FEECEC" stroke="#B91C1C" stroke-width="1.6"/>
+      <text x="902" y="946" text-anchor="middle" class="f12-l" font-size="11" fill="#B91C1C">C. Selection Gate</text>
+
+      <text x="20" y="990" class="f12-s" font-size="10.5" fill="#7C8494">A rejected candidate does not become the deployed model — training continues or the run is flagged, rather than</text>
+      <text x="20" y="1006" class="f12-s" font-size="10.5" fill="#7C8494">silently shipping whichever round happened to finish last. This is the direct answer to the earlier review's</text>
+      <text x="20" y="1022" class="f12-s" font-size="10.5" fill="#7C8494">"best-checkpoint selection needs to be disclosed" finding (Figure 7) — here, selection is now a documented policy, not an undisclosed choice.</text>
+    </svg>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="legend-swatch" style="background:#374151"></span>Architecture / configuration (verified)</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#2563EB"></span>Combined / total value</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#B91C1C"></span>Hard gate / rejection / critical policy</div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h3><span class="dot" style="background:#B91C1C"></span>The Single Most Publishable Idea Here</h3>
+      <p style="font-size:13px;color:var(--text-mid);line-height:1.65;">Not the architecture (a fairly standard small MLP) — the <b>selection rule</b>. Most federated learning papers pick "the best round by macro F1" and stop there, which is exactly the practice the earlier review flagged as needing disclosure. Formalizing rejection criteria that specifically target normal-only collapse, with a documented rationale, is a genuine, defensible methodological contribution worth a subsection of its own once Geo V2 has real results to report.</p>
+    </div>
+    <div class="panel">
+      <h3><span class="dot" style="background:#374151"></span>Before This Can Go In the Paper</h3>
+      <ul class="step-list">
+        <li>Train at least one Geo V2 candidate through the full pipeline (audit → train → gate) and confirm it clears the hard constraints.</li>
+        <li>Report whether/how often candidates actually get rejected — an honest "N of M candidates passed the gate" number is more convincing than the gate's mere existence.</li>
+        <li>Run the three feature-variant ablation (Figure 11) before finalizing which variant is "the" Geo V2 result.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="pagenav">
+    <a href="geo_v2_features.html"><span class="nav-label">← Previous — Figure 11</span><span class="nav-title">Geo V2 Feature Contract</span></a>
+    <a href="index.html" class="next"><span class="nav-label">Back to</span><span class="nav-title">All Figures →</span></a>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

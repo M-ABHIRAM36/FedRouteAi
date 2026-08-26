@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Figure 6 — Federated Communication · FedRouteAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="index.html" class="brand"><span class="brand-mark"></span>FedRouteAI</a>
+    <span class="crumb">/ <b>Figure 6 — Federated Communication</b></span>
+  </div>
+  <div class="topbar-right">
+    <button class="btn" onclick="toggleTheme()">Theme</button>
+    <button class="btn primary" onclick="downloadSVG('fig6-svg','fig6_communication.svg')">Export SVG</button>
+  </div>
+</div>
+
+<div class="page">
+  <div class="fig-header">
+    <div class="fig-eyebrow">Figure 6 · Federated Learning Communication Protocol</div>
+    <h1 class="fig-title">One Communication Round, 8 Clients</h1>
+    <p class="fig-desc">A sequence view of exactly what crosses the network each round — this is the diagram that makes your 207.36 KB/round bandwidth claim verifiable at a glance, and it's worth including specifically because Table VII's complexity claims depend on readers trusting this protocol description.</p>
+  </div>
+
+  <div class="databadge" style="display:flex;gap:8px;align-items:center;padding:10px 14px;border-radius:8px;background:var(--bg-soft);border:1px solid var(--border);margin-bottom:18px;font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text-mid);">
+    <span style="color:#2563EB;">●</span> Describes the CURRENT REPORTED system (produced Table IV's numbers) &nbsp;|&nbsp; <a href="geo_v2_features.html" style="color:#374151;text-decoration:none;">See Figures 11–12 for Geo V2 →</a>
+  </div>
+
+  <div class="canvas">
+    <svg id="fig6-svg" viewBox="0 0 1100 480" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>
+          .f6-l { font-family: 'Space Grotesk', sans-serif; font-weight: 600; }
+          .f6-s { font-family: 'Inter', sans-serif; font-weight: 400; }
+          .f6-mono { font-family: 'JetBrains Mono', monospace; }
+        </style>
+        <marker id="f6-arrow" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#2563EB"/>
+        </marker>
+        <marker id="f6-arrow-b" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#2563EB"/>
+        </marker>
+      </defs>
+
+      <!-- server lifeline -->
+      <rect x="470" y="20" width="160" height="46" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.6"/>
+      <text x="550" y="48" text-anchor="middle" class="f6-l" font-size="12.5" fill="#12151C">Flower FL Server</text>
+      <line x1="550" y1="66" x2="550" y2="430" stroke="#2563EB" stroke-width="1.2" stroke-dasharray="4 4"/>
+
+      <!-- 4 representative client lifelines (of 8) -->
+      <!-- positions -->
+      <!-- Client 1 -->
+      <g>
+        <rect x="60" y="20" width="130" height="46" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.6"/>
+        <text x="125" y="48" text-anchor="middle" class="f6-l" font-size="12" fill="#12151C">Client 1</text>
+        <line x1="125" y1="66" x2="125" y2="430" stroke="#2563EB" stroke-width="1.2" stroke-dasharray="4 4"/>
+      </g>
+      <g>
+        <rect x="230" y="20" width="130" height="46" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.6"/>
+        <text x="295" y="48" text-anchor="middle" class="f6-l" font-size="12" fill="#12151C">Client 2</text>
+        <line x1="295" y1="66" x2="295" y2="430" stroke="#2563EB" stroke-width="1.2" stroke-dasharray="4 4"/>
+      </g>
+      <text x="410" y="48" text-anchor="middle" class="f6-s" font-size="18" fill="#7C8494">⋯</text>
+      <g>
+        <rect x="740" y="20" width="130" height="46" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.6"/>
+        <text x="805" y="48" text-anchor="middle" class="f6-l" font-size="12" fill="#12151C">Client 7</text>
+        <line x1="805" y1="66" x2="805" y2="430" stroke="#2563EB" stroke-width="1.2" stroke-dasharray="4 4"/>
+      </g>
+      <g>
+        <rect x="910" y="20" width="130" height="46" rx="8" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.6"/>
+        <text x="975" y="48" text-anchor="middle" class="f6-l" font-size="12" fill="#12151C">Client 8</text>
+        <line x1="975" y1="66" x2="975" y2="430" stroke="#2563EB" stroke-width="1.2" stroke-dasharray="4 4"/>
+      </g>
+
+      <!-- step 1: broadcast global weights -->
+      <path class="f6-arrow-b" stroke="#2563EB" stroke-width="1.6" fill="none" marker-end="url(#f6-arrow-b)" d="M470,110 L130,110"/>
+      <path class="f6-arrow-b" stroke="#2563EB" stroke-width="1.6" fill="none" marker-end="url(#f6-arrow-b)" d="M470,110 L300,110"/>
+      <path class="f6-arrow-b" stroke="#2563EB" stroke-width="1.6" fill="none" marker-end="url(#f6-arrow-b)" d="M630,110 L810,110"/>
+      <path class="f6-arrow-b" stroke="#2563EB" stroke-width="1.6" fill="none" marker-end="url(#f6-arrow-b)" d="M630,110 L980,110"/>
+      <text x="550" y="98" text-anchor="middle" class="f6-mono" font-size="10.5" fill="#2563EB" font-weight="700">1. Broadcast w_t — 12.96 KB / client</text>
+
+      <!-- step 2: local training box -->
+      <rect x="70" y="130" width="110" height="50" rx="7" fill="#ffffff" stroke="#2563EB" stroke-width="1.3"/>
+      <text x="125" y="150" text-anchor="middle" class="f6-s" font-size="9.5" fill="#12151C">Local Train</text>
+      <text x="125" y="164" text-anchor="middle" class="f6-mono" font-size="9" fill="#4B5361">5 epochs</text>
+
+      <rect x="240" y="130" width="110" height="50" rx="7" fill="#ffffff" stroke="#2563EB" stroke-width="1.3"/>
+      <text x="295" y="150" text-anchor="middle" class="f6-s" font-size="9.5" fill="#12151C">Local Train</text>
+      <text x="295" y="164" text-anchor="middle" class="f6-mono" font-size="9" fill="#4B5361">5 epochs</text>
+
+      <rect x="750" y="130" width="110" height="50" rx="7" fill="#ffffff" stroke="#2563EB" stroke-width="1.3"/>
+      <text x="805" y="150" text-anchor="middle" class="f6-s" font-size="9.5" fill="#12151C">Local Train</text>
+      <text x="805" y="164" text-anchor="middle" class="f6-mono" font-size="9" fill="#4B5361">5 epochs</text>
+
+      <rect x="920" y="130" width="110" height="50" rx="7" fill="#ffffff" stroke="#2563EB" stroke-width="1.3"/>
+      <text x="975" y="150" text-anchor="middle" class="f6-s" font-size="9.5" fill="#12151C">Local Train</text>
+      <text x="975" y="164" text-anchor="middle" class="f6-mono" font-size="9" fill="#4B5361">5 epochs</text>
+
+      <!-- step 3: upload -->
+      <path class="f6-arrow" stroke="#2563EB" stroke-width="1.6" fill="none" marker-end="url(#f6-arrow)" d="M130,220 L470,220"/>
+      <path class="f6-arrow" stroke="#2563EB" stroke-width="1.6" fill="none" marker-end="url(#f6-arrow)" d="M300,220 L470,220"/>
+      <path class="f6-arrow" stroke="#2563EB" stroke-width="1.6" fill="none" marker-end="url(#f6-arrow)" d="M810,220 L630,220"/>
+      <path class="f6-arrow" stroke="#2563EB" stroke-width="1.6" fill="none" marker-end="url(#f6-arrow)" d="M980,220 L630,220"/>
+      <text x="550" y="208" text-anchor="middle" class="f6-mono" font-size="10.5" fill="#2563EB" font-weight="700">2. Upload {w_k, n_k, F1_k} — 12.96 KB / client</text>
+
+      <!-- step 4: aggregation -->
+      <rect x="440" y="240" width="220" height="66" rx="9" fill="#EFF4FF" stroke="#2563EB" stroke-width="1.7"/>
+      <text x="550" y="264" text-anchor="middle" class="f6-l" font-size="12" fill="#12151C">AdaptiveFedAvg</text>
+      <text x="550" y="282" text-anchor="middle" class="f6-mono" font-size="10" fill="#2563EB" font-weight="700">aggregate_fit(round t)</text>
+      <text x="550" y="298" text-anchor="middle" class="f6-s" font-size="9.5" fill="#4B5361">→ w_{t+1}</text>
+
+      <!-- step 5: broadcast updated -->
+      <path class="f6-arrow-b" stroke="#2563EB" stroke-width="1.6" fill="none" marker-end="url(#f6-arrow-b)" d="M440,340 L130,340"/>
+      <path class="f6-arrow-b" stroke="#2563EB" stroke-width="1.6" fill="none" marker-end="url(#f6-arrow-b)" d="M440,340 L300,340"/>
+      <path class="f6-arrow-b" stroke="#2563EB" stroke-width="1.6" fill="none" marker-end="url(#f6-arrow-b)" d="M660,340 L810,340"/>
+      <path class="f6-arrow-b" stroke="#2563EB" stroke-width="1.6" fill="none" marker-end="url(#f6-arrow-b)" d="M660,340 L980,340"/>
+      <text x="550" y="328" text-anchor="middle" class="f6-mono" font-size="10.5" fill="#2563EB" font-weight="700">3. Broadcast w_{t+1} — 12.96 KB / client</text>
+
+      <!-- round loop annotation -->
+      <path d="M1030,110 C 1080,110 1080,340 1030,340" fill="none" stroke="#7C8494" stroke-width="1.3" stroke-dasharray="4 4"/>
+      <text x="1060" y="228" class="f6-s" font-size="10" fill="#7C8494" transform="rotate(90,1060,228)">repeat × 30 rounds</text>
+
+      <text x="60" y="420" class="f6-mono" font-size="11" fill="#12151C" font-weight="700">Total bandwidth / round = 8 clients × (12.96 KB up + 12.96 KB down) = 207.36 KB</text>
+    </svg>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="legend-swatch" style="background:#2563EB"></span>Broadcast (server → clients)</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#2563EB"></span>Upload (clients → server) / aggregation</div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h3><span class="dot" style="background:#2563EB"></span>Why the Payload Is So Small</h3>
+      <p style="font-size:13px;color:var(--text-mid);line-height:1.65;">EventClassifierMLP has 3,240 trainable parameters — at 32-bit floats, that's exactly 12.96 KB per direction. This is small enough that communication cost is genuinely a non-issue at this model scale; techniques like delta/sparse updates (sometimes proposed for FL) would be solving a problem this system doesn't have.</p>
+    </div>
+    <div class="panel">
+      <h3><span class="dot" style="background:#2563EB"></span>What This Diagram Deliberately Doesn't Show</h3>
+      <p style="font-size:13px;color:var(--text-mid);line-height:1.65;">Client dropout, delayed/asynchronous arrival, and partial-round participation — because, as flagged in the earlier design review, the current 8-client simulation reports synchronously every round. If freshness/reliability terms are claimed to handle unreliable clients, an actual dropout experiment (and a corresponding diagram variant) is needed to back that claim.</p>
+    </div>
+  </div>
+
+  <div class="pagenav">
+    <a href="adaptivefedavg.html"><span class="nav-label">← Previous — Figure 5</span><span class="nav-title">AdaptiveFedAvg Workflow</span></a>
+    <a href="evaluation.html" class="next"><span class="nav-label">Next — Figure 7</span><span class="nav-title">Experimental Pipeline →</span></a>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

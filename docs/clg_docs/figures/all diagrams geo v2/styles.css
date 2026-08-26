@@ -1,0 +1,294 @@
+/* ============================================================
+   FedRouteAI Paper Diagrams — Shared Design System
+   Light theme = default (IEEE print-safe). Dark theme = toggle,
+   for on-screen/website viewing. Every diagram SVG carries its
+   OWN internal <style> block so it exports as a standalone,
+   self-contained file — this stylesheet only styles the page
+   chrome (nav, legends, formula panels, narrative text), never
+   the diagram artwork itself.
+   ============================================================ */
+
+:root {
+  /* ---- Module color language — IDENTICAL across all 10 figures.
+     A reader who learns this palette once on Figure 1 can read
+     every subsequent figure without re-learning a color key. ---- */
+  --c-edge:      #2563EB;   /* Edge / Client layer — raw telemetry, on-device */
+  --c-edge-bg:   #EFF4FF;
+  --c-memory:    #374151;   /* Historical Memory Module — PostgreSQL baselines */
+  --c-memory-bg: #F3F4F6;
+  --c-feature:   #374151;   /* Feature Engineering — ratios, encoding, tensor */
+  --c-feature-bg:#F3F4F6;
+  --c-infer:     #B91C1C;   /* Deployment-aware inference / OOD */
+  --c-infer-bg:  #FEECEC;
+  --c-fl:        #2563EB;   /* Federated server / AdaptiveFedAvg */
+  --c-fl-bg:     #EFF4FF;
+  --c-output:    #374151;   /* Dashboard / output / alerts */
+  --c-output-bg: #F3F4F6;
+
+  --bg:          #FFFFFF;
+  --bg-soft:     #F7F8FA;
+  --panel:       #FFFFFF;
+  --border:      #E2E5EA;
+  --border-strong: #C7CCD4;
+  --text-hi:     #12151C;
+  --text-mid:    #4B5361;
+  --text-lo:     #7C8494;
+  --shadow: 0 1px 2px rgba(16,24,40,0.04), 0 4px 12px -4px rgba(16,24,40,0.08);
+  --radius: 10px;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+[data-theme="dark"] {
+  --c-edge:      #6C9BFF;
+  --c-edge-bg:   #12203E;
+  --c-memory:    #2FD9B8;
+  --c-memory-bg: #0D2A28;
+  --c-feature:   #B79CFF;
+  --c-feature-bg:#211A3D;
+  --c-infer:     #FFB84D;
+  --c-infer-bg:  #3A2A0D;
+  --c-fl:        #4ADE80;
+  --c-fl-bg:     #12301D;
+  --c-output:    #FF6F87;
+  --c-output-bg: #3A1420;
+
+  --bg:          #0A0D14;
+  --bg-soft:     #10141D;
+  --panel:       #12161F;
+  --border:      rgba(255,255,255,0.09);
+  --border-strong: rgba(255,255,255,0.16);
+  --text-hi:     #F1F3F7;
+  --text-mid:    #A7AFBD;
+  --text-lo:     #6D7585;
+  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -8px rgba(0,0,0,0.5);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg-soft);
+  color: var(--text-hi);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+/* ---------------- Top chrome ---------------- */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px;
+  padding: 12px 28px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+.topbar-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.brand {
+  display: flex; align-items: center; gap: 9px;
+  font-family: var(--font-display); font-weight: 700; font-size: 16px;
+  color: var(--text-hi); text-decoration: none; flex-shrink: 0;
+}
+.brand-mark {
+  width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--c-edge), var(--c-fl));
+}
+.crumb {
+  font-size: 13px; color: var(--text-lo);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.crumb b { color: var(--text-mid); font-weight: 600; }
+.topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-body); font-size: 12.5px; font-weight: 600;
+  padding: 7px 13px; border-radius: 7px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-soft); color: var(--text-mid);
+  cursor: pointer; text-decoration: none;
+  transition: all 0.15s ease;
+}
+.btn:hover { color: var(--text-hi); border-color: var(--c-edge); }
+.btn.primary { background: var(--text-hi); color: var(--bg); border-color: var(--text-hi); }
+.btn.primary:hover { opacity: 0.85; }
+.btn svg { width: 14px; height: 14px; }
+
+/* ---------------- Page shell ---------------- */
+.page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 36px 28px 80px;
+}
+.fig-header { margin-bottom: 26px; }
+.fig-eyebrow {
+  font-family: var(--font-mono); font-size: 11.5px; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-lo); margin-bottom: 8px;
+}
+.fig-title {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 28px; line-height: 1.25; color: var(--text-hi);
+  margin: 0 0 10px;
+}
+.fig-desc {
+  font-size: 15px; line-height: 1.6; color: var(--text-mid);
+  max-width: 800px; margin: 0;
+}
+
+/* ---------------- Diagram canvas ---------------- */
+.canvas {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+.canvas svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+
+/* ---------------- Legend strip ---------------- */
+.legend {
+  display: flex; flex-wrap: wrap; gap: 10px 22px;
+  padding: 14px 18px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+}
+.legend-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-mid); font-weight: 500; }
+.legend-swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+/* ---------------- Two-column: formulas + narrative ---------------- */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+@media (max-width: 860px) { .grid-2 { grid-template-columns: 1fr; } }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+}
+.panel h3 {
+  font-family: var(--font-display); font-size: 14.5px; font-weight: 700;
+  margin: 0 0 14px; color: var(--text-hi);
+  display: flex; align-items: center; gap: 8px;
+}
+.panel h3 .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+.formula-row { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px dashed var(--border); }
+.formula-row:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+.formula-name { font-size: 12.5px; font-weight: 700; color: var(--text-hi); margin-bottom: 4px; }
+.formula-math { font-size: 15px; margin: 6px 0; color: var(--text-hi); }
+.formula-note { font-size: 12px; color: var(--text-lo); line-height: 1.55; }
+
+.step-list { list-style: none; margin: 0; padding: 0; counter-reset: step; }
+.step-list li {
+  counter-increment: step;
+  position: relative;
+  padding: 0 0 16px 34px;
+  font-size: 13px; line-height: 1.6; color: var(--text-mid);
+}
+.step-list li:last-child { padding-bottom: 0; }
+.step-list li::before {
+  content: counter(step);
+  position: absolute; left: 0; top: 0;
+  width: 22px; height: 22px; border-radius: 6px;
+  background: var(--c-edge-bg); color: var(--c-edge);
+  font-family: var(--font-mono); font-weight: 700; font-size: 11.5px;
+  display: flex; align-items: center; justify-content: center;
+}
+.step-list li b { color: var(--text-hi); }
+
+/* ---------------- Verified / illustrative data badges ---------------- */
+.databadge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 10.5px; font-weight: 600;
+  padding: 3px 9px; border-radius: 20px; margin-bottom: 14px;
+  letter-spacing: 0.02em;
+}
+.databadge.verified { background: var(--c-fl-bg); color: var(--c-fl); border: 1px solid color-mix(in srgb, var(--c-fl) 35%, transparent); }
+.databadge.illustrative { background: var(--c-infer-bg); color: var(--c-infer); border: 1px solid color-mix(in srgb, var(--c-infer) 35%, transparent); }
+.databadge.unverified { background: var(--c-output-bg); color: var(--c-output); border: 1px solid color-mix(in srgb, var(--c-output) 35%, transparent); }
+
+/* ---------------- Why-this-step narrative block ---------------- */
+.why-block {
+  background: var(--bg-soft);
+  border-left: 3px solid var(--c-edge);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+.why-block h4 {
+  font-family: var(--font-display); font-size: 13px; font-weight: 700;
+  margin: 0 0 8px; color: var(--text-hi);
+}
+.why-block p { font-size: 13.5px; line-height: 1.65; color: var(--text-mid); margin: 0 0 10px; }
+.why-block p:last-child { margin-bottom: 0; }
+
+/* ---------------- Footer nav (prev/next figure) ---------------- */
+.pagenav {
+  display: flex; justify-content: space-between; gap: 16px;
+  margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border);
+}
+.pagenav a {
+  flex: 1; max-width: 340px;
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 14px 16px; border-radius: var(--radius);
+  border: 1px solid var(--border); text-decoration: none;
+  transition: border-color 0.15s ease;
+}
+.pagenav a:hover { border-color: var(--c-edge); }
+.pagenav a.next { text-align: right; margin-left: auto; }
+.pagenav .nav-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-lo); }
+.pagenav .nav-title { font-family: var(--font-display); font-size: 13.5px; font-weight: 600; color: var(--text-hi); }
+
+/* ---------------- Index page cards ---------------- */
+.hero { padding: 56px 0 40px; text-align: center; }
+.hero h1 {
+  font-family: var(--font-display); font-weight: 700; font-size: 34px;
+  margin: 0 0 12px; color: var(--text-hi);
+}
+.hero p { font-size: 15.5px; color: var(--text-mid); max-width: 620px; margin: 0 auto 22px; line-height: 1.6; }
+.hero-badges { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+
+.fig-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 18px; margin-top: 12px;
+}
+.fig-card {
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px; text-decoration: none; display: flex; flex-direction: column; gap: 10px;
+  box-shadow: var(--shadow); transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.fig-card:hover { transform: translateY(-2px); border-color: var(--c-edge); }
+.fig-card .num {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 14px;
+  color: #fff;
+}
+.fig-card .fc-title { font-family: var(--font-display); font-weight: 700; font-size: 15.5px; color: var(--text-hi); }
+.fig-card .fc-desc { font-size: 12.5px; color: var(--text-mid); line-height: 1.55; }
+.fig-card .fc-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.fig-card .tag { font-family: var(--font-mono); font-size: 10px; padding: 2px 7px; border-radius: 10px; background: var(--bg-soft); color: var(--text-lo); }
+
+.section-label {
+  font-family: var(--font-mono); font-size: 11.5px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-lo);
+  margin: 40px 0 14px;
+}
+
+/* KaTeX color inherit */
+.katex { color: inherit; }
+
+/* Print / IEEE export mode: hides chrome, forces light theme */
+@media print {
+  .topbar, .pagenav, .btn { display: none !important; }
+  body { background: #fff; }
+  .page { padding: 0; max-width: none; }
+  .canvas { box-shadow: none; border: none; padding: 0; }
+}

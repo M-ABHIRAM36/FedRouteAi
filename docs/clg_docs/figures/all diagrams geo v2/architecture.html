@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Figure 1 — System Architecture · FedRouteAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="index.html" class="brand"><span class="brand-mark"></span>FedRouteAI</a>
+    <span class="crumb">/ <b>Figure 1 — System Architecture</b></span>
+  </div>
+  <div class="topbar-right">
+    <button class="btn" onclick="toggleTheme()">Theme</button>
+    <button class="btn primary" onclick="downloadSVG('fig1-svg','fig1_system_architecture.svg')">Export SVG</button>
+  </div>
+</div>
+
+<div class="page">
+  <div class="fig-header">
+    <div class="fig-eyebrow">Figure 1 · Overall System Architecture</div>
+    <h1 class="fig-title">FedRouteAI End-to-End Architecture</h1>
+    <p class="fig-desc">Everything left of the privacy boundary — telemetry collection, historical normalization, feature engineering, and edge inference — runs per regional client using only that client's own data. Only trained model weights (12.96&nbsp;KB) cross the boundary to the central server. Raw GPS, feature vectors, and predictions never leave the client.</p>
+  </div>
+
+  <div class="databadge" style="display:flex;gap:8px;align-items:center;padding:10px 14px;border-radius:8px;background:var(--bg-soft);border:1px solid var(--border);margin-bottom:18px;font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text-mid);">
+    <span style="color:#2563EB;">●</span> Describes the CURRENT REPORTED system (produced Table IV's numbers) &nbsp;|&nbsp; <a href="geo_v2_features.html" style="color:#374151;text-decoration:none;">See Figures 11–12 for Geo V2 →</a>
+  </div>
+
+  <div class="canvas">
+    <svg id="fig1-svg" viewBox="0 0 1360 820" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>
+          .f1-label-xl { font-family: 'Space Grotesk', sans-serif; font-weight: 700; }
+          .f1-label-l  { font-family: 'Space Grotesk', sans-serif; font-weight: 600; }
+          .f1-label-m  { font-family: 'Inter', sans-serif; font-weight: 500; }
+          .f1-label-s  { font-family: 'Inter', sans-serif; font-weight: 400; }
+          .f1-mono     { font-family: 'JetBrains Mono', monospace; }
+          .f1-node { fill: #ffffff; stroke-width: 1.6; rx: 10; }
+          .f1-arrow { fill: none; stroke: #4B5361; stroke-width: 1.8; }
+          .f1-arrow-dash { fill: none; stroke: #7C8494; stroke-width: 1.4; stroke-dasharray: 5 4; }
+        </style>
+        <marker id="f1-arrowhead" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#4B5361"/>
+        </marker>
+        <marker id="f1-arrowhead-accent" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#2563EB"/>
+        </marker>
+      </defs>
+
+      <!-- ===================== ZONE BACKDROPS ===================== -->
+      <rect x="24" y="70" width="760" height="700" rx="16" fill="#EFF4FF" opacity="0.5" stroke="#2563EB" stroke-width="1.2" stroke-dasharray="2 4"/>
+      <text x="404" y="98" text-anchor="middle" class="f1-label-xl" font-size="13" fill="#2563EB" letter-spacing="0.06em">REGIONAL EDGE CLIENT  (× 8 REGIONS — SIMULATED)</text>
+
+      <rect x="836" y="70" width="500" height="380" rx="16" fill="#EFF4FF" opacity="0.5" stroke="#2563EB" stroke-width="1.2" stroke-dasharray="2 4"/>
+      <text x="1086" y="98" text-anchor="middle" class="f1-label-xl" font-size="13" fill="#2563EB" letter-spacing="0.06em">CENTRAL BACKEND SERVER</text>
+
+      <!-- privacy boundary -->
+      <line x1="812" y1="60" x2="812" y2="720" stroke="#B91C1C" stroke-width="2" stroke-dasharray="3 5"/>
+      <g transform="translate(812,40)">
+        <rect x="-86" y="-16" width="172" height="26" rx="13" fill="#FEECEC" stroke="#B91C1C" stroke-width="1.2"/>
+        <text x="0" y="2" text-anchor="middle" class="f1-mono" font-size="10.5" fill="#B91C1C" font-weight="700">PRIVACY BOUNDARY</text>
+      </g>
+
+      <!-- ===================== ROW 1: TELEMETRY ===================== -->
+      <g>
+        <rect class="f1-node" x="60" y="130" width="140" height="52" stroke="#2563EB" fill="#EFF4FF"/>
+        <text x="130" y="152" text-anchor="middle" class="f1-label-m" font-size="11.5" fill="#12151C">GPS · Speed</text>
+        <text x="130" y="168" text-anchor="middle" class="f1-label-m" font-size="11.5" fill="#12151C">Density · Time</text>
+
+        <rect class="f1-node" x="228" y="130" width="140" height="52" stroke="#2563EB" fill="#EFF4FF"/>
+        <text x="298" y="152" text-anchor="middle" class="f1-label-m" font-size="11.5" fill="#12151C">Road Condition</text>
+        <text x="298" y="168" text-anchor="middle" class="f1-label-m" font-size="11.5" fill="#12151C">Zone / Lane ID</text>
+
+        <rect class="f1-node" x="396" y="130" width="140" height="52" stroke="#2563EB" fill="#EFF4FF"/>
+        <text x="466" y="152" text-anchor="middle" class="f1-label-m" font-size="11.5" fill="#12151C">Neighbor Segment</text>
+        <text x="466" y="168" text-anchor="middle" class="f1-label-m" font-size="11.5" fill="#12151C">Velocities</text>
+
+        <text x="620" y="152" text-anchor="middle" class="f1-label-s" font-size="10.5" fill="#7C8494">raw, on-device</text>
+        <text x="620" y="167" text-anchor="middle" class="f1-mono" font-size="10.5" fill="#2563EB" font-weight="700">never transmitted</text>
+      </g>
+
+      <path class="f1-arrow" marker-end="url(#f1-arrowhead)" d="M298,182 L298,214"/>
+
+      <!-- ===================== ROW 2: HISTORICAL MEMORY ===================== -->
+      <rect class="f1-node" x="70" y="216" width="660" height="70" stroke="#374151" fill="#F3F4F6"/>
+      <text x="94" y="242" class="f1-label-l" font-size="13.5" fill="#12151C">Historical Memory Module</text>
+      <text x="94" y="260" class="f1-label-s" font-size="11" fill="#4B5361">PostgreSQL · zone-level, time-windowed baselines: avg speed, avg density</text>
+      <text x="620" y="252" text-anchor="middle" class="f1-mono" font-size="11" fill="#374151" font-weight="700">Fig. 2</text>
+
+      <path class="f1-arrow" marker-end="url(#f1-arrowhead)" d="M298,286 L298,318"/>
+      <text x="330" y="306" class="f1-label-s" font-size="10.5" fill="#7C8494">baselines</text>
+
+      <!-- ===================== ROW 3: FEATURE ENGINEERING ===================== -->
+      <rect class="f1-node" x="70" y="320" width="660" height="70" stroke="#374151" fill="#F3F4F6"/>
+      <text x="94" y="346" class="f1-label-l" font-size="13.5" fill="#12151C">Feature Engineering</text>
+      <text x="94" y="364" class="f1-label-s" font-size="11" fill="#4B5361">Relative ratios → encoding → scaling → 10-D tensor</text>
+      <text x="620" y="356" text-anchor="middle" class="f1-mono" font-size="11" fill="#374151" font-weight="700">Fig. 3</text>
+
+      <path class="f1-arrow" marker-end="url(#f1-arrowhead)" d="M298,390 L298,422"/>
+      <text x="345" y="410" class="f1-label-s" font-size="10.5" fill="#7C8494">x ∈ ℝ¹⁰</text>
+
+      <!-- ===================== ROW 4: DEPLOYMENT-AWARE INFERENCE ===================== -->
+      <rect class="f1-node" x="70" y="424" width="660" height="90" stroke="#B91C1C" fill="#FEECEC"/>
+      <text x="94" y="450" class="f1-label-l" font-size="13.5" fill="#12151C">Deployment-Aware Inference</text>
+      <text x="94" y="468" class="f1-label-s" font-size="11" fill="#4B5361">Zero-impute unavailable fields → OOD threshold check → EventClassifierMLP</text>
+      <text x="94" y="484" class="f1-label-s" font-size="11" fill="#4B5361">3,240 trainable parameters</text>
+      <text x="620" y="472" text-anchor="middle" class="f1-mono" font-size="11" fill="#B91C1C" font-weight="700">Fig. 4</text>
+
+      <path class="f1-arrow" marker-end="url(#f1-arrowhead)" d="M400,514 L400,546"/>
+      <text x="470" y="534" class="f1-label-s" font-size="10.5" fill="#7C8494">prediction + OOD flag</text>
+
+      <!-- local model box (feeds FL, stays same box as inference conceptually but drawn separately to show it's what gets trained) -->
+      <rect class="f1-node" x="70" y="548" width="320" height="60" stroke="#B91C1C" fill="#ffffff"/>
+      <text x="230" y="572" text-anchor="middle" class="f1-label-m" font-size="12" fill="#12151C">Local Model Weights</text>
+      <text x="230" y="590" text-anchor="middle" class="f1-mono" font-size="10.5" fill="#7C8494">w_k, val loss L_k, n_k samples</text>
+
+      <rect class="f1-node" x="410" y="548" width="320" height="60" stroke="#374151" fill="#F3F4F6"/>
+      <text x="570" y="572" text-anchor="middle" class="f1-label-m" font-size="12" fill="#12151C">Prediction Served Locally</text>
+      <text x="570" y="590" text-anchor="middle" class="f1-label-s" font-size="10.5" fill="#7C8494">→ React Dashboard (this client)</text>
+
+      <!-- outgoing weight arrow crossing boundary -->
+      <path class="f1-arrow" marker-end="url(#f1-arrowhead-accent)" stroke="#2563EB" d="M390,570 L836,180"/>
+      <g transform="translate(700,330)">
+        <rect x="-58" y="-13" width="116" height="22" rx="11" fill="#EFF4FF" stroke="#2563EB" stroke-width="1"/>
+        <text x="0" y="4" text-anchor="middle" class="f1-mono" font-size="10" fill="#2563EB" font-weight="700">↑ 12.96 KB upload</text>
+      </g>
+
+      <!-- ===================== SERVER SIDE ===================== -->
+      <rect class="f1-node" x="866" y="130" width="440" height="60" stroke="#2563EB" fill="#EFF4FF"/>
+      <text x="1086" y="154" text-anchor="middle" class="f1-label-l" font-size="13" fill="#12151C">Flower FL Server (FastAPI Router)</text>
+      <text x="1086" y="172" text-anchor="middle" class="f1-label-s" font-size="10.5" fill="#4B5361">Receives {w_k, L_k, n_k} from 8 regional clients / round</text>
+
+      <path class="f1-arrow" marker-end="url(#f1-arrowhead)" d="M1086,190 L1086,222"/>
+
+      <rect class="f1-node" x="866" y="224" width="440" height="86" stroke="#2563EB" fill="#ffffff"/>
+      <text x="1086" y="250" text-anchor="middle" class="f1-label-l" font-size="13" fill="#12151C">AdaptiveFedAvg Aggregator</text>
+      <text x="1086" y="270" class="f1-mono" font-size="12" fill="#12151C" text-anchor="middle" font-weight="700">w_k = n_k · q_k · ρ_k · g_k</text>
+      <text x="1086" y="288" text-anchor="middle" class="f1-label-s" font-size="10" fill="#7C8494">quality · rarity bonus · reliability gate</text>
+      <text x="1086" y="303" text-anchor="middle" class="f1-mono" font-size="10" fill="#2563EB" font-weight="700">Fig. 5 / Algorithm 1</text>
+
+      <path class="f1-arrow" marker-end="url(#f1-arrowhead)" d="M1086,310 L1086,342"/>
+
+      <rect class="f1-node" x="866" y="344" width="440" height="60" stroke="#2563EB" fill="#EFF4FF"/>
+      <text x="1086" y="368" text-anchor="middle" class="f1-label-l" font-size="12.5" fill="#12151C">Updated Global Model</text>
+      <text x="1086" y="386" text-anchor="middle" class="f1-label-s" font-size="10.5" fill="#4B5361">Broadcast back to all 8 regional clients</text>
+
+      <!-- broadcast arrow back across boundary -->
+      <path class="f1-arrow-dash" marker-end="url(#f1-arrowhead)" d="M866,374 L400,570"/>
+      <g transform="translate(700,470)">
+        <rect x="-64" y="-13" width="128" height="22" rx="11" fill="#F7F8FA" stroke="#7C8494" stroke-width="1"/>
+        <text x="0" y="4" text-anchor="middle" class="f1-mono" font-size="10" fill="#4B5361" font-weight="700">↓ 12.96 KB download</text>
+      </g>
+
+      <!-- ===================== DASHBOARD ===================== -->
+      <rect class="f1-node" x="70" y="640" width="1236" height="90" stroke="#374151" fill="#F3F4F6"/>
+      <text x="94" y="666" class="f1-label-l" font-size="13.5" fill="#12151C">React Dashboard</text>
+      <text x="94" y="686" class="f1-label-s" font-size="11" fill="#4B5361">Live predictions · OOD warnings · regional client health · AdaptiveFedAvg weight evolution · training metrics</text>
+      <text x="94" y="704" class="f1-label-s" font-size="11" fill="#4B5361">Reads from BOTH the local prediction stream (per client) and the central server's round history — no raw telemetry involved either way</text>
+
+      <path class="f1-arrow" marker-end="url(#f1-arrowhead)" d="M570,608 L570,638"/>
+      <path class="f1-arrow-dash" marker-end="url(#f1-arrowhead)" d="M1086,404 L1086,600 L740,600 L740,638"/>
+
+      <!-- legend note bottom -->
+      <text x="70" y="800" class="f1-label-s" font-size="10.5" fill="#7C8494">Solid arrows = data/weights actually transmitted this round · Dashed = broadcast / read-only signal</text>
+    </svg>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="legend-swatch" style="background:#2563EB"></span>Edge / Client Layer (raw, on-device)</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#374151"></span>Historical Memory (PostgreSQL)</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#374151"></span>Feature Engineering</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#B91C1C"></span>Deployment-Aware Inference</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#2563EB"></span>Federated Server / AdaptiveFedAvg</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#374151"></span>Dashboard / Output</div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h3><span class="dot" style="background:#2563EB"></span>What Actually Crosses the Boundary</h3>
+      <ul class="step-list">
+        <li><b>Upload (12.96 KB):</b> this round's trained local weights <span class="f1-mono">w_k</span>, validation loss <span class="f1-mono">L_k</span>, and sample count <span class="f1-mono">n_k</span> — never raw GPS, never the 10-D feature vector, never a prediction.</li>
+        <li><b>Download (12.96 KB):</b> the aggregated global model's weights only.</li>
+        <li><b>Never transmitted:</b> raw telemetry, historical baselines, engineered features, or individual predictions — all four stay inside the regional client's own boundary.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3><span class="dot" style="background:#B91C1C"></span>An Honest Note on "Edge"</h3>
+      <p style="font-size:13px; color:var(--text-mid); line-height:1.6;">In this simulation, "edge inference" is served by the <span class="f1-mono">/predict</span> FastAPI endpoint rather than running on physical roadside hardware — the architecture and the privacy boundary are real, but the physical edge deployment described in the Limitations section is future work, not what was benchmarked. State this precisely in Section III-A rather than implying physical edge nodes were used.</p>
+    </div>
+  </div>
+
+  <div class="pagenav">
+    <span></span>
+    <a href="historical_memory.html" class="next">
+      <span class="nav-label">Next — Figure 2</span>
+      <span class="nav-title">Historical Memory Workflow →</span>
+    </a>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

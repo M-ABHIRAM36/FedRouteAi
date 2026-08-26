@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FedRouteAI — Paper Diagrams</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="index.html" class="brand"><span class="brand-mark"></span>FedRouteAI</a>
+    <span class="crumb">Publication Figure Set</span>
+  </div>
+  <div class="topbar-right">
+    <button class="btn" onclick="toggleTheme()">Theme</button>
+    <a class="btn" href="https://ieeexplore.ieee.org" target="_blank" rel="noopener">IEEE Xplore ↗</a>
+  </div>
+</div>
+
+<div class="page">
+  <div class="hero">
+    <h1>FedRouteAI — Figure Set</h1>
+    <p>Twelve publication-quality, self-contained SVG diagrams for "Adaptive Federated Learning for Resilient Edge-Based Traffic Anomaly Detection" — every number verified against the actual codebase, never approximated. Figures 1–10 describe the system that produced the paper's current reported results; Figures 11–12 describe Geo&nbsp;V2, the newer architecture that exists in code but has no trained checkpoint yet. Open discrepancies are flagged directly on the page, not smoothed over.</p>
+    <div class="hero-badges">
+      <span class="databadge verified">Figures 1–10 — current reported system</span>
+      <span class="databadge unverified">Figures 11–12 — Geo V2, not yet benchmarked</span>
+      <span class="databadge unverified">1 formula conflict still open (Fig. 5)</span>
+    </div>
+  </div>
+
+  <div class="section-label">Currently-Reported System — Figures 1–10</div>
+  <div class="fig-grid">
+
+    <a href="architecture.html" class="fig-card">
+      <div class="num" style="background:#2563EB;">1</div>
+      <div class="fc-title">System Architecture</div>
+      <div class="fc-desc">End-to-end pipeline with an explicit privacy boundary — everything that stays local vs. what actually crosses to the server.</div>
+      <div class="fc-tags"><span class="tag">privacy boundary</span><span class="tag">12.96 KB weights</span></div>
+    </a>
+
+    <a href="historical_memory.html" class="fig-card">
+      <div class="num" style="background:#374151;">2</div>
+      <div class="fc-title">Historical Memory Workflow</div>
+      <div class="fc-desc">Zone + time-window baseline retrieval and the speed/density ratio normalization that everything downstream depends on.</div>
+      <div class="fc-tags"><span class="tag">PostgreSQL</span><span class="tag">v_ratio, d_ratio</span></div>
+    </a>
+
+    <a href="feature_engineering.html" class="fig-card">
+      <div class="num" style="background:#374151;">3</div>
+      <div class="fc-title">Feature Engineering Pipeline</div>
+      <div class="fc-desc">The real, verified 10-feature vector — including which 4 fields are always zero-filled by the prediction endpoint.</div>
+      <div class="fc-tags"><span class="tag">x ∈ ℝ¹⁰</span><span class="tag">verified vs. predict.py</span></div>
+    </a>
+
+    <a href="ood_pipeline.html" class="fig-card">
+      <div class="num" style="background:#B91C1C;">4</div>
+      <div class="fc-title">Deployment-Aware Inference</div>
+      <div class="fc-desc">Zero-imputation, the OOD threshold check (using the code's actual OR logic), and classification.</div>
+      <div class="fc-tags"><span class="tag">OOD detection</span><span class="tag">0.2069 ms/sample</span></div>
+    </a>
+
+    <a href="adaptivefedavg.html" class="fig-card">
+      <div class="num" style="background:#2563EB;">5</div>
+      <div class="fc-title">AdaptiveFedAvg Workflow</div>
+      <div class="fc-desc">Client-to-server weight computation, built strictly from the formulas verified in adaptive_fedavg.py.</div>
+      <div class="fc-tags"><span class="tag">w_k = n_k·q_k·ρ_k·g_k</span><span class="tag">⚠ paper mismatch</span></div>
+    </a>
+
+    <a href="communication.html" class="fig-card">
+      <div class="num" style="background:#2563EB;">6</div>
+      <div class="fc-title">Federated Communication</div>
+      <div class="fc-desc">One full round across 8 clients — the sequence diagram behind your bandwidth claim.</div>
+      <div class="fc-tags"><span class="tag">207.36 KB / round</span><span class="tag">30 rounds</span></div>
+    </a>
+
+    <a href="evaluation.html" class="fig-card">
+      <div class="num" style="background:#B91C1C;">7</div>
+      <div class="fc-title">Experimental Pipeline</div>
+      <div class="fc-desc">Dataset → partition → train → evaluate, with the best-checkpoint disclosure your Section IV currently omits.</div>
+      <div class="fc-tags"><span class="tag">30,195 samples</span><span class="tag">8 clients</span></div>
+    </a>
+  </div>
+
+  <div class="section-label">Results — Figures 8–10 (Real Data)</div>
+  <div class="fig-grid">
+    <a href="results.html" class="fig-card">
+      <div class="num" style="background:#374151;">8</div>
+      <div class="fc-title">Dataset Class Distribution</div>
+      <div class="fc-desc">Log-scaled bar chart, plotted directly from Table I's real counts.</div>
+      <div class="fc-tags"><span class="tag">30,195 total</span><span class="tag">76.49% normal</span></div>
+    </a>
+
+    <a href="results.html" class="fig-card">
+      <div class="num" style="background:#2563EB;">9</div>
+      <div class="fc-title">Training Convergence</div>
+      <div class="fc-desc">FedAvg vs. AdaptiveFedAvg macro F1 across all 30 rounds, plotted from federated_history.csv.</div>
+      <div class="fc-tags"><span class="tag">real 31-point series</span><span class="tag">no seed variance yet</span></div>
+    </a>
+
+    <a href="results.html" class="fig-card">
+      <div class="num" style="background:#374151;">10</div>
+      <div class="fc-title">Confusion Matrix</div>
+      <div class="fc-desc">8×8 heatmap from the reported held-out test results, with the largest confusions called out.</div>
+      <div class="fc-tags"><span class="tag">log-scaled color</span><span class="tag">real counts</span></div>
+    </a>
+  </div>
+
+  <div class="section-label">Geo V2 — Next-Generation Architecture (No Trained Results Yet)</div>
+  <div class="fig-grid">
+    <a href="geo_v2_features.html" class="fig-card">
+      <div class="num" style="background:#B91C1C;">11</div>
+      <div class="fc-title">Geo V2 Feature Contract</div>
+      <div class="fc-desc">28 causal features — real neighbor aggregation, cyclical time encoding, and observability signals replacing the old fixed zero-fill.</div>
+      <div class="fc-tags"><span class="tag">x ∈ ℝ²⁸</span><span class="tag">no checkpoint yet</span></div>
+    </a>
+
+    <a href="geo_v2_model.html" class="fig-card">
+      <div class="num" style="background:#B91C1C;">12</div>
+      <div class="fc-title">Geo V2 Model &amp; Robust Training</div>
+      <div class="fc-desc">BatchNorm+dropout MLP, verified hyperparameters, and a hard-gated model selection rule that rejects normal-only collapse.</div>
+      <div class="fc-tags"><span class="tag">4,392 params</span><span class="tag">SELECTION_RULE</span></div>
+    </a>
+  </div>
+
+  <div class="section-label">Using These Files</div>
+  <div class="grid-2">
+    <div class="panel">
+      <h3><span class="dot" style="background:#2563EB"></span>For the IEEE Paper</h3>
+      <ul class="step-list">
+        <li>Open any figure page, click <b>Export SVG</b> — downloads a standalone, self-contained <span class="f3-mono">.svg</span> (styles are embedded, no external stylesheet needed).</li>
+        <li>Convert for LaTeX: <span class="f3-mono">inkscape figure.svg --export-type=pdf</span>, then <span class="f3-mono">\includegraphics</span> as usual — vector, crisp at any print size.</li>
+        <li>Default theme is light/print-safe by design — don't toggle dark mode before exporting for print.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3><span class="dot" style="background:#B91C1C"></span>Open Items Before Submission</h3>
+      <ul class="step-list">
+        <li><b>Resolve Figure 5's formula conflict</b> — confirm which AdaptiveFedAvg implementation actually produced Table IV's numbers.</li>
+        <li><b>Fix the OOD "and"/"or" mismatch</b> in Section III-C's prose (Figure 4).</li>
+        <li><b>Add the best-checkpoint disclosure</b> sentence to Section IV (Figure 7).</li>
+        <li><b>Run 2-3 more seeds</b> before citing convergence "variance" as a robustness claim (Figure 9).</li>
+        <li><b>Decide Geo V2's role</b> in this submission — train and evaluate it first (Figures 11–12), or explicitly scope it to "future work" in the text. Don't describe it as implemented without results, or as not-yet-started when the code and dataset already exist.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
