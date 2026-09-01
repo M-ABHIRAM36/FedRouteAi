@@ -1,0 +1,169 @@
+The data/ directory contains both original synthetic datasets and new real OpenStreetMap (OSM) topology datasets. Different models use specific datasets tailored to their evaluation setup.
+
+1. Data Directory Structure
+Directory Path	Dataset Type	Description & Usage
+data/raw/fedrouteai_dataset_v2/	Federated Regional Dataset (v2)	8 regional client partitions (REGION_01 – REGION_08) containing 21,133 total regional samples.
+data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1/	OSM Real Topology Dataset (Geo V2)	Real OpenStreetMap (Beeramguda, Hyderabad bounding box) network topology dataset with 332,416 test samples and 10 spatial-temporal features.
+data/raw/fedrouteai_dataset/	Legacy Synthetic Dataset (v1)	Original synthetic baseline dataset used in early v1 experiments.
+data/calibration/	Traffic Density Calibration	Benchmark split for low, medium, and high traffic density calibration tests.
+2. Are All Models Using the Same Data?
+No, they use specific datasets matching their model architecture:
+
+AdaptiveFedAvg (Proposed), Standard FedAvg, and Centralized MLP:
+
+Dataset Used: data/raw/fedrouteai_dataset_v2/
+Regional Sample Split (21,133 total):
+REGION_01: 2,852 samples
+REGION_02: 2,612 samples
+REGION_03: 3,483 samples
+REGION_04: 2,443 samples
+REGION_05: 2,464 samples
+REGION_06: 1,762 samples
+REGION_07: 3,521 samples
+REGION_08: 1,996 samples
+Geo V2 Enhanced Model:
+
+Dataset Used: data/geo_v2/fedrouteai_dataset_geo_v2_ml_v1/
+Features & Size: Evaluated on 332,416 real-world samples generated over the real OSM road network topology using a 10-feature spatial contract (vertex IDs, spatial node connections, speed/capacity ratios, temporal sliding windows).
+7:12 PM
+
+Complete Geo V2 Dataset & Model Specification
+1. Sample Counts & Split Distribution
+The Geo V2 Dataset (fedrouteai_dataset_geo_v2_ml_v1) contains 997,248 total rows (~1 Million samples) across three deterministic splits:
+
+Split	Raw Telemetry Rows	Feature State Rows	Simulated Episodes
+Train	124,000	332,416	56 episodes
+Validation	124,000	332,416	56 episodes
+Test	124,000	332,416	56 episodes
+TOTAL	372,000	997,248 (~1M)	168 episodes
+Class Distribution Per Split (e.g. Test Evaluation Set)
+normal: 331,632 samples (99.76% majority)
+congestion: 112 samples
+diversion: 112 samples
+road_damage: 112 samples
+construction: 112 samples
+accident: 112 samples
+flood: 112 samples
+road_block: 112 samples
+Total Test Split: 332,416 samples
+2. Geographic & Network Source
+Network Graph: OpenStreetMap (OSM) real road network topology.
+Bounding Box: Beeramguda, Hyderabad (17.505°N, 78.287°E to 17.530°N, 78.312°E).
+OSM Source File: data/geo_v2/beeramguda_roads.osm.json (Real Overpass API road response preserving all OSM way IDs, nodes, lanes, and one-way directions).
+Vehicle Simulation: 1,000 active vehicles operating at 120-second (2-minute) temporal sliding window ticks.
+3. Feature Contract & Variants
+Geo V2 uses a 10-Feature Spatial Contract:
+
+avg_speed_kmph: Average vehicle speed on road segment
+speed_std_kmph: Standard deviation of speeds
+vehicle_count: Active vehicle count on segment
+occupancy: Segment density fraction
+flow_rate_vph: Vehicles per hour flow rate
+stopped_fraction: Fraction of stationary/stuck vehicles
+hour_sin: Cyclic sine transform of time of day
+hour_cos: Cyclic cosine transform of time of day
+road_type_code: Encoded OSM road classification
+lane_count / max_speed_kmph: Road physical capacity attributes
+Extended Feature Sets:
+
+history_current (22 features): Adds historical baseline speeds, trend deltas, and low-speed persistence.
+history_spatial (29 features): Adds 1st-degree neighbor segment speeds, neighbor vehicle counts, and spatial delta features.
+4. 8 Event Classes & Priority Rules
+Deterministic label hierarchy for resolving concurrent events on the same segment: $$\text{road_block} \succ \text{flood} \succ \text{accident} \succ \text{construction} \succ \text{road_damage} \succ \text{diversion} \succ \text{congestion} \succ \text{normal}$$
+
+5. Geo V2 Model Telemetry Summary
+Evaluation Test Set: 332,416 samples
+Global Accuracy: 83.50% (Event Balanced: 63.97%, Weighted F1: 99.59%)
+Macro F1 Score: 0.6580
+ROC AUC Macro: 0.9785
+Model Payload: 3,240 parameters (12.96 KB payload per round)
+7:26 PM
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- // scripts used in backend for generating the dataset  -->
+1. python backend/data/generate_city_graph.py (300MB)
+
+2. python backend/data/create_regional_topology.py (200MB)
+
+3. python backend/data/generate_traffic_data.py (150MB)
+
+Listed directory scripts
+Listed directory dataset_generator
+Listed directory geo_v2
+
+**Yes! 100% of the scripts and source code required to completely regenerate the `data/` directory from scratch are fully present in the codebase.**
+
+Here is the exact mapping of every dataset in `data/` to its corresponding generator script and command:
+
+---
+
+### 1. Synthetic Regional Datasets (`data/raw/fedrouteai_dataset_v2`)
+Generates the 8-region synthetic road graph dataset (21,133 regional samples) used by `AdaptiveFedAvg`, `Standard FedAvg`, and `Centralized MLP`.
+
+- **Generator Script**: [`scripts/dataset_generator/generate_dataset.py`](file:///c:/Users/DELL/Desktop/Major%20Project/fedrouteai/scripts/dataset_generator/generate_dataset.py)
+- **Supporting Modules**:
+  - `road_network.py`: Builds the 8-region synthetic road graph topology.
+  - `traffic_sim.py`: SUMO-like traffic micro-simulation engine.
+  - `event_signatures.py`: Injects 7 anomaly event signatures (accidents, floods, blockades, etc.).
+  - `geo_utils.py`: Spatial coordinate transformation utilities.
+- **Command to Regenerate**:
+  ```bash
+  python scripts/dataset_generator/generate_dataset.py
+  ```
+
+---
+
+### 2. Geo V2 Real OSM Topology Dataset (`data/geo_v2/`)
+Generates the OpenStreetMap Beeramguda network topology, raw telemetry, and ML dataset (997,248 total rows across Train, Validation, and Test splits).
+
+- **Scripts**:
+  1. **OSM Network Importer**: [`scripts/geo_v2/import_network.py`](file:///c:/Users/DELL/Desktop/Major%20Project/fedrouteai/scripts/geo_v2/import_network.py)  
+     *(Downloads/caches OpenStreetMap Overpass query into `beeramguda_roads.osm.json`)*
+  2. **Raw Telemetry Generator**: [`scripts/geo_v2/generate_dataset.py`](file:///c:/Users/DELL/Desktop/Major%20Project/fedrouteai/scripts/geo_v2/generate_dataset.py)  
+     *(Simulates 1,000 vehicles over the real OSM road network)*
+  3. **ML Dataset Builder**: [`scripts/geo_v2/generate_ml_dataset.py`](file:///c:/Users/DELL/Desktop/Major%20Project/fedrouteai/scripts/geo_v2/generate_ml_dataset.py)  
+     *(Builds `fedrouteai_dataset_geo_v2_ml_v1` with 10-feature spatial contract, 8 event classes, and regional splits)*
+  4. **Fixed Contract Derivation**: [`scripts/geo_v2/derive_fixed_contract_features.py`](file:///c:/Users/DELL/Desktop/Major%20Project/fedrouteai/scripts/geo_v2/derive_fixed_contract_features.py)
+  5. **Dataset Auditor**: [`scripts/geo_v2/audit_ml_dataset.py`](file:///c:/Users/DELL/Desktop/Major%20Project/fedrouteai/scripts/geo_v2/audit_ml_dataset.py)
+- **Command Sequence**:
+  ```bash
+  python scripts/geo_v2/import_network.py
+  python scripts/geo_v2/generate_dataset.py
+  python scripts/geo_v2/generate_ml_dataset.py
+  python scripts/geo_v2/audit_ml_dataset.py
+  ```
+
+---
+
+### 3. Traffic Density Calibration Data (`data/calibration/`)
+Generates the traffic density calibration benchmarks for low, medium, and high traffic density states.
+
+- **Generator Script**: [`scripts/calibrate_event_density.py`](file:///c:/Users/DELL/Desktop/Major%20Project/fedrouteai/scripts/calibrate_event_density.py)
+- **Command to Regenerate**:
+  ```bash
+  python scripts/calibrate_event_density.py
+  ```
+
+---
+
+### 4. Database Seeding
+Populates PostgreSQL/SQLite database tables with segments, regions, active events, and historical GPS pings from the generated dataset.
+
+- **Seeder Script**: [`scripts/seed_db.py`](file:///c:/Users/DELL/Desktop/Major%20Project/fedrouteai/scripts/seed_db.py)
+- **Command to Seed**:
+  ```bash
+  python scripts/seed_db.py
+  ```
