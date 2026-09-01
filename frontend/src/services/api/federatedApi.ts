@@ -1,6 +1,6 @@
 import axios from 'axios';
 import Papa from 'papaparse';
-import { ModelId } from './modelsApi';
+import { type ModelId } from './modelsApi';
 
 export interface AdaptiveWeight {
   round: number;

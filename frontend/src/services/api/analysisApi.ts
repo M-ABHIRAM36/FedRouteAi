@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ModelId } from './modelsApi';
+import { type ModelId } from './modelsApi';
 
 export interface FigureData {
   src: string;
