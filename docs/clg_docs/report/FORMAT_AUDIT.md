@@ -18,9 +18,9 @@ report and `B.Tech Project Report Format26.docx` as formatting references.
 | Intentional placeholders | 6 clearly labeled screenshot reservations |
 | Front matter | Title, certificate, declaration, acknowledgement, abstract, contents, lists, and abbreviations |
 | Page size and margins | A4; left 3.25 cm; right/top/bottom 2.5 cm |
-| Word-rendered page count | 61 physical pages in current render |
+| Word-rendered page count | 54 physical pages in current render |
 | Counted typed matter | 38 displayed Arabic pages from Chapter 1 content through References |
-| Chapter subsection inventory | 10, 18, 17, 17, 30, 21, 16, and 10 sections in Chapters 1-8 |
+| Chapter subsection inventory | 10, 13, 14, 16, 18, 15, 12, and 10 meaningful sections in Chapters 1-8 |
 | Combined range headings | None detected |
 | Technical figure captions | 16 detected |
 | Application screenshot captions | 6 detected separately |
@@ -42,7 +42,7 @@ report and `B.Tech Project Report Format26.docx` as formatting references.
 
 The package audit inspected the generated DOCX after Word field refresh. Applied
 report content uses only black text, white table fill, and black borders. Technical
-diagrams use controlled color where required for architecture or result readability.
+diagrams use grayscale fills and black line work for print-safe readability.
 
 ## Content Integrity
 
@@ -63,7 +63,7 @@ diagrams use controlled color where required for architecture or result readabil
 - Later chapter-content sections continue Arabic numbering without hard-coded page estimates.
 - Footer fields are centered, black, and Times New Roman.
 
-Microsoft Word automation rendered the current package at 61 physical pages. The
+Microsoft Word automation rendered the current package at 54 physical pages. The
 abstract begins at displayed Roman `v`; chapter separators are physically present
 but have no visible page number. Chapter 1 content begins at Arabic `1` and the
 sequence continues without gaps through Arabic `38`. The eight separator pages are
@@ -71,7 +71,7 @@ the only intentionally sparse pages.
 
 ## Final Review
 
-The generated package passes the current structural, margin, typography, color,
+The generated package passes the current structural, margin, typography, grayscale,
 and Word-rendering checks. Six live-project screenshot positions remain reserved
 because actual screenshots were not available during generation. They are clearly
 marked and must be replaced only with reviewed screenshots from the running project.

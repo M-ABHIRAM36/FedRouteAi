@@ -68,7 +68,7 @@ Editable SVG masters and PNG/PDF derivatives are stored under `docs/clg_docs/fig
 | A2.1 | Evidence register |
 | A5.1 | Database and network evidence |
 
-The generated DOCX contains 12 table objects; some planned table topics are combined into larger tables in the final document to avoid unnecessary fragmentation.
+The generated DOCX contains 9 table objects; related evidence is consolidated to avoid unnecessary fragmentation.
 
 ## Evidence Boundaries
 
@@ -83,7 +83,7 @@ The generated DOCX contains 12 table objects; some planned table topics are comb
 - Every chapter uses a dedicated centered separator page.
 - Chapter content begins on the page following its separator.
 - Normal technical content is grouped under broad headings in approximately three substantial paragraphs per page.
-- Technical figures are interleaved with related prose; six UI/demo screenshot spaces are explicitly reserved.
+- Technical figures are interleaved with related prose; six compact UI/demo screenshot register entries are indexed separately.
 - Front matter uses lower-case Roman numbering.
 - Chapter 1 restarts page numbering with Arabic numeral 1.
 - Page numbers are centered at the bottom.
