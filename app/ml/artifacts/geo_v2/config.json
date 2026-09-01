@@ -1,0 +1,12 @@
+{
+  "architecture": "EventClassifierMLP_GeoV2",
+  "input_dim": 10,
+  "num_classes": 8,
+  "clients": 8,
+  "rounds": 50,
+  "local_epochs": 2,
+  "optimizer": "AdamW",
+  "learning_rate": 0.001,
+  "batch_size": 256,
+  "spatial_contract": "OSM_Topology_V2"
+}

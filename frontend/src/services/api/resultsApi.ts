@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { ModelId } from './modelsApi';
 
 export interface ArtifactFile {
   title: string;
@@ -20,17 +21,24 @@ const KNOWN_ARTIFACTS = [
   { title: 'ROC AUC Scores', filename: 'roc_auc.json' },
 ];
 
-export const fetchAvailableArtifacts = async (): Promise<ArtifactFile[]> => {
+export const fetchAvailableArtifacts = async (modelId: ModelId = 'adaptive_federated'): Promise<ArtifactFile[]> => {
   const available: ArtifactFile[] = [];
 
   await Promise.all(
     KNOWN_ARTIFACTS.map(async (artifact) => {
-      const url = `${ARTIFACTS_BASE}/${artifact.filename}`;
+      const url = `${ARTIFACTS_BASE}/${modelId}/${artifact.filename}`;
       try {
         await axios.head(url);
         available.push({ ...artifact, url });
       } catch (err) {
-        // Artifact not found, do not include
+        // Fallback check top level
+        try {
+          const fallbackUrl = `${ARTIFACTS_BASE}/adaptive_federated/${artifact.filename}`;
+          await axios.head(fallbackUrl);
+          available.push({ ...artifact, url: fallbackUrl });
+        } catch (e) {
+          // Artifact not found
+        }
       }
     })
   );
@@ -39,7 +47,6 @@ export const fetchAvailableArtifacts = async (): Promise<ArtifactFile[]> => {
     throw new Error('No artifacts found. Ensure backend is running and training is complete.');
   }
 
-  // Preserve ordering based on known list
   return available.sort((a, b) => {
     const idxA = KNOWN_ARTIFACTS.findIndex(c => c.filename === a.filename);
     const idxB = KNOWN_ARTIFACTS.findIndex(c => c.filename === b.filename);

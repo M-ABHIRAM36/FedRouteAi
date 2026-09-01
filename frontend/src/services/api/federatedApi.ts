@@ -1,5 +1,6 @@
 import axios from 'axios';
 import Papa from 'papaparse';
+import { ModelId } from './modelsApi';
 
 export interface AdaptiveWeight {
   round: number;
@@ -36,8 +37,9 @@ export interface FederatedSummary {
   latestClients: ClientMetric[];
 }
 
-export const fetchFederatedSummary = async (): Promise<FederatedSummary> => {
-  const response = await axios.get('http://localhost:8000/artifacts/adaptive_weights.csv');
+export const fetchFederatedSummary = async (modelId: ModelId = 'adaptive_federated'): Promise<FederatedSummary> => {
+  const targetFolder = modelId === 'geo_v2' ? 'geo_v2' : 'adaptive_federated';
+  const response = await axios.get(`http://localhost:8000/artifacts/${targetFolder}/adaptive_weights.csv`);
   
   return new Promise((resolve, reject) => {
     Papa.parse<AdaptiveWeight>(response.data, {
@@ -51,7 +53,6 @@ export const fetchFederatedSummary = async (): Promise<FederatedSummary> => {
           return;
         }
 
-        // 1. Group by Round for average w_k, q_k, rho_k (Chart Data)
         const roundMap = new Map<number, { w_k: number, q_k: number, rho_k: number, count: number }>();
         
         data.forEach(row => {
@@ -60,29 +61,28 @@ export const fetchFederatedSummary = async (): Promise<FederatedSummary> => {
             roundMap.set(r, { w_k: 0, q_k: 0, rho_k: 0, count: 0 });
           }
           const curr = roundMap.get(r)!;
-          curr.w_k += row.normalized_weight;
-          curr.q_k += row.quality;
-          curr.rho_k += row.ema_f1;
+          curr.w_k += row.normalized_weight || 0;
+          curr.q_k += row.quality || 0;
+          curr.rho_k += row.ema_f1 || 0;
           curr.count += 1;
         });
 
         const chartData: ChartDataPoint[] = Array.from(roundMap.entries()).map(([round, stats]) => ({
           Round: round,
-          w_k: stats.w_k / stats.count,
-          q_k: stats.q_k / stats.count,
-          rho_k: stats.rho_k / stats.count,
+          w_k: stats.w_k / (stats.count || 1),
+          q_k: stats.q_k / (stats.count || 1),
+          rho_k: stats.rho_k / (stats.count || 1),
         })).sort((a, b) => a.Round - b.Round);
 
-        // 2. Latest Client Status
-        const maxRound = Math.max(...data.map(d => d.round));
+        const maxRound = Math.max(...data.map(d => d.round || 0));
         const latestData = data.filter(d => d.round === maxRound);
         
         const latestClients: ClientMetric[] = latestData.map(d => ({
-          region_id: d.region_id,
-          quality: d.quality,
-          ema_f1: d.ema_f1,
-          weight: d.normalized_weight,
-          samples: d.dataset_size,
+          region_id: String(d.region_id),
+          quality: d.quality || 0,
+          ema_f1: d.ema_f1 || 0,
+          weight: d.normalized_weight || 0,
+          samples: d.dataset_size || 0,
           gatePassed: d.gate === 1.0,
         })).sort((a, b) => a.region_id.localeCompare(b.region_id));
 

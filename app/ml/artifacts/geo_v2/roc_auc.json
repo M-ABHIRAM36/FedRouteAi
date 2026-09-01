@@ -1,0 +1,14 @@
+{
+  "macro": 0.9785,
+  "micro": 0.9912,
+  "per_class": {
+    "normal": 0.9995,
+    "congestion": 0.975,
+    "construction": 0.968,
+    "flood": 0.982,
+    "road_block": 0.971,
+    "road_damage": 0.965,
+    "accident": 0.981,
+    "diversion": 0.989
+  }
+}

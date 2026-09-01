@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import os
 
 from app.core.config import settings
@@ -22,8 +23,6 @@ async def lifespan(app: FastAPI):
     try:
         GRAPH_CACHE.refresh(db)
     except Exception:
-        # DB not up yet / not seeded yet — don't crash the app for it,
-        # the graph will lazily build on the first request that needs it
         logger.warning("Could not warm graph cache at startup (DB not ready?) — will build on first use.")
     finally:
         db.close()
@@ -34,19 +33,26 @@ app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # TODO: restrict before deploying anywhere real
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
-import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-artifacts_dir = os.path.join(BASE_DIR, "app", "ml", "artifacts", "adaptive_federated")
+artifacts_root = os.path.join(BASE_DIR, "app", "ml", "artifacts")
 
-if os.path.exists(artifacts_dir):
-    app.mount("/artifacts", StaticFiles(directory=artifacts_dir), name="artifacts")
+if os.path.exists(artifacts_root):
+    app.mount("/artifacts", StaticFiles(directory=artifacts_root), name="artifacts")
+
+@app.get("/artifacts/{filename}")
+def serve_root_artifact_fallback(filename: str):
+    # Fallback for top-level artifact requests pointing to adaptive_federated
+    fallback_path = os.path.join(artifacts_root, "adaptive_federated", filename)
+    if os.path.exists(fallback_path):
+        return FileResponse(fallback_path)
+    return {"error": f"Artifact {filename} not found"}
 
 @app.get("/")
 def root():

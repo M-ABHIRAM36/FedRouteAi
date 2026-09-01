@@ -1,0 +1,9 @@
+actual,normal,congestion,diversion,road_damage,construction,accident,flood,road_block
+normal,330612,46,116,288,104,246,163,57
+congestion,70,42,0,0,0,0,0,0
+diversion,112,0,0,0,0,0,0,0
+road_damage,68,6,0,36,0,0,2,0
+construction,100,0,0,0,12,0,0,0
+accident,50,0,6,0,0,52,2,2
+flood,58,0,0,0,0,15,39,0
+road_block,56,0,14,0,0,0,0,42

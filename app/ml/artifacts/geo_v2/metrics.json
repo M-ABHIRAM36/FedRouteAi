@@ -1,0 +1,12 @@
+{
+  "model": "GeoV2_AdaptiveFedAvg",
+  "round": 50,
+  "clients": 8,
+  "accuracy": 0.835,
+  "macro_f1": 0.658,
+  "roc_auc_macro": 0.9785,
+  "weighted_f1": 0.9958,
+  "n_test": 332416,
+  "payload_kb": 12.96,
+  "parameters": 3240
+}
