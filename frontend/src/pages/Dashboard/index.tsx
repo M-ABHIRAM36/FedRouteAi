@@ -31,7 +31,7 @@ const Dashboard: React.FC = () => {
     <PageContainer>
       <PageHeader 
         title="Research Overview" 
-        description="FedRouteAI Complete Lifecycle & Multi-Model Telemetry" 
+        description="FedRouteAI Complete Lifecycle and Multi-Model Telemetry" 
       />
 
       {/* 1. Animated Research Workflow */}
@@ -52,15 +52,22 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {ALL_MODELS.map(m => (
-              <button
-                key={m.id}
-                onClick={() => setSelectedModelId(m.id)}
-                className={px-3 py-1.5 rounded-md text-xs font-semibold transition-all border }
-              >
-                {m.shortLabel}
-              </button>
-            ))}
+            {ALL_MODELS.map(m => {
+              const isSelected = selectedModelId === m.id;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => setSelectedModelId(m.id)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all border ${
+                    isSelected
+                      ? 'bg-primary text-white border-primary shadow-sm'
+                      : 'bg-surfaceHover text-textSecondary border-border hover:text-white hover:border-textSecondary'
+                  }`}
+                >
+                  {m.shortLabel}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -102,7 +109,7 @@ const Dashboard: React.FC = () => {
         ) : null}
       </div>
 
-      {/* 4. Lower Section: Comparison, Events, Map Placeholder (Map remains untouched) */}
+      {/* 4. Lower Section: Comparison, Events, Map Placeholder */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Left Column: Model Comparison */}
@@ -134,7 +141,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: Live Traffic Map (Untouched Map Placeholder) */}
+        {/* Right Column: Live Traffic Map */}
         <div className="lg:col-span-2 bg-surface border border-border rounded-lg p-5 flex flex-col">
           <h3 className="text-sm font-medium text-textSecondary mb-4">Live Traffic Preview</h3>
           <div className="flex-1 bg-surfaceHover rounded-md border border-border flex items-center justify-center min-h-[300px]">

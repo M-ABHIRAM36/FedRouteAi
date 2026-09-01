@@ -93,9 +93,9 @@ const ARTIFACTS_BASE = 'http://localhost:8000/artifacts';
 
 export const fetchModelMetrics = async (modelId: ModelId) => {
   const model = ALL_MODELS.find(m => m.id === modelId);
-  if (!model) throw new Error(Unknown model: );
+  if (!model) throw new Error(`Unknown model: ${modelId}`);
   try {
-    const url = ${ARTIFACTS_BASE}//metrics.json;
+    const url = `${ARTIFACTS_BASE}/${model.artifactPath}/metrics.json`;
     const response = await axios.get(url);
     return { ...model.metrics, ...response.data };
   } catch (err) {
