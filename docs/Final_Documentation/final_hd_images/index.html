@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FedRouteAI — HD Figures (Chapters 4–7)</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <h1>FedRouteAI — High-Resolution Figures</h1>
+    <p>Clean vector (SVG) redraws of the report diagrams. Same figure numbers, names and count as the document. Export any figure as a crisp PNG or SVG and drop it into the Word report.</p>
+  </div>
+  <div class="tools">
+    <label class="tool-check"><input type="checkbox" id="toggleBg" checked /> White background</label>
+    <button id="dlAllPng" class="btn">Download all PNG</button>
+    <button id="dlAllSvg" class="btn ghost">Download all SVG</button>
+  </div>
+</header>
+
+<main id="grid" class="grid" aria-live="polite"></main>
+
+<footer class="foot">
+  <p>Tip: PNG export is rendered at 2.5&times; scale for print sharpness. For infinitely scalable quality use the SVG download. Figures are vector schematics generated from the real project structure — the app screenshots (live map, moving vehicles, demos) are shown as clean schematic mockups, and result figures use the values reported in the document.</p>
+</footer>
+
+<script src="app.js" defer></script>
+</body>
+</html>

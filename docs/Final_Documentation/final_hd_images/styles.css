@@ -1,0 +1,57 @@
+:root{
+  --ink:#1f2937;
+  --muted:#5b6472;
+  --line:#94a3b8;
+  --bg:#f4f6fb;
+  --card:#ffffff;
+  --accent:#2563eb;
+  --accent-2:#0d9488;
+  --shadow:0 6px 22px rgba(15,23,42,.08);
+  --radius:14px;
+  font-family:"Segoe UI","Inter",system-ui,Arial,sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);}
+.topbar{
+  display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between;
+  padding:22px 30px;background:linear-gradient(120deg,#0f172a,#1e3a8a);color:#fff;
+}
+.brand h1{margin:0 0 6px;font-size:22px;font-weight:700;letter-spacing:.2px;}
+.brand p{margin:0;max-width:760px;font-size:13.5px;line-height:1.5;color:#cbd5e1;}
+.tools{display:flex;gap:10px;align-items:center;}
+.tool-check{font-size:13px;color:#e2e8f0;display:flex;align-items:center;gap:6px;cursor:pointer;}
+.btn{
+  border:none;border-radius:9px;padding:9px 15px;font-size:13px;font-weight:600;cursor:pointer;
+  background:#fff;color:#0f172a;transition:transform .06s ease, box-shadow .15s ease;
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.18);}
+.btn.ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.5);}
+.btn.small{padding:6px 11px;font-size:12px;}
+
+.grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(520px,1fr));
+  gap:26px;padding:30px;max-width:1500px;margin:0 auto;
+}
+.card{
+  background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:18px 18px 20px;display:flex;flex-direction:column;gap:12px;border:1px solid #e6eaf2;
+}
+.fig-holder{
+  background:#fff;border:1px solid #eef1f6;border-radius:10px;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;padding:8px;
+}
+.fig-holder.dark{background:#0b1220;}
+.fig-holder svg{width:100%;height:auto;display:block;}
+.cap{display:flex;flex-direction:column;gap:5px;}
+.cap .fnum{font-size:15px;font-weight:700;color:var(--ink);}
+.cap .fnum span{color:var(--accent);}
+.cap .fdesc{margin:0;font-size:13px;line-height:1.55;color:var(--muted);}
+.card-actions{display:flex;gap:8px;margin-top:2px;}
+
+.foot{padding:10px 30px 40px;max-width:1500px;margin:0 auto;color:var(--muted);font-size:12.5px;line-height:1.5;}
+
+@media print{
+  .topbar,.tools,.card-actions,.foot{display:none;}
+  .grid{grid-template-columns:1fr;gap:0;}
+  .card{box-shadow:none;border:none;page-break-inside:avoid;}
+}
