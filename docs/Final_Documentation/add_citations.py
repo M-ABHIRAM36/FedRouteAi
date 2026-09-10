@@ -1,32 +1,42 @@
-"""Add inline citations + figure/table cross-references INTO the DOCX itself.
+"""Add CLICKABLE, blue citations + figure/table cross-references INTO the DOCX.
 
 Works on a COPY (docs/Final_Documentation/with_citations/) so the original file
-is never touched. Nothing about structure, justification, fonts, spacing, images,
-tables, or the reference list is changed -- we only:
+is never touched. Front matter (title, certificate, declaration, acknowledgement,
+abstract, index, lists -- the first ~5-6 pages) is NOT edited: insertion starts
+only at CHAPTER-1 and stops at REFERENCES.
 
-  1. insert numeric citation markers [n] after key technical terms in the
-     chapter body text (linked to the existing [1]-[34] reference list), and
-  2. append short in-text references to every figure and table inside the most
-     relevant section paragraph.
+What it adds (nothing else changes -- structure, justification, fonts, spacing,
+images, tables and the reference list are all preserved):
 
-Citations are inserted by editing the text of the *single run* that already
-contains the term, so each run keeps its exact formatting.
+  1. Inline numeric citations [n] after key terms in the chapter body, each a
+     real internal hyperlink (blue + underline) that jumps to reference [n].
+  2. In-text references to every figure/table, with "Figure X.Y" / "Table X.Y"
+     as blue hyperlinks that jump to that figure/table.
+  3. Bookmarks on every reference-list entry and every figure/table caption so
+     the hyperlinks have somewhere to land.
+
+Ctrl+Click in Word follows a link (Word's default). The links are blue.
 """
 from __future__ import annotations
 
+import copy
 import os
 import re
 import shutil
+from collections import Counter
 
 from docx import Document
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "FEDROUTEAI DOC Final v1.00.docx")
 OUTDIR = os.path.join(HERE, "with_citations")
 OUT = os.path.join(OUTDIR, "FEDROUTEAI DOC Final v1.00 (citations).docx")
 
-# term  ->  citation string (numbers match the existing REFERENCES list order).
-# Applied at most once per citation-group per chapter, so cites spread naturally.
+XMLSPACE = "{http://www.w3.org/XML/1998/namespace}space"
+BLUE = "0000FF"
+
 CITE_RULES = [
     (r"Federated Averaging|\bFedAvg\b", "[17]"),
     (r"\bAdaptive FedAvg\b", "[26]"),
@@ -54,7 +64,6 @@ CITE_RULES = [
     (r"reproducible academic prototype|academic prototype|end-to-end", "[34]"),
 ]
 
-# figure X.Y  ->  section whose first body paragraph gets the in-text reference
 FIG_SECTION = {
     "4.1": "4.1", "4.2": "4.2", "4.3": "4.2", "4.4": "4.4", "4.5": "4.3",
     "4.6": "4.4", "4.7": "4.5", "4.8": "4.5", "4.9": "4.6", "4.10": "4.6",
@@ -71,13 +80,117 @@ RE_CHAPTER = re.compile(r"^CHAPTER[-\s]*(\d+)\s*$", re.I)
 RE_HEADING = re.compile(r"^(\d+)\.(\d+)\s+\S")
 RE_FIGCAP = re.compile(r"^Figure\s+(\d+)\.(\d+)\s*:?\s*(.*)$", re.I)
 RE_TABCAP = re.compile(r"^Table\s+(\d+)\.(\d+)\s*:?\s*(.*)$", re.I)
+RE_REF = re.compile(r"^\[(\d+)\]")
 
 
-def is_heading(text: str) -> bool:
+# --------------------------------------------------------------------------
+# low-level OXML helpers
+# --------------------------------------------------------------------------
+def clone_rpr(run):
+    if run is None:
+        return None
+    rpr = run._r.find(qn("w:rPr"))
+    return copy.deepcopy(rpr) if rpr is not None else None
+
+
+def text_run(text, rpr_clone):
+    r = OxmlElement("w:r")
+    if rpr_clone is not None:
+        r.append(copy.deepcopy(rpr_clone))
+    t = OxmlElement("w:t")
+    t.set(XMLSPACE, "preserve")
+    t.text = text
+    r.append(t)
+    return r
+
+
+def hyperlink(anchor, text, font_name, sz_half):
+    """Internal hyperlink (w:anchor) -> blue, underlined run. Schema-ordered rPr."""
+    h = OxmlElement("w:hyperlink")
+    h.set(qn("w:anchor"), anchor)
+    h.set(qn("w:history"), "1")
+    r = OxmlElement("w:r")
+    rpr = OxmlElement("w:rPr")
+    rstyle = OxmlElement("w:rStyle")
+    rstyle.set(qn("w:val"), "Hyperlink")
+    rpr.append(rstyle)
+    if font_name:
+        rf = OxmlElement("w:rFonts")
+        rf.set(qn("w:ascii"), font_name)
+        rf.set(qn("w:hAnsi"), font_name)
+        rpr.append(rf)
+    color = OxmlElement("w:color")
+    color.set(qn("w:val"), BLUE)
+    rpr.append(color)
+    if sz_half:
+        sz = OxmlElement("w:sz")
+        sz.set(qn("w:val"), str(sz_half))
+        rpr.append(sz)
+    u = OxmlElement("w:u")
+    u.set(qn("w:val"), "single")
+    rpr.append(u)
+    r.append(rpr)
+    t = OxmlElement("w:t")
+    t.set(XMLSPACE, "preserve")
+    t.text = text
+    r.append(t)
+    h.append(r)
+    return h
+
+
+def set_r_text(r_el, text):
+    for t in r_el.findall(qn("w:t")):
+        r_el.remove(t)
+    t = OxmlElement("w:t")
+    t.set(XMLSPACE, "preserve")
+    t.text = text
+    r_el.append(t)
+
+
+def insert_after_match(run, end_offset, nodes):
+    """Split `run` at end_offset, drop `nodes` in the gap, keep the tail run."""
+    r = run._r
+    full = run.text
+    before, after = full[:end_offset], full[end_offset:]
+    r_after = copy.deepcopy(r)
+    run.text = before
+    set_r_text(r_after, after)
+    parent = r.getparent()
+    idx = list(parent).index(r)
+    for i, el in enumerate([*nodes, r_after]):
+        parent.insert(idx + 1 + i, el)
+
+
+def add_bookmark(paragraph, name, bmid):
+    el = paragraph._p
+    start = OxmlElement("w:bookmarkStart")
+    start.set(qn("w:id"), str(bmid))
+    start.set(qn("w:name"), name)
+    end = OxmlElement("w:bookmarkEnd")
+    end.set(qn("w:id"), str(bmid))
+    pPr = el.find(qn("w:pPr"))
+    if pPr is not None:
+        pPr.addnext(start)
+    else:
+        el.insert(0, start)
+    el.append(end)
+
+
+def last_text_run(p):
+    runs = [r for r in p.runs if r.text and r.text.strip()]
+    if runs:
+        return runs[-1]
+    return p.runs[-1] if p.runs else None
+
+
+# --------------------------------------------------------------------------
+# classification
+# --------------------------------------------------------------------------
+def is_heading(text):
     return bool(RE_HEADING.match(text)) and len(text) < 70 and not text.endswith(".")
 
 
-def is_body(text: str) -> bool:
+def is_body(text):
     if len(text) < 120:
         return False
     if text.startswith("[") or text.startswith("Figure ") or text.startswith("Table "):
@@ -87,58 +200,59 @@ def is_body(text: str) -> bool:
     return True
 
 
-def cite_paragraph(p, used: set) -> int:
-    """Insert [n] after the first in-run match of each unused rule. Returns count."""
-    n = 0
-    for pattern, cite in CITE_RULES:
-        if cite in used:
-            continue
-        for r in p.runs:
-            if not r.text:
-                continue
-            m = re.search(pattern, r.text, flags=re.I)
-            if m:
-                e = m.end()
-                r.text = r.text[:e] + " " + cite + r.text[e:]
-                used.add(cite)
-                n += 1
-                break
-    return n
+def detect_font(doc):
+    names, szs = Counter(), Counter()
+    for p in doc.paragraphs:
+        if len(p.text.strip()) > 150:
+            for r in p.runs:
+                if r.text and r.font.name:
+                    names[r.font.name] += 1
+                if r.text and r.font.size:
+                    szs[r.font.size.pt] += 1
+    name = names.most_common(1)[0][0] if names else "Times New Roman"
+    pt = szs.most_common(1)[0][0] if szs else 12.0
+    return name, int(round(pt * 2))
 
 
-def append_sentence(p, text: str) -> None:
-    """Append a sentence to a paragraph, inheriting the last run's formatting."""
-    runs = [r for r in p.runs if r.text and r.text.strip()]
-    if runs:
-        runs[-1].text = runs[-1].text.rstrip() + " " + text
-    else:
-        p.add_run(" " + text)
-
-
-def main() -> None:
+# --------------------------------------------------------------------------
+def main():
     os.makedirs(OUTDIR, exist_ok=True)
     shutil.copyfile(SRC, OUT)
-
     doc = Document(OUT)
     paras = doc.paragraphs
+    font, sz = detect_font(doc)
 
-    # ---- pass 1: citations + capture first body paragraph per section ----
-    section_body: dict[str, object] = {}
-    fig_desc: dict[str, str] = {}
-    tab_desc: dict[str, str] = {}
+    bmid = 1000
+    # ---- pass A: bookmarks on references + figure/table captions ----
+    ref_bm = fig_bm = tab_bm = 0
+    for p in paras:
+        t = p.text.strip()
+        mref = RE_REF.match(t)
+        if mref:
+            add_bookmark(p, "ref" + mref.group(1), bmid); bmid += 1; ref_bm += 1
+            continue
+        mfig = RE_FIGCAP.match(t)
+        if mfig:
+            add_bookmark(p, f"figure{mfig.group(1)}_{mfig.group(2)}", bmid); bmid += 1; fig_bm += 1
+            continue
+        mtab = RE_TABCAP.match(t)
+        if mtab:
+            add_bookmark(p, f"table{mtab.group(1)}_{mtab.group(2)}", bmid); bmid += 1; tab_bm += 1
 
+    # ---- pass B: citations + capture first body paragraph per section ----
+    section_body = {}
+    fig_desc, tab_desc = {}, {}
     started = False
     current_section = None
-    used: set = set()
-    cite_count = 0
-    per_chapter: dict[str, int] = {}
+    used = set()
     chap = "0"
+    cite_count = 0
+    per_chapter = {}
 
     for p in paras:
         text = p.text.strip()
         if not text:
             continue
-
         mchap = RE_CHAPTER.match(text)
         if mchap:
             started = True
@@ -171,37 +285,73 @@ def main() -> None:
         if is_body(text):
             if current_section and current_section not in section_body:
                 section_body[current_section] = p
-            added = cite_paragraph(p, used)
-            cite_count += added
-            per_chapter[chap] = per_chapter.get(chap, 0) + added
+            for pattern, cite in CITE_RULES:
+                if cite in used:
+                    continue
+                for run in list(p.runs):
+                    if not run.text:
+                        continue
+                    m = re.search(pattern, run.text, flags=re.I)
+                    if m:
+                        # extend to the end of the whole word so we never split it
+                        # (e.g. "trajector"->"trajectory", "scalab"->"scalability",
+                        #  "MLP"->"MLP-based", "Dijkstra"->"Dijkstra's")
+                        rt = run.text
+                        e = m.end()
+                        while e < len(rt):
+                            c = rt[e]
+                            if c.isalpha() or c in "'\u2019":
+                                e += 1
+                            elif c == "-" and e + 1 < len(rt) and rt[e + 1].isalpha():
+                                e += 1
+                            else:
+                                break
+                        nums = re.findall(r"\d+", cite)
+                        rpr = clone_rpr(run)
+                        nodes = [text_run(" ", rpr)]
+                        for i, num in enumerate(nums):
+                            if i:
+                                nodes.append(text_run(", ", rpr))
+                            nodes.append(hyperlink("ref" + num, "[" + num + "]", font, sz))
+                        insert_after_match(run, e, nodes)
+                        used.add(cite)
+                        cite_count += 1
+                        per_chapter[chap] += 1
+                        break
 
-    # ---- pass 2: figure references into relevant section paragraphs ----
+    # ---- pass C: clickable figure references ----
     fig_refs = 0
     for num in sorted(FIG_SECTION, key=lambda s: tuple(int(x) for x in s.split("."))):
-        sec = FIG_SECTION[num]
-        p = section_body.get(sec)
+        p = section_body.get(FIG_SECTION[num])
         desc = fig_desc.get(num, "")
         if p is not None and desc:
-            append_sentence(p, f"The {desc} is shown in Figure {num}.")
+            rpr = clone_rpr(last_text_run(p))
+            p._p.append(text_run(f" The {desc} is shown in ", rpr))
+            p._p.append(hyperlink(f"figure{num.replace('.', '_')}", f"Figure {num}", font, sz))
+            p._p.append(text_run(".", rpr))
             fig_refs += 1
 
-    # ---- pass 3: table references into relevant section paragraphs ----
+    # ---- pass D: clickable table references ----
     tab_refs = 0
     for num in sorted(TAB_SECTION, key=lambda s: tuple(int(x) for x in s.split("."))):
-        sec = TAB_SECTION[num]
-        p = section_body.get(sec)
+        p = section_body.get(TAB_SECTION[num])
         desc = tab_desc.get(num, "")
         if p is not None and desc:
-            append_sentence(p, f"Table {num} presents the {desc}.")
+            rpr = clone_rpr(last_text_run(p))
+            p._p.append(text_run(" ", rpr))
+            p._p.append(hyperlink(f"table{num.replace('.', '_')}", f"Table {num}", font, sz))
+            p._p.append(text_run(f" presents the {desc}.", rpr))
             tab_refs += 1
 
     doc.save(OUT)
 
     print(f"saved: {OUT}")
-    print(f"citation markers inserted: {cite_count}")
-    print(f"  per chapter: " + ", ".join(f"ch{k}={v}" for k, v in sorted(per_chapter.items())))
-    print(f"figure references added: {fig_refs}/22")
-    print(f"table references added:  {tab_refs}/8")
+    print(f"body font detected: {font} {sz//2}pt")
+    print(f"bookmarks -> references={ref_bm} figures={fig_bm} tables={tab_bm}")
+    print(f"citation hyperlinks inserted: {cite_count}")
+    print("  per chapter: " + ", ".join(f"ch{k}={v}" for k, v in sorted(per_chapter.items())))
+    print(f"figure hyperlinks added: {fig_refs}/22")
+    print(f"table hyperlinks added:  {tab_refs}/8")
 
 
 if __name__ == "__main__":
