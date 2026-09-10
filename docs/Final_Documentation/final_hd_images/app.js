@@ -134,7 +134,7 @@ const FIGS = [
   b+=hflow(st2,120,392,190,66,20,{});
   b+=`<path d="M 867 338 V 365 H 215 V 392" fill="none" stroke="${C.line}" stroke-width="2" marker-end="url(#arr)"/>`;
   b+=arrow(875,158,875,214,{color:C.purp});
-  b+=T(892,192,"frozen model → runtime",{anchor:"start",size:10.5,fill:C.purp});
+  b+=T(866,186,"frozen model",{anchor:"end",size:10.5,fill:C.purp});
   b+=cyl(360,478,260,66,["OSM / PostGIS network · 2,968 segments"]);
   b+=arrow(300,458,360,500,{});
   return {w:W,h:H,body:b};}},
@@ -160,7 +160,7 @@ const FIGS = [
   b+=`<line x1="750" y1="104" x2="750" y2="470" stroke="#c3ccd8" stroke-width="2"/>`;
   const steps=[[150,"Broadcast global weights",true],[230,"Load local regional data",false,"self"],[300,"Local training (2 epochs, class-weighted + FedProx)",false,"self"],[370,"Return model update + metrics",false],[440,"AdaptiveFedAvg: re-weight & aggregate",true,"selfL"]];
   steps.forEach(s=>{const y=s[0];
-    if(s[3]==="self"){b+=`<path d="M 750 ${y} h 120 v 26 h -120" fill="none" stroke="${C.teal}" stroke-width="2" marker-end="url(#arr)"/>`;b+=T(755,y-11,s[1],{anchor:"start",size:11.5,fill:C.ink});}
+    if(s[3]==="self"){b+=`<path d="M 750 ${y} h -120 v 26 h 120" fill="none" stroke="${C.teal}" stroke-width="2" marker-end="url(#arr)"/>`;b+=T(745,y-11,s[1],{anchor:"end",size:11.5,fill:C.ink});}
     else if(s[3]==="selfL"){b+=`<path d="M 260 ${y} h -120 v 26 h 120" fill="none" stroke="${C.purp}" stroke-width="2" marker-end="url(#arr)"/>`;b+=T(150,y-11,s[1],{anchor:"start",size:11.5,fill:C.ink});}
     else if(s[2]){b+=arrow(262,y,748,y,{color:C.purp});b+=T(505,y-11,s[1],{size:11.5,fill:C.ink});}
     else{b+=arrow(748,y,262,y,{color:C.teal});b+=T(505,y-11,s[1],{size:11.5,fill:C.ink});}
@@ -347,21 +347,24 @@ const FIGS = [
   return {w:W,h:H,body:b};}},
 
 {num:"6.2", name:"Model Confusion Matrix",
- desc:"Eight-class confusion layout (normal + 7 event types). A dominant normal diagonal and sparse minority rows reflect the reported class imbalance (illustrative shading).",
- build(){const W=1000,H=600;let b="";
-  const M=[[0.995,0.001,0,0.001,0.002,0,0.001,0],[0.42,0.34,0,0.05,0.06,0,0.10,0.03],[0.55,0.05,0.15,0.05,0.08,0.02,0.07,0.03],[0.50,0.04,0.02,0.30,0.08,0.01,0.03,0.02],[0.38,0.05,0.02,0.10,0.38,0.01,0.03,0.03],[0.60,0.04,0.02,0.05,0.06,0.18,0.03,0.02],[0.45,0.10,0.02,0.04,0.05,0.01,0.30,0.03],[0.58,0.05,0.02,0.04,0.06,0.01,0.04,0.20]];
-  const x0=250,y0=70,cs=52,ab=CLASSES.map(c=>c.length>8?c.slice(0,7)+"…":c);
+ desc:"Real held-out test confusion matrix (8 classes). Normal dominates (330,612 correct); minority events are weak and diversion is never recovered (0/112) — reflecting the dataset's class imbalance.",
+ build(){const W=1000,H=620;let b="";
+  const ab=["normal","congest.","diversion","road_dmg","constr.","accident","flood","rd_block"];
+  const M=[[330612,46,116,288,104,246,163,57],[70,42,0,0,0,0,0,0],[112,0,0,0,0,0,0,0],[68,6,0,36,0,0,2,0],[100,0,0,0,12,0,0,0],[50,0,6,0,0,52,2,2],[58,0,0,0,0,15,39,0],[56,0,14,0,0,0,0,42]];
+  const x0=250,y0=80,cs=52;
+  const fmt=n=>String(n).replace(/\B(?=(\d{3})+(?!\d))/g,",");
   for(let i=0;i<8;i++){b+=T(x0-12,y0+i*cs+cs/2,ab[i],{anchor:"end",size:10.5,fill:C.ink});
     b+=T(x0+i*cs+cs/2,y0-14,ab[i],{size:10,fill:C.ink,rot:-40});}
-  for(let r=0;r<8;r++)for(let c=0;c<8;c++){const v=M[r][c],X=x0+c*cs,Y=y0+r*cs;
-    b+=`<rect x="${X}" y="${Y}" width="${cs-2}" height="${cs-2}" rx="3" fill="${mixBlue(v)}" stroke="#e2e8f0"/>`;
-    if(v>=0.02)b+=T(X+cs/2-1,Y+cs/2,v.toFixed(2),{size:9.5,weight:600,fill:v>0.5?"#fff":C.ink});}
+  for(let r=0;r<8;r++){const rs=M[r].reduce((a,c)=>a+c,0)||1;
+    for(let c=0;c<8;c++){const v=M[r][c],frac=v/rs,X=x0+c*cs,Y=y0+r*cs;
+      b+=`<rect x="${X}" y="${Y}" width="${cs-2}" height="${cs-2}" rx="3" fill="${mixBlue(frac)}" stroke="#e2e8f0"/>`;
+      if(v>0||r===c)b+=T(X+cs/2-1,Y+cs/2,fmt(v),{size:v>=100000?8:9.5,weight:600,fill:frac>0.5?"#fff":C.ink});}}
   b+=T(x0+4*cs,y0+8*cs+26,"Predicted class",{size:12,weight:700,fill:C.slate});
-  b+=T(x0-58,y0+4*cs,"True class",{size:12,weight:700,fill:C.slate,rot:-90});
-  // colorbar
-  for(let i=0;i<50;i++)b+=`<rect x="${820}" y="${70+i*7}" width="22" height="7" fill="${mixBlue(1-i/49)}"/>`;
-  b+=T(852,74,"1.0",{anchor:"start",size:10,fill:C.sub});b+=T(852,70+49*7,"0.0",{anchor:"start",size:10,fill:C.sub});
-  b+=T(500,H-14,"row-normalized · illustrative pattern (dominant normal, weak minority classes)",{size:11,fill:C.sub});
+  b+=T(x0-72,y0+4*cs,"Actual class",{size:12,weight:700,fill:C.slate,rot:-90});
+  for(let i=0;i<50;i++)b+=`<rect x="820" y="${80+i*7}" width="22" height="7" fill="${mixBlue(1-i/49)}"/>`;
+  b+=T(852,84,"1.0",{anchor:"start",size:10,fill:C.sub});b+=T(852,80+49*7,"0.0",{anchor:"start",size:10,fill:C.sub});
+  b+=T(831,80+50*7+14,"recall",{size:10,fill:C.sub});
+  b+=T(500,H-16,"real held-out test counts · cell color = row-normalized recall · diversion recall = 0/112",{size:11,fill:C.sub});
   return {w:W,h:H,body:b};}},
 
 {num:"6.3", name:"Backend and Frontend Test Evidence",
