@@ -303,12 +303,16 @@ const FIGS = [
   return {w:W,h:H,body:b};}},
 
 {num:"5.5", name:"Route-Bound Demonstration Flow",
- desc:"A user calculates a directed route (≥ 1.5 km) and selects a scenario; controlled behavior is bound to the route's ordered segments, kept separate from model inputs.",
- build(){const W=1000,H=420;let b="";
-  const st=[{t:"Calculate route",s:"≥ 1.5 km directed",fill:C.blueF,stroke:C.blueB},{t:"Select scenario",s:"normal/congestion/accident",fill:C.amberF,stroke:C.amberB},{t:"Bind to segments",s:"ordered segment IDs",fill:C.tealF,stroke:C.tealB},{t:"Simulate on map",s:"vehicles + state",fill:C.greenF,stroke:C.greenB}];
-  b+=hflow(st,40,120,205,80,20,{});
-  b+=box(300,270,400,60,"Scenario truth kept OUT of model features","demonstration ≠ ground truth",{fill:"#fff",stroke:C.redB,size:12.5,subsize:10.5,tcolor:C.red});
-  b+=arrow(245,260,430,270,{dash:true});b+=arrow(700,260,560,270,{dash:true});
+ desc:"A user calculates a directed route (\u2265 1.5 km) and selects a scenario; controlled behavior is bound to the route's ordered segments, kept separate from model inputs.",
+ build(){const W=1000,H=430;let b="";
+  const st=[{t:"Calculate route",s:"\u2265 1.5 km directed",fill:C.blueF,stroke:C.blueB},{t:"Select scenario",s:"normal / congestion / accident",fill:C.amberF,stroke:C.amberB},{t:"Bind to segments",s:"ordered segment IDs",fill:C.tealF,stroke:C.tealB},{t:"Simulate on map",s:"vehicles + state",fill:C.greenF,stroke:C.greenB}];
+  b+=hflow(st,40,90,205,80,20,{});
+  b+=box(290,300,420,66,"Scenario truth kept OUT of model features","demonstration only \u00b7 not ground truth",{fill:"#fff",stroke:C.redB,size:13,subsize:10.5,tcolor:C.red});
+  const c1=40+205+20+205/2;
+  const c2=40+2*(205+20)+205/2;
+  b+=arrow(c1,170,c1,300,{dash:true});
+  b+=arrow(c2,170,c2,300,{dash:true});
+  b+=T((c1+c2)/2,235,"scenario label (truth)",{size:10.5,fill:C.sub});
   return {w:W,h:H,body:b};}},
 
 {num:"5.6", name:"Normal Traffic Demonstration",
