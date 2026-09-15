@@ -66,22 +66,53 @@ class LiveMapRepository:
             .all()
         )
 
+    # def latest_predictions(self, source_id: str, run_id: str) -> list[SegmentPrediction]:
+    #     latest = self.db.query(
+    #         SegmentPrediction.segment_id,
+    #         func.max(SegmentPrediction.timestamp).label("timestamp"),
+    #     ).filter(
+    #         SegmentPrediction.source_id == source_id,
+    #         SegmentPrediction.run_id == run_id,
+    #     ).group_by(SegmentPrediction.segment_id).subquery()
+    #     return self.db.query(SegmentPrediction).join(
+    #         latest,
+    #         (latest.c.segment_id == SegmentPrediction.segment_id)
+    #         & (latest.c.timestamp == SegmentPrediction.timestamp),
+    #     ).filter(
+    #         SegmentPrediction.source_id == source_id,
+    #         SegmentPrediction.run_id == run_id,
+    #     ).all()
     def latest_predictions(self, source_id: str, run_id: str) -> list[SegmentPrediction]:
-        latest = self.db.query(
-            SegmentPrediction.segment_id,
-            func.max(SegmentPrediction.timestamp).label("timestamp"),
-        ).filter(
-            SegmentPrediction.source_id == source_id,
-            SegmentPrediction.run_id == run_id,
-        ).group_by(SegmentPrediction.segment_id).subquery()
-        return self.db.query(SegmentPrediction).join(
-            latest,
-            (latest.c.segment_id == SegmentPrediction.segment_id)
-            & (latest.c.timestamp == SegmentPrediction.timestamp),
-        ).filter(
-            SegmentPrediction.source_id == source_id,
-            SegmentPrediction.run_id == run_id,
-        ).all()
+        ranked = (
+            self.db.query(
+                SegmentPrediction.id.label("prediction_id"),
+                func.row_number().over(
+                    partition_by=SegmentPrediction.segment_id,
+                    order_by=(
+                        SegmentPrediction.timestamp.desc(),
+                        SegmentPrediction.id.desc(),
+                    ),
+                ).label("prediction_rank"),
+            )
+            .filter(
+                SegmentPrediction.source_id == source_id,
+                SegmentPrediction.run_id == run_id,
+            )
+            .subquery()
+        )
+
+        latest = aliased(SegmentPrediction)
+
+        return (
+            self.db.query(latest)
+            .join(
+                ranked,
+                ranked.c.prediction_id == latest.id,
+            )
+            .filter(ranked.c.prediction_rank == 1)
+            .order_by(latest.segment_id.asc())
+            .all()
+        )
 
     def active_scenarios(self, source_id: str, run_id: str, at: datetime) -> list[LiveScenario]:
         return self.db.query(LiveScenario).filter(
