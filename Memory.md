@@ -1,4 +1,4 @@
-# CLAUDE.md — context for AI coding tools continuing this project
+# Memory.md — context for AI coding tools continuing this project
 
 Read this before generating code anywhere in this repo. It exists so
 every session (or every tool — Claude Code, Cursor, whatever) builds on
